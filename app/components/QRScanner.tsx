@@ -136,9 +136,15 @@ export default function QRScanner({ isOpen, onClose, onScan }: QRScannerProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 animate-fade-in">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 animate-fade-in"
+      onClick={handleClose}
+    >
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 p-4 pt-safe flex items-center justify-between z-10">
+      <div 
+        className="absolute top-0 left-0 right-0 p-4 pt-safe flex items-center justify-between z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           onClick={handleClose}
           className="p-2 rounded-xl glass touch-target"
@@ -150,7 +156,10 @@ export default function QRScanner({ isOpen, onClose, onScan }: QRScannerProps) {
       </div>
 
       {/* Scanner Container */}
-      <div className="relative w-full max-w-sm mx-4">
+      <div 
+        className="relative w-full max-w-sm mx-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Scanner viewport */}
         <div 
           id="qr-reader" 
@@ -205,7 +214,10 @@ export default function QRScanner({ isOpen, onClose, onScan }: QRScannerProps) {
       </div>
 
       {/* Instructions */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 pb-safe text-center">
+      <div 
+        className="absolute bottom-0 left-0 right-0 p-6 pb-safe text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
         <p className="text-gray-400 text-sm">
           Point your camera at a SuperPay QR code
         </p>

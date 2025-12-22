@@ -1,6 +1,7 @@
 'use client';
 
 import { WalletSelectionModal } from './wallet-selection-modal';
+import ThemeToggle from './ThemeToggle';
 
 export default function LoginPage() {
   return (
@@ -8,6 +9,10 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center p-4" 
       style={{ backgroundColor: 'var(--color-background)' }}
     >
+      {/* Theme Toggle - Top Right Corner */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle showLabel />
+      </div>
       {/* Background decoration */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div 
@@ -45,10 +50,10 @@ export default function LoginPage() {
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-3">
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-3">
             SuperPay
           </h1>
-          <p className="text-gray-400 text-lg mb-8">
+          <p className="text-slate-500 dark:text-gray-400 text-lg mb-8">
             Send crypto by username
           </p>
 
@@ -56,15 +61,15 @@ export default function LoginPage() {
           <div className="grid grid-cols-3 gap-3 mb-8">
             <div className="card-solid p-3 rounded-xl">
               <div className="text-2xl mb-1">⚡</div>
-              <p className="text-xs text-gray-400">Instant</p>
+              <p className="text-xs text-slate-600 dark:text-gray-400">Instant</p>
             </div>
             <div className="card-solid p-3 rounded-xl">
               <div className="text-2xl mb-1">🔒</div>
-              <p className="text-xs text-gray-400">Secure</p>
+              <p className="text-xs text-slate-600 dark:text-gray-400">Secure</p>
             </div>
             <div className="card-solid p-3 rounded-xl">
               <div className="text-2xl mb-1">🎁</div>
-              <p className="text-xs text-gray-400">Rewards</p>
+              <p className="text-xs text-slate-600 dark:text-gray-400">Rewards</p>
             </div>
           </div>
 
@@ -76,18 +81,18 @@ export default function LoginPage() {
           </WalletSelectionModal>
 
           {/* Trust badges */}
-          <div className="mt-8 pt-6 border-t border-white/5">
-            <p className="text-xs text-gray-500 mb-3">
+          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/5">
+            <p className="text-xs text-slate-500 dark:text-gray-500 mb-3">
               Powered by Movement Network
             </p>
             <div className="flex justify-center gap-4 flex-wrap">
-              <span className="text-xs text-gray-600 flex items-center gap-1">
+              <span className="text-xs text-slate-600 dark:text-gray-600 flex items-center gap-1">
                 <span className="text-emerald-500">●</span> Non-custodial
               </span>
-              <span className="text-xs text-gray-600 flex items-center gap-1">
+              <span className="text-xs text-slate-600 dark:text-gray-600 flex items-center gap-1">
                 <span className="text-emerald-500">●</span> Low fees
               </span>
-              <span className="text-xs text-gray-600 flex items-center gap-1">
+              <span className="text-xs text-slate-600 dark:text-gray-600 flex items-center gap-1">
                 <span className="text-emerald-500">●</span> Decentralized
               </span>
             </div>
@@ -95,7 +100,7 @@ export default function LoginPage() {
         </div>
 
         {/* Version */}
-        <p className="text-center text-gray-600 text-xs mt-6">
+        <p className="text-center text-slate-500 dark:text-gray-600 text-xs mt-6">
           Version 1.0.0
         </p>
       </div>
