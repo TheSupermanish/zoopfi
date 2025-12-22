@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import Navbar from '../components/Navbar';
+import DashboardLayout from '../components/DashboardLayout';
 import QRCodeCard from '../components/QRCodeCard';
 import { getUserByAddress, getPaymentRequests, createPaymentRequest } from '../lib/api';
 
@@ -89,7 +89,7 @@ export default function ReceivePageContent() {
     fetchRequests();
   }, [walletAddress]);
 
-  // Redirect if not connected (only check once after initial load)
+  // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!authenticated && !connected) {
@@ -135,40 +135,42 @@ export default function ReceivePageContent() {
   };
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--color-background)' }}>
-      {/* Header */}
-      <header className="p-4 pt-safe">
-        <h1 className="text-2xl font-bold text-white">Receive</h1>
-        <p className="text-gray-400 text-sm">Share your QR or create a request</p>
-      </header>
-
-      {/* Tabs */}
-      <div className="px-4 mb-6">
-        <div className="flex gap-2 p-1 rounded-xl glass">
-          <button
-            onClick={() => setTab('qr')}
-            className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all touch-target ${
-              tab === 'qr'
-                ? 'bg-emerald-500 text-white shadow-lg'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            📲 QR Code
-          </button>
-          <button
-            onClick={() => setTab('request')}
-            className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all touch-target ${
-              tab === 'request'
-                ? 'bg-emerald-500 text-white shadow-lg'
-                : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            📋 Requests
-          </button>
+    <DashboardLayout username={username} walletAddress={walletAddress}>
+      <div className="p-4 md:p-8 max-w-2xl mx-auto w-full">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Receive</h1>
+          <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Share your QR or create a request</p>
         </div>
-      </div>
 
-      <div className="px-4">
+        {/* Tabs */}
+        <div className="mb-6">
+          <div className="flex gap-2 p-1 rounded-xl bg-slate-200 dark:bg-[#251a30] border border-slate-200 dark:border-white/5">
+            <button
+              onClick={() => setTab('qr')}
+              className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${
+                tab === 'qr'
+                  ? 'bg-[#7f13ec] text-white shadow-lg'
+                  : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
+              }`}
+              style={{ boxShadow: tab === 'qr' ? '0 10px 40px -10px rgba(127, 19, 236, 0.5)' : 'none' }}
+            >
+              📲 QR Code
+            </button>
+            <button
+              onClick={() => setTab('request')}
+              className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${
+                tab === 'request'
+                  ? 'bg-[#7f13ec] text-white shadow-lg'
+                  : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
+              }`}
+              style={{ boxShadow: tab === 'request' ? '0 10px 40px -10px rgba(127, 19, 236, 0.5)' : 'none' }}
+            >
+              📋 Requests
+            </button>
+          </div>
+        </div>
+
         {/* QR Tab */}
         {tab === 'qr' && username && walletAddress && (
           <div className="space-y-6 animate-fade-in-up">
@@ -181,8 +183,8 @@ export default function ReceivePageContent() {
             />
 
             {/* Amount Input */}
-            <div className="card p-4">
-              <label className="block text-sm text-gray-400 mb-2">
+            <div className="bg-white dark:bg-[#251a30] rounded-2xl p-5 border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
+              <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-3">
                 Request specific amount (optional)
               </label>
               <div className="relative">
@@ -191,13 +193,13 @@ export default function ReceivePageContent() {
                   value={amount}
                   onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))}
                   placeholder="0.00"
-                  className="input pr-16"
+                  className="input h-14 pr-20"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#ad92c9] font-bold">
                   MOVE
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60 mt-2">
                 Adding an amount will update the QR code
               </p>
             </div>
@@ -211,7 +213,7 @@ export default function ReceivePageContent() {
             {!showRequestForm && (
               <button
                 onClick={() => setShowRequestForm(true)}
-                className="w-full btn btn-primary py-4 text-lg"
+                className="w-full btn btn-primary py-4 text-lg h-14"
               >
                 <span className="mr-2">➕</span>
                 Create Payment Request
@@ -220,45 +222,45 @@ export default function ReceivePageContent() {
 
             {/* Request Form */}
             {showRequestForm && (
-              <div className="card p-6 space-y-4 animate-scale-in">
-                <h3 className="text-lg font-bold text-white">New Payment Request</h3>
+              <div className="bg-white dark:bg-[#251a30] rounded-2xl p-6 space-y-4 animate-scale-in border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">New Payment Request</h3>
                 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Amount *</label>
+                  <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-2">Amount *</label>
                   <div className="relative">
                     <input
                       type="text"
                       value={requestAmount}
                       onChange={(e) => setRequestAmount(e.target.value.replace(/[^0-9.]/g, ''))}
                       placeholder="0.00"
-                      className="input pr-16"
+                      className="input h-14 pr-20"
                       autoFocus
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#ad92c9] font-bold">
                       MOVE
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">
+                  <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-2">
                     From (optional)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 font-medium z-10">@</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7f13ec] font-bold z-10">@</span>
                     <input
                       type="text"
                       value={requestPayer}
                       onChange={(e) => setRequestPayer(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                       placeholder="anyone"
-                      className="input"
+                      className="input h-14"
                       style={{ paddingLeft: '2.5rem' }}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">
+                  <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-2">
                     Message (optional)
                   </label>
                   <input
@@ -266,7 +268,7 @@ export default function ReceivePageContent() {
                     value={requestMessage}
                     onChange={(e) => setRequestMessage(e.target.value)}
                     placeholder="What's this for?"
-                    className="input"
+                    className="input h-14"
                     maxLength={200}
                   />
                 </div>
@@ -274,14 +276,14 @@ export default function ReceivePageContent() {
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setShowRequestForm(false)}
-                    className="flex-1 btn btn-secondary"
+                    className="flex-1 btn btn-secondary h-12"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleCreateRequest}
                     disabled={isCreatingRequest || !requestAmount}
-                    className="flex-1 btn btn-primary"
+                    className="flex-1 btn btn-primary h-12"
                   >
                     {isCreatingRequest ? (
                       <span className="flex items-center gap-2">
@@ -298,17 +300,17 @@ export default function ReceivePageContent() {
 
             {/* Pending Requests */}
             <div>
-              <h3 className="text-lg font-bold text-white mb-4">Your Requests</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Your Requests</h3>
               
               {isLoading ? (
                 <div className="flex justify-center py-12">
                   <div className="spinner" />
                 </div>
               ) : requests.length === 0 ? (
-                <div className="empty-state card">
-                  <span className="empty-state-icon">📋</span>
-                  <p className="empty-state-title">No payment requests yet</p>
-                  <p className="empty-state-description">
+                <div className="bg-white dark:bg-[#251a30] rounded-2xl p-8 text-center border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
+                  <span className="text-4xl mb-3 block">📋</span>
+                  <p className="text-slate-900 dark:text-white font-bold">No payment requests yet</p>
+                  <p className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1">
                     Create a request to ask someone to pay you
                   </p>
                 </div>
@@ -317,10 +319,10 @@ export default function ReceivePageContent() {
                   {requests.map((req) => (
                     <div
                       key={req._id}
-                      className="card-solid p-4 card-hover"
+                      className="bg-white dark:bg-[#251a30] rounded-2xl p-4 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all shadow-lg dark:shadow-none"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-2xl font-bold text-white">
+                        <span className="text-2xl font-bold text-slate-900 dark:text-white">
                           {req.amount} MOVE
                         </span>
                         <span className={`badge ${
@@ -328,20 +330,20 @@ export default function ReceivePageContent() {
                             ? 'badge-warning'
                             : req.status === 'paid'
                             ? 'badge-success'
-                            : 'bg-gray-500/20 text-gray-400'
+                            : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-[#ad92c9]'
                         }`}>
                           {req.status}
                         </span>
                       </div>
                       {req.payerUsername && (
-                        <p className="text-gray-400 text-sm">
-                          From: <span className="text-emerald-400">@{req.payerUsername}</span>
+                        <p className="text-slate-500 dark:text-[#ad92c9] text-sm">
+                          From: <span className="text-[#7f13ec]">@{req.payerUsername}</span>
                         </p>
                       )}
                       {req.message && (
-                        <p className="text-gray-500 text-sm mt-1 italic">"{req.message}"</p>
+                        <p className="text-slate-400 dark:text-[#ad92c9]/60 text-sm mt-1 italic">"{req.message}"</p>
                       )}
-                      <p className="text-gray-600 text-xs mt-2">
+                      <p className="text-slate-400 dark:text-[#ad92c9]/40 text-xs mt-2">
                         Expires: {new Date(req.expiresAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -355,13 +357,10 @@ export default function ReceivePageContent() {
 
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-emerald-500 text-white text-sm font-medium shadow-lg animate-fade-in-up z-50">
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-[#7f13ec] text-white text-sm font-bold shadow-lg animate-fade-in-up z-50">
           {toastMessage}
         </div>
       )}
-
-      <Navbar />
-    </div>
+    </DashboardLayout>
   );
 }
-
