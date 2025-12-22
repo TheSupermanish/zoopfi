@@ -91,7 +91,7 @@ export default function RewardsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#191022]">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#191022]">
         <div className="spinner" />
       </div>
     );
@@ -102,8 +102,8 @@ export default function RewardsPage() {
       <div className="p-4 md:p-8 max-w-3xl mx-auto w-full">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">Rewards</h1>
-          <p className="text-[#ad92c9] text-sm">Track your progress and earn rewards</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Rewards</h1>
+          <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Track your progress and earn rewards</p>
         </div>
 
         <div className="space-y-6">
@@ -154,13 +154,13 @@ export default function RewardsPage() {
           </div>
 
           {/* Streak Card */}
-          <div className="bg-[#251a30] rounded-2xl p-6 border border-white/5 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+          <div className="bg-white dark:bg-[#251a30] rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none animate-fade-in-up" style={{ animationDelay: '100ms' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[#ad92c9] text-sm">Daily Streak</p>
-                <p className="text-4xl font-black text-white flex items-center gap-2">
+                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Daily Streak</p>
+                <p className="text-4xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                   🔥 {streakInfo?.streak || 0}
-                  <span className="text-lg font-normal text-[#ad92c9]">days</span>
+                  <span className="text-lg font-normal text-slate-500 dark:text-[#ad92c9]">days</span>
                 </p>
               </div>
               <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
@@ -169,7 +169,7 @@ export default function RewardsPage() {
                 </span>
               </div>
             </div>
-            <p className="text-[#ad92c9]/60 text-sm mt-4">
+            <p className="text-slate-400 dark:text-[#ad92c9]/60 text-sm mt-4">
               {streakInfo?.streak === 0
                 ? 'Make a transfer today to start your streak!'
                 : `Keep it up! Transfer daily to maintain your streak.`}
@@ -178,7 +178,7 @@ export default function RewardsPage() {
 
           {/* Milestones */}
           <div className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-            <h3 className="text-lg font-bold text-white mb-4">Milestones</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Milestones</h3>
             <div className="space-y-3">
               {MILESTONES.map((milestone, index) => {
                 const isCompleted = transferCount >= milestone.count;
@@ -188,10 +188,10 @@ export default function RewardsPage() {
                 return (
                   <div
                     key={milestone.name}
-                    className={`bg-[#251a30] rounded-2xl p-4 flex items-center gap-4 border ${
-                      isCurrent ? 'border-[#7f13ec]' : 'border-white/5'
+                    className={`bg-white dark:bg-[#251a30] rounded-2xl p-4 flex items-center gap-4 border shadow-sm dark:shadow-none ${
+                      isCurrent ? 'border-[#7f13ec]' : 'border-slate-200 dark:border-white/5'
                     } ${isLocked ? 'opacity-50' : ''}`}
-                    style={{ boxShadow: isCurrent ? '0 0 30px rgba(127, 19, 236, 0.2)' : 'none' }}
+                    style={{ boxShadow: isCurrent ? '0 0 30px rgba(127, 19, 236, 0.2)' : undefined }}
                   >
                     <div 
                       className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${
@@ -199,21 +199,21 @@ export default function RewardsPage() {
                           ? 'bg-emerald-500/20' 
                           : isCurrent 
                             ? 'bg-[#7f13ec]/20' 
-                            : 'bg-white/5'
+                            : 'bg-slate-100 dark:bg-white/5'
                       }`}
                     >
                       {isCompleted ? '✅' : milestone.emoji}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className={`font-bold ${isCompleted || isCurrent ? 'text-white' : 'text-[#ad92c9]'}`}>
+                        <p className={`font-bold ${isCompleted || isCurrent ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-[#ad92c9]'}`}>
                           {milestone.name}
                         </p>
                         {isCurrent && (
                           <span className="badge badge-primary text-xs">Current</span>
                         )}
                       </div>
-                      <p className="text-[#ad92c9]/60 text-sm">
+                      <p className="text-slate-400 dark:text-[#ad92c9]/60 text-sm">
                         {milestone.count === 0 
                           ? 'Starting level' 
                           : `${milestone.count} transfers`}
@@ -221,10 +221,10 @@ export default function RewardsPage() {
                     </div>
                     {milestone.reward > 0 && (
                       <div className="text-right">
-                        <p className={`font-bold ${isCompleted ? 'text-emerald-400' : 'text-[#ad92c9]'}`}>
+                        <p className={`font-bold ${isCompleted ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-500 dark:text-[#ad92c9]'}`}>
                           +{milestone.reward} MOVE
                         </p>
-                        <p className="text-[#ad92c9]/60 text-xs">
+                        <p className="text-slate-400 dark:text-[#ad92c9]/60 text-xs">
                           {isCompleted ? 'Earned' : 'Reward'}
                         </p>
                       </div>
@@ -237,15 +237,15 @@ export default function RewardsPage() {
 
           {/* Stats Summary */}
           <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-            <h3 className="text-lg font-bold text-white mb-4">Your Stats</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Your Stats</h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-[#251a30] rounded-2xl p-4 text-center border border-white/5">
-                <p className="text-3xl font-bold text-white">{userData?.totalSent || 0}</p>
-                <p className="text-[#ad92c9] text-sm">MOVE Sent</p>
+              <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">{userData?.totalSent || 0}</p>
+                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">MOVE Sent</p>
               </div>
-              <div className="bg-[#251a30] rounded-2xl p-4 text-center border border-white/5">
-                <p className="text-3xl font-bold text-white">{userData?.totalReceived || 0}</p>
-                <p className="text-[#ad92c9] text-sm">MOVE Received</p>
+              <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
+                <p className="text-3xl font-bold text-slate-900 dark:text-white">{userData?.totalReceived || 0}</p>
+                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">MOVE Received</p>
               </div>
             </div>
           </div>
