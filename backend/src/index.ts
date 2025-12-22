@@ -9,6 +9,8 @@ import transactionRoutes from './routes/transactions';
 import contactRoutes from './routes/contacts';
 import requestRoutes from './routes/requests';
 import rewardRoutes from './routes/rewards';
+import contactRequestRoutes from './routes/contactRequests';
+import groupRoutes from './routes/groups';
 
 dotenv.config();
 
@@ -49,6 +51,8 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/rewards', rewardRoutes);
+app.use('/api/contact-requests', contactRequestRoutes);
+app.use('/api/groups', groupRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
