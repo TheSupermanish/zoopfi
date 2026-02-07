@@ -5,4 +5,6 @@ export { PaymentRequest, IPaymentRequest, RequestStatus } from './PaymentRequest
 export { default as ContactRequest, IContactRequest } from './ContactRequest';
 export { default as Group, IGroup, IGroupMember } from './Group';
 export { default as GroupExpense, IGroupExpense, IExpenseSplit } from './GroupExpense';
+export { default as GroupInvitation, IGroupInvitation } from './GroupInvitation';
+export { Invoice, IInvoice, InvoiceStatus, ILineItem } from './Invoice';
 

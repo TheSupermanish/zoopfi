@@ -6,7 +6,22 @@ import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
-import { getUserByAddress, getGroups, getGroup, createGroup, addGroupMember, addGroupExpense } from '../lib/api';
+import { getUserByAddress, getGroups, getGroup, createGroup, inviteGroupMember, addGroupExpense, getGroupInvitations, acceptGroupInvitation, declineGroupInvitation } from '../lib/api';
+
+interface GroupInvitation {
+  _id: string;
+  groupId: string;
+  groupName: string;
+  groupIcon: string;
+  groupColor: string;
+  invitedUsername: string;
+  invitedAddress: string;
+  inviterUsername: string;
+  inviterAddress: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+  expiresAt: string;
+}
 
 interface GroupMember {
   username: string;
@@ -1320,17 +1335,31 @@ export default function GroupsPage() {
 
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={() => setShowAddMember(false)}
-                  className="flex-1 btn btn-secondary h-12"
+                  onClick={() => {
+                    setShowAddMember(false);
+                    setNewMemberUsername('');
+                    setError('');
+                  }}
+                  className="flex-1 btn btn-secondary h-12 whitespace-nowrap"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddMember}
                   disabled={isAddingMember || !newMemberUsername}
-                  className="flex-1 btn btn-primary h-12"
+                  className="flex-1 btn btn-primary h-12 flex items-center justify-center gap-2 whitespace-nowrap"
                 >
-                  {isAddingMember ? 'Adding...' : 'Add Member'}
+                  {isAddingMember ? (
+                    <>
+                      <div className="spinner-sm" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📨</span>
+                      <span>Send Invite</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

@@ -2,22 +2,63 @@
 // This allows tunneling just the frontend while backend stays on localhost
 const API_BASE = '/api/backend';
 
+// Types
+export type AccountType = 'personal' | 'business';
+export type BusinessCategory = 'retail' | 'food' | 'services' | 'technology' | 'healthcare' | 'entertainment' | 'other';
+
+export interface BusinessInfo {
+  ownerFirstName: string;
+  ownerLastName: string;
+  category: BusinessCategory;
+  description?: string;
+  address?: string;
+  website?: string;
+}
+
+export interface RegisterData {
+  walletAddress: string;
+  username: string;
+  accountType: AccountType;
+  displayName: string;
+  avatarUrl?: string;
+  email?: string;
+  phone?: string;
+  businessInfo?: BusinessInfo;
+}
+
+export interface UserData {
+  username: string;
+  walletAddress: string;
+  accountType: AccountType;
+  displayName: string;
+  avatarUrl?: string;
+  email?: string;
+  phone?: string;
+  createdAt: string;
+  totalSent: number;
+  totalReceived: number;
+  streak: number;
+  transferCount: number;
+  lastActivityDate?: string;
+  businessInfo?: BusinessInfo;
+}
+
 // User API
 export const checkUsername = async (username: string): Promise<{ available: boolean; username: string }> => {
   const response = await fetch(`${API_BASE}/auth/check-username/${username}`);
   return response.json();
 };
 
-export const registerUser = async (walletAddress: string, username: string) => {
+export const registerUser = async (data: RegisterData) => {
   const response = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, walletAddress }),
+    body: JSON.stringify(data),
   });
   return response.json();
 };
 
-export const getUserByUsername = async (username: string) => {
+export const getUserByUsername = async (username: string): Promise<UserData | null> => {
   const response = await fetch(`${API_BASE}/users/${username}`);
   if (!response.ok) {
     if (response.status === 404) return null;
@@ -26,12 +67,43 @@ export const getUserByUsername = async (username: string) => {
   return response.json();
 };
 
-export const getUserByAddress = async (address: string) => {
+export const getUserByAddress = async (address: string): Promise<UserData | null> => {
   const response = await fetch(`${API_BASE}/users/address/${address}`);
   if (!response.ok) {
     if (response.status === 404) return null;
     throw new Error('Failed to fetch user');
   }
+  return response.json();
+};
+
+export const convertToBusiness = async (
+  walletAddress: string,
+  businessInfo: BusinessInfo,
+  displayName?: string
+) => {
+  const response = await fetch(`${API_BASE}/users/address/${walletAddress}/convert-to-business`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ businessInfo, displayName }),
+  });
+  return response.json();
+};
+
+export const updateUserProfile = async (
+  walletAddress: string,
+  data: {
+    displayName?: string;
+    avatarUrl?: string;
+    email?: string;
+    phone?: string;
+    businessInfo?: Partial<BusinessInfo>;
+  }
+) => {
+  const response = await fetch(`${API_BASE}/users/address/${walletAddress}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
   return response.json();
 };
 
@@ -211,14 +283,17 @@ export const updateGroup = async (groupId: string, data: {
   return response.json();
 };
 
-export const addGroupMember = async (groupId: string, username: string) => {
+export const inviteGroupMember = async (groupId: string, username: string, inviterAddress: string) => {
   const response = await fetch(`${API_BASE}/groups/${groupId}/members`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username }),
+    body: JSON.stringify({ username, inviterAddress }),
   });
   return response.json();
 };
+
+// Keep old name for backwards compatibility, but now sends invitation
+export const addGroupMember = inviteGroupMember;
 
 export const removeGroupMember = async (groupId: string, address: string) => {
   const response = await fetch(`${API_BASE}/groups/${groupId}/members/${address}`, {
@@ -268,5 +343,132 @@ export const deleteGroup = async (groupId: string, address: string) => {
     method: 'DELETE',
   });
   return response.json();
+};
+
+// Group Invitations API
+export const getGroupInvitations = async (address: string) => {
+  const response = await fetch(`${API_BASE}/groups/invitations/pending?address=${address}`);
+  return response.json();
+};
+
+export const acceptGroupInvitation = async (invitationId: string, address: string) => {
+  const response = await fetch(`${API_BASE}/groups/invitations/${invitationId}/accept`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address }),
+  });
+  return response.json();
+};
+
+export const declineGroupInvitation = async (invitationId: string, address: string) => {
+  const response = await fetch(`${API_BASE}/groups/invitations/${invitationId}/decline`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address }),
+  });
+  return response.json();
+};
+
+// Invoice API
+export const getInvoices = async (
+  address: string,
+  role: 'business' | 'customer' = 'business',
+  status: string = 'all'
+) => {
+  const response = await fetch(
+    `${API_BASE}/invoices?address=${address}&role=${role}&status=${status}`
+  );
+  return response.json();
+};
+
+export const getInvoice = async (invoiceId: string) => {
+  const response = await fetch(`${API_BASE}/invoices/${invoiceId}`);
+  return response.json();
+};
+
+export const createInvoice = async (data: {
+  businessAddress: string;
+  customerDisplayName: string;
+  customerEmail?: string;
+  customerAddress?: string;
+  customerUsername?: string;
+  lineItems: any[];
+  dueDate: string;
+  notes?: string;
+  terms?: string;
+  customerInfo?: {
+    address?: string;
+    phone?: string;
+  };
+  status?: 'draft' | 'sent';
+}) => {
+  const response = await fetch(`${API_BASE}/invoices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const updateInvoice = async (invoiceId: string, data: any) => {
+  const response = await fetch(`${API_BASE}/invoices/${invoiceId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const sendInvoice = async (invoiceId: string, businessAddress: string) => {
+  const response = await fetch(`${API_BASE}/invoices/${invoiceId}/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ businessAddress }),
+  });
+  return response.json();
+};
+
+export const payInvoice = async (
+  invoiceId: string,
+  customerAddress: string,
+  txHash: string,
+  amount: number
+) => {
+  const response = await fetch(`${API_BASE}/invoices/${invoiceId}/pay`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ customerAddress, txHash, amount }),
+  });
+  return response.json();
+};
+
+export const cancelInvoice = async (invoiceId: string, businessAddress: string) => {
+  const response = await fetch(`${API_BASE}/invoices/${invoiceId}/cancel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ businessAddress }),
+  });
+  return response.json();
+};
+
+export const deleteInvoice = async (invoiceId: string, businessAddress: string) => {
+  const response = await fetch(
+    `${API_BASE}/invoices/${invoiceId}?businessAddress=${businessAddress}`,
+    { method: 'DELETE' }
+  );
+  return response.json();
+};
+
+export const downloadInvoicePDF = async (invoiceId: string) => {
+  const response = await fetch(`${API_BASE}/invoices/${invoiceId}/pdf`);
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `invoice-${invoiceId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 };
 

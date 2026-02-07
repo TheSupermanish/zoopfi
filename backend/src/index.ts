@@ -11,6 +11,7 @@ import requestRoutes from './routes/requests';
 import rewardRoutes from './routes/rewards';
 import contactRequestRoutes from './routes/contactRequests';
 import groupRoutes from './routes/groups';
+import invoiceRoutes from './routes/invoices';
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ app.use('/api/requests', requestRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/contact-requests', contactRequestRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
