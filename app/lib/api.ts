@@ -134,3 +134,139 @@ export const updateStreak = async (address: string) => {
   return response.json();
 };
 
+// Contact Requests API (Friend Requests)
+export const sendContactRequest = async (senderAddress: string, receiverUsername: string, message?: string) => {
+  const response = await fetch(`${API_BASE}/contact-requests`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ senderAddress, receiverUsername, message }),
+  });
+  return response.json();
+};
+
+export const getContactRequests = async (address: string, type: 'all' | 'sent' | 'received' = 'received') => {
+  const response = await fetch(`${API_BASE}/contact-requests?address=${address}&type=${type}`);
+  return response.json();
+};
+
+export const getPendingContactRequestsCount = async (address: string) => {
+  const response = await fetch(`${API_BASE}/contact-requests/pending?address=${address}`);
+  return response.json();
+};
+
+export const respondToContactRequest = async (requestId: string, action: 'accept' | 'decline', address: string) => {
+  const response = await fetch(`${API_BASE}/contact-requests/${requestId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, address }),
+  });
+  return response.json();
+};
+
+export const cancelContactRequest = async (requestId: string, address: string) => {
+  const response = await fetch(`${API_BASE}/contact-requests/${requestId}?address=${address}`, {
+    method: 'DELETE',
+  });
+  return response.json();
+};
+
+// Groups API (Bill Splitting)
+export const getGroups = async (address: string) => {
+  const response = await fetch(`${API_BASE}/groups?address=${address}`);
+  return response.json();
+};
+
+export const getGroup = async (groupId: string) => {
+  const response = await fetch(`${API_BASE}/groups/${groupId}`);
+  return response.json();
+};
+
+export const createGroup = async (data: {
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  creatorAddress: string;
+  memberUsernames?: string[];
+}) => {
+  const response = await fetch(`${API_BASE}/groups`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const updateGroup = async (groupId: string, data: {
+  name?: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+}) => {
+  const response = await fetch(`${API_BASE}/groups/${groupId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const addGroupMember = async (groupId: string, username: string) => {
+  const response = await fetch(`${API_BASE}/groups/${groupId}/members`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username }),
+  });
+  return response.json();
+};
+
+export const removeGroupMember = async (groupId: string, address: string) => {
+  const response = await fetch(`${API_BASE}/groups/${groupId}/members/${address}`, {
+    method: 'DELETE',
+  });
+  return response.json();
+};
+
+export const addGroupExpense = async (groupId: string, data: {
+  description: string;
+  amount: number;
+  category?: string;
+  paidByAddress: string;
+  splitType?: 'equal' | 'exact' | 'percentage';
+  splitWith?: string[];
+  splits?: { walletAddress: string; username: string; amount: number }[];
+}) => {
+  const response = await fetch(`${API_BASE}/groups/${groupId}/expenses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const getGroupExpenses = async (groupId: string, limit = 50, offset = 0) => {
+  const response = await fetch(`${API_BASE}/groups/${groupId}/expenses?limit=${limit}&offset=${offset}`);
+  return response.json();
+};
+
+export const settleGroupPayment = async (groupId: string, data: {
+  fromAddress: string;
+  toAddress: string;
+  amount: number;
+  txHash?: string;
+}) => {
+  const response = await fetch(`${API_BASE}/groups/${groupId}/settle`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return response.json();
+};
+
+export const deleteGroup = async (groupId: string, address: string) => {
+  const response = await fetch(`${API_BASE}/groups/${groupId}?address=${address}`, {
+    method: 'DELETE',
+  });
+  return response.json();
+};
+
