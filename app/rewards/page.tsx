@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import Navbar from '../components/Navbar';
+import DashboardLayout from '../components/DashboardLayout';
 import { getStreakInfo, getUserByAddress } from '../lib/api';
 
 const MILESTONES = [
@@ -23,6 +23,7 @@ export default function RewardsPage() {
   const { account, connected } = useWallet();
 
   const [walletAddress, setWalletAddress] = useState('');
+  const [username, setUsername] = useState('');
   const [streakInfo, setStreakInfo] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,6 +55,9 @@ export default function RewardsPage() {
         ]);
         setStreakInfo(streak);
         setUserData(userInfo);
+        if (userInfo) {
+          setUsername(userInfo.username);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -64,7 +68,7 @@ export default function RewardsPage() {
     fetchData();
   }, [walletAddress]);
 
-  // Redirect if not connected (only check once after initial load)
+  // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!authenticated && !connected) {
@@ -87,165 +91,166 @@ export default function RewardsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-background)' }}>
+      <div className="min-h-screen flex items-center justify-center bg-[#191022]">
         <div className="spinner" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--color-background)' }}>
-      {/* Header */}
-      <header className="p-4 pt-safe">
-        <h1 className="text-2xl font-bold text-white">Rewards</h1>
-        <p className="text-gray-400 text-sm">Track your progress and earn rewards</p>
-      </header>
+    <DashboardLayout username={username} walletAddress={walletAddress}>
+      <div className="p-4 md:p-8 max-w-3xl mx-auto w-full">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white">Rewards</h1>
+          <p className="text-[#ad92c9] text-sm">Track your progress and earn rewards</p>
+        </div>
 
-      <div className="px-4 space-y-6">
-        {/* Current Status Card */}
-        <div 
-          className="rounded-2xl p-6 animate-fade-in-up overflow-hidden relative"
-          style={{
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #4f46e5 100%)',
-            boxShadow: '0 20px 40px -15px rgba(139, 92, 246, 0.3)'
-          }}
-        >
-          {/* Background decoration */}
-          <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-          
-          <div className="relative">
-            <div className="flex items-center justify-between mb-4">
+        <div className="space-y-6">
+          {/* Current Status Card */}
+          <div 
+            className="rounded-2xl p-6 animate-fade-in-up overflow-hidden relative"
+            style={{
+              background: 'linear-gradient(135deg, #7f13ec 0%, #a855f7 50%, #6366f1 100%)',
+              boxShadow: '0 20px 40px -15px rgba(127, 19, 236, 0.4)'
+            }}
+          >
+            {/* Background decoration */}
+            <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+            <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+            
+            <div className="relative">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-white/70 text-sm">Current Level</p>
+                  <p className="text-3xl font-black text-white flex items-center gap-2">
+                    <span>{currentMilestone.emoji}</span>
+                    <span>{currentMilestone.name}</span>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-white/70 text-sm">Transfers</p>
+                  <p className="text-3xl font-black text-white">{transferCount}</p>
+                </div>
+              </div>
+
+              {nextMilestone && (
+                <div className="mt-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-white/70">Progress to {nextMilestone.name}</span>
+                    <span className="text-white font-bold">
+                      {nextMilestone.count - transferCount} more
+                    </span>
+                  </div>
+                  <div className="h-3 bg-white/20 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-white rounded-full transition-all duration-1000"
+                      style={{ width: `${progressToNext}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Streak Card */}
+          <div className="bg-[#251a30] rounded-2xl p-6 border border-white/5 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-200 text-sm">Current Level</p>
-                <p className="text-3xl font-black text-white flex items-center gap-2">
-                  <span>{currentMilestone.emoji}</span>
-                  <span>{currentMilestone.name}</span>
+                <p className="text-[#ad92c9] text-sm">Daily Streak</p>
+                <p className="text-4xl font-black text-white flex items-center gap-2">
+                  🔥 {streakInfo?.streak || 0}
+                  <span className="text-lg font-normal text-[#ad92c9]">days</span>
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-purple-200 text-sm">Transfers</p>
-                <p className="text-3xl font-black text-white">{transferCount}</p>
+              <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <span className="text-3xl">
+                  {(streakInfo?.streak || 0) >= 7 ? '🌟' : (streakInfo?.streak || 0) >= 3 ? '⚡' : '🔥'}
+                </span>
               </div>
             </div>
-
-            {nextMilestone && (
-              <div className="mt-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-purple-200">Progress to {nextMilestone.name}</span>
-                  <span className="text-white font-medium">
-                    {nextMilestone.count - transferCount} more
-                  </span>
-                </div>
-                <div className="h-3 bg-white/20 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-white rounded-full transition-all duration-1000"
-                    style={{ width: `${progressToNext}%` }}
-                  />
-                </div>
-              </div>
-            )}
+            <p className="text-[#ad92c9]/60 text-sm mt-4">
+              {streakInfo?.streak === 0
+                ? 'Make a transfer today to start your streak!'
+                : `Keep it up! Transfer daily to maintain your streak.`}
+            </p>
           </div>
-        </div>
 
-        {/* Streak Card */}
-        <div className="card p-6 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Daily Streak</p>
-              <p className="text-4xl font-black text-white flex items-center gap-2">
-                🔥 {streakInfo?.streak || 0}
-                <span className="text-lg font-normal text-gray-400">days</span>
-              </p>
-            </div>
-            <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <span className="text-3xl">
-                {(streakInfo?.streak || 0) >= 7 ? '🌟' : (streakInfo?.streak || 0) >= 3 ? '⚡' : '🔥'}
-              </span>
-            </div>
-          </div>
-          <p className="text-gray-500 text-sm mt-4">
-            {streakInfo?.streak === 0
-              ? 'Make a transfer today to start your streak!'
-              : `Keep it up! Transfer daily to maintain your streak.`}
-          </p>
-        </div>
+          {/* Milestones */}
+          <div className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+            <h3 className="text-lg font-bold text-white mb-4">Milestones</h3>
+            <div className="space-y-3">
+              {MILESTONES.map((milestone, index) => {
+                const isCompleted = transferCount >= milestone.count;
+                const isCurrent = index === currentMilestoneIndex;
+                const isLocked = !isCompleted && !isCurrent;
 
-        {/* Milestones */}
-        <div className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-          <h3 className="text-lg font-bold text-white mb-4">Milestones</h3>
-          <div className="space-y-3">
-            {MILESTONES.map((milestone, index) => {
-              const isCompleted = transferCount >= milestone.count;
-              const isCurrent = index === currentMilestoneIndex;
-              const isLocked = !isCompleted && !isCurrent;
-
-              return (
-                <div
-                  key={milestone.name}
-                  className={`card-solid p-4 flex items-center gap-4 ${
-                    isCurrent ? 'ring-2 ring-emerald-500/50' : ''
-                  } ${isLocked ? 'opacity-50' : ''}`}
-                >
-                  <div 
-                    className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${
-                      isCompleted 
-                        ? 'bg-emerald-500/20' 
-                        : isCurrent 
-                          ? 'bg-purple-500/20' 
-                          : 'bg-white/5'
-                    }`}
+                return (
+                  <div
+                    key={milestone.name}
+                    className={`bg-[#251a30] rounded-2xl p-4 flex items-center gap-4 border ${
+                      isCurrent ? 'border-[#7f13ec]' : 'border-white/5'
+                    } ${isLocked ? 'opacity-50' : ''}`}
+                    style={{ boxShadow: isCurrent ? '0 0 30px rgba(127, 19, 236, 0.2)' : 'none' }}
                   >
-                    {isCompleted ? '✅' : milestone.emoji}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className={`font-bold ${isCompleted || isCurrent ? 'text-white' : 'text-gray-400'}`}>
-                        {milestone.name}
-                      </p>
-                      {isCurrent && (
-                        <span className="badge badge-info text-xs">Current</span>
-                      )}
+                    <div 
+                      className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${
+                        isCompleted 
+                          ? 'bg-emerald-500/20' 
+                          : isCurrent 
+                            ? 'bg-[#7f13ec]/20' 
+                            : 'bg-white/5'
+                      }`}
+                    >
+                      {isCompleted ? '✅' : milestone.emoji}
                     </div>
-                    <p className="text-gray-500 text-sm">
-                      {milestone.count === 0 
-                        ? 'Starting level' 
-                        : `${milestone.count} transfers`}
-                    </p>
-                  </div>
-                  {milestone.reward > 0 && (
-                    <div className="text-right">
-                      <p className={`font-bold ${isCompleted ? 'text-emerald-400' : 'text-gray-500'}`}>
-                        +{milestone.reward} MOVE
-                      </p>
-                      <p className="text-gray-500 text-xs">
-                        {isCompleted ? 'Earned' : 'Reward'}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className={`font-bold ${isCompleted || isCurrent ? 'text-white' : 'text-[#ad92c9]'}`}>
+                          {milestone.name}
+                        </p>
+                        {isCurrent && (
+                          <span className="badge badge-primary text-xs">Current</span>
+                        )}
+                      </div>
+                      <p className="text-[#ad92c9]/60 text-sm">
+                        {milestone.count === 0 
+                          ? 'Starting level' 
+                          : `${milestone.count} transfers`}
                       </p>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Stats Summary */}
-        <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-          <h3 className="text-lg font-bold text-white mb-4">Your Stats</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="card-solid p-4 text-center">
-              <p className="text-3xl font-bold text-white">{userData?.totalSent || 0}</p>
-              <p className="text-gray-500 text-sm">MOVE Sent</p>
+                    {milestone.reward > 0 && (
+                      <div className="text-right">
+                        <p className={`font-bold ${isCompleted ? 'text-emerald-400' : 'text-[#ad92c9]'}`}>
+                          +{milestone.reward} MOVE
+                        </p>
+                        <p className="text-[#ad92c9]/60 text-xs">
+                          {isCompleted ? 'Earned' : 'Reward'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <div className="card-solid p-4 text-center">
-              <p className="text-3xl font-bold text-white">{userData?.totalReceived || 0}</p>
-              <p className="text-gray-500 text-sm">MOVE Received</p>
+          </div>
+
+          {/* Stats Summary */}
+          <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+            <h3 className="text-lg font-bold text-white mb-4">Your Stats</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#251a30] rounded-2xl p-4 text-center border border-white/5">
+                <p className="text-3xl font-bold text-white">{userData?.totalSent || 0}</p>
+                <p className="text-[#ad92c9] text-sm">MOVE Sent</p>
+              </div>
+              <div className="bg-[#251a30] rounded-2xl p-4 text-center border border-white/5">
+                <p className="text-3xl font-bold text-white">{userData?.totalReceived || 0}</p>
+                <p className="text-[#ad92c9] text-sm">MOVE Received</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
-      <Navbar />
-    </div>
+    </DashboardLayout>
   );
 }
