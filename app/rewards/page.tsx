@@ -1,77 +1,52 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet } from '@/app/lib/chain';
+import { useUser, useStreak } from '@/app/lib/hooks';
 import DashboardLayout from '../components/DashboardLayout';
-import { getStreakInfo, getUserByAddress } from '../lib/api';
+import {
+  Sprout,
+  Rocket,
+  Sparkles,
+  Star,
+  Trophy,
+  Crown,
+  Gem,
+  Flame,
+  Zap,
+  CheckCircle2,
+  type LucideIcon,
+} from 'lucide-react';
 
-const MILESTONES = [
-  { name: 'Newcomer', emoji: '🌱', count: 0, reward: 0 },
-  { name: 'Explorer', emoji: '🚀', count: 10, reward: 0.5 },
-  { name: 'Trader', emoji: '💫', count: 25, reward: 1 },
-  { name: 'Star', emoji: '⭐', count: 50, reward: 2 },
-  { name: 'Champion', emoji: '🏆', count: 100, reward: 5 },
-  { name: 'Legend', emoji: '👑', count: 250, reward: 10 },
-  { name: 'Titan', emoji: '💎', count: 500, reward: 25 },
+const MILESTONES: { name: string; Icon: LucideIcon; count: number; reward: number }[] = [
+  { name: 'Newcomer', Icon: Sprout, count: 0, reward: 0 },
+  { name: 'Explorer', Icon: Rocket, count: 10, reward: 0.5 },
+  { name: 'Trader', Icon: Sparkles, count: 25, reward: 1 },
+  { name: 'Star', Icon: Star, count: 50, reward: 2 },
+  { name: 'Champion', Icon: Trophy, count: 100, reward: 5 },
+  { name: 'Legend', Icon: Crown, count: 250, reward: 10 },
+  { name: 'Titan', Icon: Gem, count: 500, reward: 25 },
 ];
 
 export default function RewardsPage() {
   const router = useRouter();
-  const { user, authenticated } = usePrivy();
-  const { account, connected } = useWallet();
+  const { address: walletAddress, authenticated, isConnected } = useWallet();
 
-  const [walletAddress, setWalletAddress] = useState('');
-  const [username, setUsername] = useState('');
-  const [streakInfo, setStreakInfo] = useState<any>(null);
-  const [userData, setUserData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: userData } = useUser();
+  const { data: streakInfo } = useStreak();
+  const username = userData?.username ?? '';
+  const isLoading = userData === undefined;
 
-  // Get wallet address
+  // Redirect if not registered
   useEffect(() => {
-    if (authenticated && user) {
-      const moveWallet = user.linkedAccounts?.find(
-        (acc: any) => acc.chainType === 'aptos'
-      ) as any;
-      if (moveWallet?.address) {
-        setWalletAddress(moveWallet.address);
-      }
-    } else if (connected && account?.address) {
-      setWalletAddress(account.address.toString());
-    }
-  }, [authenticated, user, connected, account]);
-
-  // Fetch data
-  useEffect(() => {
-    if (!walletAddress) return;
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [streak, userInfo] = await Promise.all([
-          getStreakInfo(walletAddress),
-          getUserByAddress(walletAddress),
-        ]);
-        setStreakInfo(streak);
-        setUserData(userInfo);
-        if (userInfo) {
-          setUsername(userInfo.username);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [walletAddress]);
+    if (userData === null) router.replace('/onboarding');
+  }, [userData, router]);
 
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -124,7 +99,7 @@ export default function RewardsPage() {
                 <div>
                   <p className="text-white/70 text-sm">Current Level</p>
                   <p className="text-3xl font-black text-white flex items-center gap-2">
-                    <span>{currentMilestone.emoji}</span>
+                    <currentMilestone.Icon className="w-7 h-7" />
                     <span>{currentMilestone.name}</span>
                   </p>
                 </div>
@@ -159,14 +134,16 @@ export default function RewardsPage() {
               <div>
                 <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Daily Streak</p>
                 <p className="text-4xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  🔥 {streakInfo?.streak || 0}
+                  <Flame className="w-10 h-10 text-amber-500" /> {streakInfo?.streak || 0}
                   <span className="text-lg font-normal text-slate-500 dark:text-[#ad92c9]">days</span>
                 </p>
               </div>
               <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
-                <span className="text-3xl">
-                  {(streakInfo?.streak || 0) >= 7 ? '🌟' : (streakInfo?.streak || 0) >= 3 ? '⚡' : '🔥'}
-                </span>
+                {(() => {
+                  const streak = streakInfo?.streak || 0;
+                  const StreakIcon = streak >= 7 ? Star : streak >= 3 ? Zap : Flame;
+                  return <StreakIcon className="w-7 h-7 text-amber-500" />;
+                })()}
               </div>
             </div>
             <p className="text-slate-400 dark:text-[#ad92c9]/60 text-sm mt-4">
@@ -193,16 +170,20 @@ export default function RewardsPage() {
                     } ${isLocked ? 'opacity-50' : ''}`}
                     style={{ boxShadow: isCurrent ? '0 0 30px rgba(127, 19, 236, 0.2)' : undefined }}
                   >
-                    <div 
+                    <div
                       className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${
-                        isCompleted 
-                          ? 'bg-emerald-500/20' 
-                          : isCurrent 
-                            ? 'bg-[#7f13ec]/20' 
+                        isCompleted
+                          ? 'bg-emerald-500/20'
+                          : isCurrent
+                            ? 'bg-[#7f13ec]/20'
                             : 'bg-slate-100 dark:bg-white/5'
                       }`}
                     >
-                      {isCompleted ? '✅' : milestone.emoji}
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                      ) : (
+                        <milestone.Icon className={`w-6 h-6 ${isCurrent ? 'text-[#7f13ec]' : 'text-slate-400 dark:text-[#ad92c9]'}`} />
+                      )}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -222,7 +203,7 @@ export default function RewardsPage() {
                     {milestone.reward > 0 && (
                       <div className="text-right">
                         <p className={`font-bold ${isCompleted ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-500 dark:text-[#ad92c9]'}`}>
-                          +{milestone.reward} MOVE
+                          +{milestone.reward} USDC
                         </p>
                         <p className="text-slate-400 dark:text-[#ad92c9]/60 text-xs">
                           {isCompleted ? 'Earned' : 'Reward'}
@@ -241,11 +222,11 @@ export default function RewardsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                 <p className="text-3xl font-bold text-slate-900 dark:text-white">{userData?.totalSent || 0}</p>
-                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">MOVE Sent</p>
+                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">USDC Sent</p>
               </div>
               <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                 <p className="text-3xl font-bold text-slate-900 dark:text-white">{userData?.totalReceived || 0}</p>
-                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">MOVE Received</p>
+                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">USDC Received</p>
               </div>
             </div>
           </div>

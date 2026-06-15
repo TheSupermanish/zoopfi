@@ -203,10 +203,22 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* Focus visible */
+/* Focus visible: purple outline for keyboard a11y on interactive elements. */
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* Text inputs/textareas/selects already show focus via their own border/ring
+   (.input) or their container's focus-within ring, so suppress the focus
+   outline box entirely on them (both our custom one and the browser default). */
+input:focus,
+textarea:focus,
+select:focus,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
 }
 
 /* Touch target minimum size */

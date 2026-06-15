@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet } from '@/app/lib/chain';
 import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
 import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
-import { getUserByAddress, getInvoices } from '../lib/api';
+import { getInvoices } from '../lib/api';
+import { useUser } from '@/app/lib/hooks';
 
 type InvoiceStatus = 'all' | 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 type ViewMode = 'business' | 'customer';
@@ -27,68 +27,35 @@ interface Invoice {
 
 export default function InvoicesPage() {
   const router = useRouter();
-  const { user, authenticated } = usePrivy();
-  const { account, connected } = useWallet();
+  const { address: walletAddress, authenticated, isConnected } = useWallet();
 
-  const [walletAddress, setWalletAddress] = useState('');
-  const [username, setUsername] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [accountType, setAccountType] = useState<'personal' | 'business'>('personal');
+  const { data: userData } = useUser();
+  const username = userData?.username ?? '';
+  const displayName = userData?.displayName ?? '';
+  const avatarUrl = userData?.avatarUrl ?? '';
+  const accountType = userData?.accountType ?? 'personal';
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('business');
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus>('all');
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Wallet setup
+  // Set default view mode based on account type
   useEffect(() => {
-    const setup = async () => {
-      let address = '';
-
-      if (authenticated && user) {
-        const moveWallet = user.linkedAccounts?.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-        if (moveWallet?.address) {
-          address = moveWallet.address;
-        }
-      } else if (connected && account?.address) {
-        address = account.address.toString();
-      }
-
-      if (address) {
-        setWalletAddress(address);
-        const userData = await getUserByAddress(address);
-        if (userData) {
-          setUsername(userData.username);
-          setDisplayName(userData.displayName);
-          setAvatarUrl(userData.avatarUrl || '');
-          setAccountType(userData.accountType);
-
-          // Set default view mode based on account type
-          if (userData.accountType === 'personal') {
-            setViewMode('customer');
-          }
-        }
-      }
-    };
-
-    setup();
-  }, [authenticated, user, connected, account]);
+    if (userData?.accountType === 'personal') {
+      setViewMode('customer');
+    }
+  }, [userData?.accountType]);
 
   // Fetch invoices
   useEffect(() => {
     if (!walletAddress) return;
 
     const fetchInvoices = async () => {
-      setIsLoading(true);
       try {
         const result = await getInvoices(walletAddress, viewMode, statusFilter);
         setInvoices(result.invoices || []);
       } catch (error) {
         console.error('Error fetching invoices:', error);
-      } finally {
-        setIsLoading(false);
       }
     };
 
@@ -98,12 +65,12 @@ export default function InvoicesPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [authenticated, connected, router]);
+  }, [authenticated, isConnected, router]);
 
   return (
     <DashboardLayout
@@ -180,11 +147,7 @@ export default function InvoicesPage() {
         </div>
 
         {/* Invoice List */}
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="spinner" />
-          </div>
-        ) : invoices.length === 0 ? (
+        {invoices.length === 0 ? (
           <div className="bg-white dark:bg-[#251a30] rounded-2xl p-12 text-center border border-slate-200 dark:border-white/5">
             <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-4">
               <span className="text-4xl">📄</span>

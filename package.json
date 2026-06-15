@@ -1,5 +1,5 @@
 {
-  "name": "superpay",
+  "name": "zoopfi",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -9,16 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@aptos-labs/ts-sdk": "^5.1.5",
-    "@aptos-labs/wallet-adapter-react": "^7.2.2",
-    "@aptos-labs/wallet-standard": "^0.5.2",
     "@privy-io/react-auth": "^3.7.0",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-separator": "^1.1.0",
     "@radix-ui/react-slot": "^1.1.0",
+    "@stellar/stellar-sdk": "^15.1.0",
+    "@tanstack/react-query": "^5.101.0",
     "@telegram-apps/bridge": "^2.10.3",
     "@wallet-standard/core": "^1.1.1",
-    "aptos": "^1.22.1",
+    "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "got": "^14.6.5",

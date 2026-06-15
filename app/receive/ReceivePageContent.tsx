@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet } from '@/app/lib/chain';
+import { useUser } from '@/app/lib/hooks';
 import DashboardLayout from '../components/DashboardLayout';
 import QRCodeCard from '../components/QRCodeCard';
-import { getUserByAddress, getPaymentRequests, createPaymentRequest } from '../lib/api';
+import { getPaymentRequests, createPaymentRequest } from '../lib/api';
+import { QrCode, Copy } from 'lucide-react';
 
 type Tab = 'qr' | 'request';
 
@@ -24,12 +25,11 @@ interface PaymentRequest {
 export default function ReceivePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, authenticated } = usePrivy();
-  const { account, connected } = useWallet();
+  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { data: userData } = useUser();
+  const username = userData?.username ?? '';
 
   const [tab, setTab] = useState<Tab>((searchParams.get('tab') as Tab) || 'qr');
-  const [walletAddress, setWalletAddress] = useState('');
-  const [username, setUsername] = useState('');
   const [amount, setAmount] = useState('');
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,34 +41,6 @@ export default function ReceivePageContent() {
   const [requestPayer, setRequestPayer] = useState('');
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   const [showRequestForm, setShowRequestForm] = useState(false);
-
-  // Get wallet info
-  useEffect(() => {
-    const setup = async () => {
-      let address = '';
-      
-      if (authenticated && user) {
-        const moveWallet = user.linkedAccounts?.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-        if (moveWallet?.address) {
-          address = moveWallet.address;
-        }
-      } else if (connected && account?.address) {
-        address = account.address.toString();
-      }
-
-      if (address) {
-        setWalletAddress(address);
-        const userData = await getUserByAddress(address);
-        if (userData) {
-          setUsername(userData.username);
-        }
-      }
-    };
-
-    setup();
-  }, [authenticated, user, connected, account]);
 
   // Fetch payment requests
   useEffect(() => {
@@ -92,7 +64,7 @@ export default function ReceivePageContent() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -155,7 +127,7 @@ export default function ReceivePageContent() {
               }`}
               style={{ boxShadow: tab === 'qr' ? '0 10px 40px -10px rgba(127, 19, 236, 0.5)' : 'none' }}
             >
-              📲 QR Code
+              <span className="inline-flex items-center justify-center gap-2"><QrCode className="w-4 h-4" /> QR Code</span>
             </button>
             <button
               onClick={() => setTab('request')}
@@ -166,7 +138,7 @@ export default function ReceivePageContent() {
               }`}
               style={{ boxShadow: tab === 'request' ? '0 10px 40px -10px rgba(127, 19, 236, 0.5)' : 'none' }}
             >
-              📋 Requests
+              <span className="inline-flex items-center justify-center gap-2"><Copy className="w-4 h-4" /> Requests</span>
             </button>
           </div>
         </div>
@@ -196,7 +168,7 @@ export default function ReceivePageContent() {
                   className="input h-14 pr-20"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#ad92c9] font-bold">
-                  MOVE
+                  USDC
                 </span>
               </div>
               <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60 mt-2">
@@ -237,7 +209,7 @@ export default function ReceivePageContent() {
                       autoFocus
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#ad92c9] font-bold">
-                      MOVE
+                      USDC
                     </span>
                   </div>
                 </div>
@@ -308,7 +280,7 @@ export default function ReceivePageContent() {
                 </div>
               ) : requests.length === 0 ? (
                 <div className="bg-white dark:bg-[#251a30] rounded-2xl p-8 text-center border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
-                  <span className="text-4xl mb-3 block">📋</span>
+                  <Copy className="w-10 h-10 mb-3 mx-auto text-slate-400 dark:text-[#ad92c9]" />
                   <p className="text-slate-900 dark:text-white font-bold">No payment requests yet</p>
                   <p className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1">
                     Create a request to ask someone to pay you
@@ -323,7 +295,7 @@ export default function ReceivePageContent() {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                          {req.amount} MOVE
+                          {req.amount} USDC
                         </span>
                         <span className={`badge ${
                           req.status === 'pending'

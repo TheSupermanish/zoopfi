@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { submitCounterTransaction, submitCounterTransactionNative, fetchCounterValue } from '../lib/transactions';
-import { useSignRawHash } from '@privy-io/react-auth/extended-chains';
+import { Crown, Flame, Star, Gem, Rocket, Sprout, Plus, Minus, Loader2 } from 'lucide-react';
+import { useWallet, CONTRACTS } from '@/app/lib/chain';
 
 interface CounterItemProps {
     username: string;
@@ -12,9 +10,7 @@ interface CounterItemProps {
 }
 
 export default function CounterItem({ username, onToast }: CounterItemProps) {
-    const { user } = usePrivy();
-    const { signRawHash } = useSignRawHash();
-    const { account, signAndSubmitTransaction } = useWallet();
+    const { address: walletAddress, ops } = useWallet();
     const [counter, setCounter] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(false);
     const [lastAction, setLastAction] = useState<string>('');
@@ -37,7 +33,7 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
     const refreshCounter = async () => {
         if (!username) return;
         try {
-            const value = await fetchCounterValue(username);
+            const value = Number(await ops.viewContract(CONTRACTS.counter, 'get_counter', [walletAddress || username]));
             if (value !== null) {
                 setCounter(value);
             }
@@ -53,7 +49,7 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
 
     const handleCounterAction = async (action: 'increment' | 'decrement') => {
         // Check if either wallet is connected
-        if (!user && !account) return;
+        if (!walletAddress) return;
 
         // Update pending counts
         if (action === 'increment') {
@@ -93,84 +89,21 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
         setIsLoading(true);
 
         try {
-            // Check if using native wallet or Privy wallet
-            // Prioritize Privy wallet if both are available
-            const isPrivyWallet = !!user?.linkedAccounts?.find(
-                (acc: any) => acc.chainType === 'aptos'
-            );
-            const isNativeWallet = !!account && !isPrivyWallet;
-
-            console.log('Wallet detection:', { isPrivyWallet, isNativeWallet, hasUser: !!user, hasAccount: !!account });
-
-            if (!isNativeWallet && !isPrivyWallet) {
+            if (!walletAddress) {
                 throw new Error('No wallet connected');
             }
 
-            const promises = [];
+            const operations: { action: 'increment' | 'decrement'; amount: number }[] = [];
+            if (incrementAmount > 0) operations.push({ action: 'increment', amount: incrementAmount });
+            if (decrementAmount > 0) operations.push({ action: 'decrement', amount: decrementAmount });
 
-            if (isNativeWallet) {
-                // Use native wallet adapter for transactions
-                if (incrementAmount > 0) {
-                    promises.push(
-                        submitCounterTransactionNative(
-                            'increment',
-                            incrementAmount,
-                            account?.address.toString(),
-                            signAndSubmitTransaction
-                        )
-                    );
-                }
-
-                if (decrementAmount > 0) {
-                    promises.push(
-                        submitCounterTransactionNative(
-                            'decrement',
-                            decrementAmount,
-                            account?.address.toString(),
-                            signAndSubmitTransaction
-                        )
-                    );
-                }
-            } else if (isPrivyWallet) {
-                // Use Privy wallet for transactions
-                const moveWallet = user!.linkedAccounts!.find(
-                    (acc: any) => acc.chainType === 'aptos'
-                ) as any;
-
-                if (!moveWallet) {
-                    throw new Error('Privy wallet not found');
-                }
-
-                console.log('Using Privy wallet:', { address: moveWallet.address, publicKey: moveWallet.publicKey });
-
-                if (!signRawHash) {
-                    throw new Error('signRawHash function not available');
-                }
-
-                if (incrementAmount > 0) {
-                    promises.push(
-                        submitCounterTransaction(
-                            'increment',
-                            incrementAmount,
-                            moveWallet.address,
-                            moveWallet.publicKey,
-                            signRawHash
-                        )
-                    );
-                }
-
-                if (decrementAmount > 0) {
-                    promises.push(
-                        submitCounterTransaction(
-                            'decrement',
-                            decrementAmount,
-                            moveWallet.address,
-                            moveWallet.publicKey,
-                            signRawHash
-                        )
-                    );
-                }
-            }
+            const promises = operations.map(async ({ action, amount }) => {
+                const method = action === 'increment' ? 'add_counter' : 'subtract_counter';
+                const result = await ops.invokeContract(CONTRACTS.counter, method, [walletAddress, amount]);
+                if (!result.success) throw new Error(result.error || 'Transaction failed');
+                const hash = result.hash;
+                return hash;
+            });
 
             // Wait for all transactions to complete
             const results = await Promise.all(promises);
@@ -237,13 +170,13 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
         return '#ff4444'; // Red for very negative
     };
 
-    const getLevelEmoji = () => {
-        if (level >= 10) return '👑';
-        if (level >= 8) return '🔥';
-        if (level >= 6) return '⭐';
-        if (level >= 4) return '💎';
-        if (level >= 2) return '🚀';
-        return '🌱';
+    const getLevelIcon = () => {
+        if (level >= 10) return <Crown size={20} />;
+        if (level >= 8) return <Flame size={20} />;
+        if (level >= 6) return <Star size={20} />;
+        if (level >= 4) return <Gem size={20} />;
+        if (level >= 2) return <Rocket size={20} />;
+        return <Sprout size={20} />;
     };
 
     return (
@@ -259,39 +192,43 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
                 {/* Level and Streak Display */}
                 <div className="flex justify-between items-center mb-6">
                     <div
-                        className="px-4 py-2 rounded-lg font-bold text-white"
+                        className="px-4 py-2 rounded-lg font-bold text-white inline-flex items-center gap-1.5"
                         style={{
                             backgroundColor: '#0099ff',
                             border: '2px solid black',
                             boxShadow: '2px 2px 0px black'
                         }}
                     >
-                        {getLevelEmoji()} Level {level}
+                        {getLevelIcon()} Level {level}
                     </div>
 
                     {/* Pending Count Display */}
                     {pendingCount > 0 && (
                         <div
-                            className="px-4 py-2 rounded-lg font-bold text-white animate-pulse"
+                            className="px-4 py-2 rounded-lg font-bold text-white animate-pulse inline-flex items-center gap-1.5"
                             style={{
                                 backgroundColor: isSyncing ? '#ff6600' : '#9333ea',
                                 border: '2px solid black',
                                 boxShadow: '2px 2px 0px black'
                             }}
                         >
-                            {isSyncing ? '⏳ Syncing...' : `⏱️ Pending: ${pendingCount}`}
+                            {isSyncing ? (
+                                <><Loader2 size={20} className="animate-spin" /> Syncing...</>
+                            ) : (
+                                <>⏱️ Pending: {pendingCount}</>
+                            )}
                         </div>
                     )}
 
                     <div
-                        className="px-4 py-2 rounded-lg font-bold text-white"
+                        className="px-4 py-2 rounded-lg font-bold text-white inline-flex items-center gap-1.5"
                         style={{
                             backgroundColor: '#ff6600',
                             border: '2px solid black',
                             boxShadow: '2px 2px 0px black'
                         }}
                     >
-                        🔥 Streak: {streak}
+                        <Flame size={20} /> Streak: {streak}
                     </div>
                 </div>
 
@@ -328,7 +265,7 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
                         <button
                             onClick={() => handleCounterAction('increment')}
                             disabled={isLoading || isSyncing}
-                            className="font-bold text-white text-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
+                            className="font-bold text-white text-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl inline-flex items-center justify-center gap-2"
                             style={{
                                 backgroundColor: '#00ff88',
                                 border: '4px solid black',
@@ -336,13 +273,17 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
                                 padding: '16px 32px'
                             }}
                         >
-                            {isLoading || isSyncing ? '⏳' : '➕ INCREMENT'}
+                            {isLoading || isSyncing ? (
+                                <Loader2 size={24} className="animate-spin" />
+                            ) : (
+                                <><Plus size={24} /> INCREMENT</>
+                            )}
                         </button>
 
                         <button
                             onClick={() => handleCounterAction('decrement')}
                             disabled={isLoading || isSyncing}
-                            className="font-bold text-white text-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl"
+                            className="font-bold text-white text-xl transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl inline-flex items-center justify-center gap-2"
                             style={{
                                 backgroundColor: '#ff4444',
                                 border: '4px solid black',
@@ -350,7 +291,11 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
                                 padding: '16px 32px'
                             }}
                         >
-                            {isLoading || isSyncing ? '⏳' : '➖ DECREMENT'}
+                            {isLoading || isSyncing ? (
+                                <Loader2 size={24} className="animate-spin" />
+                            ) : (
+                                <><Minus size={24} /> DECREMENT</>
+                            )}
                         </button>
                     </div>
 
@@ -359,7 +304,7 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
                         <button
                             onClick={syncPendingCounts}
                             disabled={isLoading || isSyncing}
-                            className="font-bold text-white text-sm transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+                            className="font-bold text-white text-sm transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg inline-flex items-center justify-center gap-1.5"
                             style={{
                                 backgroundColor: '#9333ea',
                                 border: '3px solid black',
@@ -367,7 +312,7 @@ export default function CounterItem({ username, onToast }: CounterItemProps) {
                                 padding: '8px 16px'
                             }}
                         >
-                            🚀 SYNC NOW ({pendingCount})
+                            <Rocket size={16} /> SYNC NOW ({pendingCount})
                         </button>
                     )}
                 </div>

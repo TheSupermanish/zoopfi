@@ -2,12 +2,30 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useWallet } from '@/app/lib/chain';
+import { useUser } from '@/app/lib/hooks';
 import DashboardLayout from '../components/DashboardLayout';
 import { ThemeTogglePill } from '../components/ThemeToggle';
-import { getUserByAddress, convertToBusiness, UserData, BusinessCategory, BusinessInfo } from '../lib/api';
+import { convertToBusiness, BusinessCategory, BusinessInfo } from '../lib/api';
 import { toast } from 'sonner';
+import {
+  Building2,
+  User,
+  Pencil,
+  Copy,
+  Rocket,
+  Check,
+  Palette,
+  Settings,
+  Share2,
+  HelpCircle,
+  Twitter,
+  MessageCircle,
+  BookOpen,
+  AlertTriangle,
+  LogOut,
+} from 'lucide-react';
 
 const BUSINESS_CATEGORIES: { value: BusinessCategory; label: string; icon: string }[] = [
   { value: 'retail', label: 'Retail', icon: '🛍️' },
@@ -21,12 +39,11 @@ const BUSINESS_CATEGORIES: { value: BusinessCategory; label: string; icon: strin
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, authenticated, logout: privyLogout } = usePrivy();
-  const { account, connected, disconnect } = useWallet();
+  const queryClient = useQueryClient();
+  const { address: walletAddress, authenticated, isConnected, logout } = useWallet();
 
-  const [walletAddress, setWalletAddress] = useState('');
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: userData } = useUser();
+  const isLoading = userData === undefined;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Form state
@@ -50,55 +67,19 @@ export default function SettingsPage() {
 
   const isBusiness = userData?.accountType === 'business';
 
-  // Get wallet address
+  // Initialize the editable display name from the cached user
   useEffect(() => {
-    if (authenticated && user) {
-      const moveWallet = user.linkedAccounts?.find(
-        (acc: any) => acc.chainType === 'aptos'
-      ) as any;
-      if (moveWallet?.address) {
-        setWalletAddress(moveWallet.address);
-      }
-      // Get email from Privy user
-      const emailAccount = user.linkedAccounts?.find(
-        (acc: any) => acc.type === 'email'
-      ) as any;
-      if (emailAccount?.address) {
-        setEmail(emailAccount.address);
-      }
-    } else if (connected && account?.address) {
-      setWalletAddress(account.address.toString());
+    if (userData?.displayName) {
+      setDisplayName(userData.displayName);
+    } else if (userData?.username) {
+      setDisplayName(userData.username);
     }
-  }, [authenticated, user, connected, account]);
-
-  // Fetch user data
-  useEffect(() => {
-    if (!walletAddress) return;
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const result = await getUserByAddress(walletAddress);
-        setUserData(result);
-        if (result?.displayName) {
-          setDisplayName(result.displayName);
-        } else if (result?.username) {
-          setDisplayName(result.username);
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [walletAddress]);
+  }, [userData?.displayName, userData?.username]);
 
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -114,12 +95,7 @@ export default function SettingsPage() {
   // Handle logout
   const handleLogout = async () => {
     try {
-      if (authenticated) {
-        await privyLogout();
-      }
-      if (connected) {
-        await disconnect();
-      }
+      await logout();
       router.replace('/');
     } catch (error) {
       console.error('Error logging out:', error);
@@ -155,7 +131,7 @@ export default function SettingsPage() {
       const result = await convertToBusiness(walletAddress, businessInfo, businessName.trim());
 
       if (result.user) {
-        setUserData(result.user);
+        queryClient.invalidateQueries({ queryKey: ['user'] });
         toast.success('Successfully converted to business account!');
         setShowConvertModal(false);
         // Reset form
@@ -217,7 +193,7 @@ export default function SettingsPage() {
           }`}>
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
               <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}>
-                {isBusiness ? '🏢' : '👤'}
+                {isBusiness ? <Building2 className="w-5 h-5" /> : <User className="w-5 h-5" />}
               </span>
               {isBusiness ? 'Business Profile' : 'Profile'}
             </h3>
@@ -248,7 +224,7 @@ export default function SettingsPage() {
                     isBusiness ? 'bg-purple-600' : 'bg-[#7f13ec]'
                   }`}
                 >
-                  <span className="text-sm">✏️</span>
+                  <Pencil className="w-4 h-4" />
                 </button>
               </div>
               <div className="flex-1">
@@ -372,11 +348,11 @@ export default function SettingsPage() {
                   }`}
                   title="Copy Address"
                 >
-                  <span className="text-lg">📋</span>
+                  <Copy className="w-5 h-5" />
                 </button>
               </div>
               <p className="text-xs text-slate-500 dark:text-[#ad92c9] ml-1">
-                This wallet is used for all {isBusiness ? 'business ' : ''}transactions on Movement Network.
+                This wallet is used for all {isBusiness ? 'business ' : ''}transactions on Stellar Network.
               </p>
             </div>
           </section>
@@ -385,7 +361,7 @@ export default function SettingsPage() {
           {!isBusiness && (
             <section className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-500/5 dark:to-violet-500/5 rounded-3xl p-6 md:p-8 border border-purple-200 dark:border-purple-500/20">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
-                <span className="text-purple-600">🏢</span>
+                <span className="text-purple-600"><Building2 className="w-5 h-5" /></span>
                 Upgrade to Business
               </h3>
               
@@ -396,19 +372,19 @@ export default function SettingsPage() {
 
               <div className="flex flex-wrap gap-4 mb-6">
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#ad92c9]">
-                  <span className="text-purple-500">✓</span>
+                  <span className="text-purple-500"><Check className="w-4 h-4" /></span>
                   <span>Professional profile</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#ad92c9]">
-                  <span className="text-purple-500">✓</span>
+                  <span className="text-purple-500"><Check className="w-4 h-4" /></span>
                   <span>Payment analytics</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#ad92c9]">
-                  <span className="text-purple-500">✓</span>
+                  <span className="text-purple-500"><Check className="w-4 h-4" /></span>
                   <span>Customer management</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#ad92c9]">
-                  <span className="text-purple-500">✓</span>
+                  <span className="text-purple-500"><Check className="w-4 h-4" /></span>
                   <span>Invoice generation</span>
                 </div>
               </div>
@@ -417,7 +393,7 @@ export default function SettingsPage() {
                 onClick={() => setShowConvertModal(true)}
                 className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-colors flex items-center gap-2"
               >
-                <span>🚀</span>
+                <Rocket className="w-5 h-5" />
                 Convert to Business Account
               </button>
             </section>
@@ -426,7 +402,7 @@ export default function SettingsPage() {
           {/* Appearance Section */}
           <section className="bg-white dark:bg-[#261933] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-[#4d3267]">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
-              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}>🎨</span>
+              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}><Palette className="w-5 h-5" /></span>
               Appearance
             </h3>
 
@@ -442,7 +418,7 @@ export default function SettingsPage() {
           {/* Preferences Section */}
           <section className="bg-white dark:bg-[#261933] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-[#4d3267]">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
-              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}>⚙️</span>
+              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}><Settings className="w-5 h-5" /></span>
               Quick Preferences
             </h3>
             
@@ -542,18 +518,18 @@ export default function SettingsPage() {
           {/* Support & Links Section */}
           <section className="bg-white dark:bg-[#261933] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-[#4d3267]">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
-              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}>🔗</span>
+              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}><Share2 className="w-5 h-5" /></span>
               Links & Support
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <a
-                href="https://movement.xyz"
+                href="https://stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/30 transition-colors group"
               >
-                <span className="text-2xl">❓</span>
+                <HelpCircle className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
                 <div className="flex-1">
                   <p className={`font-bold text-slate-900 dark:text-white transition-colors ${
                     isBusiness ? 'group-hover:text-purple-600' : 'group-hover:text-[#7f13ec]'
@@ -564,12 +540,12 @@ export default function SettingsPage() {
               </a>
 
               <a
-                href="https://twitter.com/movementlabsxyz"
+                href="https://twitter.com/StellarOrg"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/30 transition-colors group"
               >
-                <span className="text-2xl">🐦</span>
+                <Twitter className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
                 <div className="flex-1">
                   <p className={`font-bold text-slate-900 dark:text-white transition-colors ${
                     isBusiness ? 'group-hover:text-purple-600' : 'group-hover:text-[#7f13ec]'
@@ -580,12 +556,12 @@ export default function SettingsPage() {
               </a>
 
               <a
-                href="https://discord.gg/movement"
+                href="https://discord.gg/stellardev"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/30 transition-colors group"
               >
-                <span className="text-2xl">💬</span>
+                <MessageCircle className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
                 <div className="flex-1">
                   <p className={`font-bold text-slate-900 dark:text-white transition-colors ${
                     isBusiness ? 'group-hover:text-purple-600' : 'group-hover:text-[#7f13ec]'
@@ -596,17 +572,17 @@ export default function SettingsPage() {
               </a>
 
               <a
-                href="https://docs.movementlabs.xyz"
+                href="https://developers.stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/30 transition-colors group"
               >
-                <span className="text-2xl">📚</span>
+                <BookOpen className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
                 <div className="flex-1">
                   <p className={`font-bold text-slate-900 dark:text-white transition-colors ${
                     isBusiness ? 'group-hover:text-purple-600' : 'group-hover:text-[#7f13ec]'
                   }`}>Documentation</p>
-                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Learn about Movement</p>
+                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Learn about Stellar</p>
                 </div>
                 <span className="text-slate-400 dark:text-[#ad92c9]">↗</span>
               </a>
@@ -616,7 +592,7 @@ export default function SettingsPage() {
           {/* Danger Zone */}
           <section className="bg-red-50 dark:bg-red-500/5 rounded-3xl p-6 md:p-8 border border-red-200 dark:border-red-500/20">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-red-600 dark:text-red-400">
-              <span>⚠️</span>
+              <AlertTriangle className="w-5 h-5" />
               Danger Zone
             </h3>
             
@@ -624,14 +600,14 @@ export default function SettingsPage() {
               <div>
                 <p className="font-bold text-slate-900 dark:text-white">Sign Out</p>
                 <p className="text-sm text-slate-500 dark:text-[#ad92c9]">
-                  You'll need to reconnect your wallet to access SuperPay again.
+                  You'll need to reconnect your wallet to access Zoopfi again.
                 </p>
               </div>
               <button
                 onClick={() => setShowLogoutConfirm(true)}
                 className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-sm transition-colors flex items-center gap-2"
               >
-                <span>🚪</span>
+                <LogOut className="w-5 h-5" />
                 Sign Out
               </button>
             </div>
@@ -659,7 +635,7 @@ export default function SettingsPage() {
 
           {/* Version */}
           <p className="text-center text-slate-400 dark:text-[#ad92c9]/40 text-xs pb-8">
-            SuperPay v1.0.0 • Built on Movement Network
+            Zoopfi v1.0.0 • Built on Stellar Network
           </p>
         </div>
       </div>
@@ -670,11 +646,11 @@ export default function SettingsPage() {
           <div className="bg-white dark:bg-[#261933] rounded-3xl p-6 max-w-sm w-full animate-scale-in border border-slate-200 dark:border-[#4d3267] shadow-xl">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
-                <span className="text-3xl">🚪</span>
+                <LogOut className="w-7 h-7 text-red-500" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Sign Out?</h3>
               <p className="text-slate-500 dark:text-[#ad92c9] text-sm">
-                You'll need to reconnect your wallet to access SuperPay again.
+                You'll need to reconnect your wallet to access Zoopfi again.
               </p>
             </div>
             <div className="flex gap-3">
@@ -701,7 +677,7 @@ export default function SettingsPage() {
           <div className="bg-white dark:bg-[#261933] rounded-3xl p-6 max-w-lg w-full animate-scale-in border border-purple-200 dark:border-purple-500/20 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <span className="text-2xl">🏢</span>
+                <Building2 className="w-6 h-6 text-purple-600" />
               </div>
               <div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">Convert to Business</h3>

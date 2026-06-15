@@ -2,16 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { useSignRawHash } from '@privy-io/react-auth/extended-chains';
 import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
 import QRScanner from '../components/QRScanner';
-import { getUserByUsername, getUserByAddress, recordTransaction, updateStreak, getTransactions, getContacts } from '../lib/api';
-import { fetchBalance, formatBalance, formatUSD } from '../lib/balance';
-import { transferWithPrivy, transferWithNativeWallet } from '../lib/transfer';
-import { getExplorerUrl } from '../lib/aptos';
+import { getUserByUsername, recordTransaction, updateStreak, getContacts } from '../lib/api';
+import { useWallet, formatBalance, formatUSD, getExplorerUrl } from '@/app/lib/chain';
+import { useUser, useBalance, useTransactions, useChainInvalidate } from '@/app/lib/hooks';
+import { ArrowUpRight, ArrowDownLeft, CheckCircle2, FileText, Fuel, Check, X, ScanLine, QrCode, Copy, Share2 } from 'lucide-react';
 
 type Step = 'form' | 'confirm' | 'success';
 type Mode = 'send' | 'receive';
@@ -35,9 +32,12 @@ interface Transaction {
 export default function SendPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, authenticated } = usePrivy();
-  const { account, connected, signAndSubmitTransaction } = useWallet();
-  const { signRawHash } = useSignRawHash();
+  const { address: walletAddress, authenticated, isConnected, ops } = useWallet();
+  const { data: userData } = useUser();
+  const { data: balance = 0 } = useBalance('USDC');
+  const { data: recentTransactions = [] } = useTransactions(5);
+  const invalidate = useChainInvalidate();
+  const senderUsername = userData?.username ?? '';
 
   const [mode, setMode] = useState<Mode>('send');
   const [step, setStep] = useState<Step>('form');
@@ -50,12 +50,8 @@ export default function SendPageContent() {
   const [error, setError] = useState('');
   const [txHash, setTxHash] = useState('');
   const [showScanner, setShowScanner] = useState(false);
-  
-  const [walletAddress, setWalletAddress] = useState('');
-  const [senderUsername, setSenderUsername] = useState('');
-  const [balance, setBalance] = useState(0);
+
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
 
   // Handle QR scan result
   const handleQRScan = async (data: { username: string; amount?: string }) => {
@@ -66,47 +62,22 @@ export default function SendPageContent() {
     await searchRecipient(data.username);
   };
 
-  // Get wallet info
+  // Load contacts (no global hook for these)
   useEffect(() => {
     const setup = async () => {
-      let address = '';
-      
-      if (authenticated && user) {
-        const moveWallet = user.linkedAccounts?.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-        if (moveWallet?.address) {
-          address = moveWallet.address;
-        }
-      } else if (connected && account?.address) {
-        address = account.address.toString();
-      }
-
-      if (address) {
-        setWalletAddress(address);
-        const [bal, userData, contactsResult, txResult] = await Promise.all([
-          fetchBalance(address),
-          getUserByAddress(address),
-          getContacts(address).catch(() => ({ contacts: [] })),
-          getTransactions(address, 5, 0).catch(() => ({ transactions: [] })),
-        ]);
-        
-        setBalance(bal);
-        if (userData) {
-          setSenderUsername(userData.username);
-        }
+      if (walletAddress) {
+        const contactsResult = await getContacts(walletAddress).catch(() => ({ contacts: [] }));
         setContacts(contactsResult.contacts || []);
-        setRecentTransactions(txResult.transactions || []);
       }
     };
 
     setup();
-  }, [authenticated, user, connected, account]);
+  }, [authenticated, walletAddress, isConnected]);
 
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -171,32 +142,9 @@ export default function SendPageContent() {
       let hash: string;
       const amountNum = Number(amount);
 
-      const isPrivyWallet = authenticated && user?.linkedAccounts?.find(
-        (acc: any) => acc.chainType === 'aptos'
-      );
-
-      if (isPrivyWallet && signRawHash) {
-        const moveWallet = user!.linkedAccounts!.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-
-        hash = await transferWithPrivy(
-          walletAddress,
-          recipientData.walletAddress,
-          amountNum,
-          moveWallet.publicKey,
-          signRawHash
-        );
-      } else if (connected && signAndSubmitTransaction) {
-        hash = await transferWithNativeWallet(
-          walletAddress,
-          recipientData.walletAddress,
-          amountNum,
-          signAndSubmitTransaction
-        );
-      } else {
-        throw new Error('No wallet available for signing');
-      }
+      const result = await ops.sendPayment(recipientData.walletAddress, String(amountNum), 'USDC', note || undefined);
+      if (!result.success) throw new Error(result.error || 'Transaction failed. Please try again.');
+      hash = result.hash;
 
       setTxHash(hash);
 
@@ -212,6 +160,7 @@ export default function SendPageContent() {
       });
 
       await updateStreak(walletAddress);
+      invalidate();
       setStep('success');
     } catch (err: any) {
       console.error('Transfer error:', err);
@@ -221,8 +170,8 @@ export default function SendPageContent() {
     }
   };
 
-  // Calculate USD value
-  const usdValue = Number(amount) * 0.05; // Placeholder rate
+  // USDC is dollar-denominated (1:1)
+  const usdValue = Number(amount);
 
   // Copy wallet address
   const copyAddress = async () => {
@@ -253,7 +202,7 @@ export default function SendPageContent() {
                       : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span>📤</span>
+                  <ArrowUpRight className="w-4 h-4" />
                   Send
                 </button>
                 <button
@@ -267,7 +216,7 @@ export default function SendPageContent() {
                       : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span>📥</span>
+                  <ArrowDownLeft className="w-4 h-4" />
                   Receive
                 </button>
               </div>
@@ -277,11 +226,11 @@ export default function SendPageContent() {
             {step === 'success' && (
               <div className="text-center space-y-6 animate-scale-in py-12">
                 <div className="w-24 h-24 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center mb-6">
-                  <span className="text-5xl">✅</span>
+                  <CheckCircle2 className="w-12 h-12 text-emerald-400" />
                 </div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Payment Sent!</h2>
                 <p className="text-slate-500 dark:text-[#ad92c9]">
-                  {amount} MOVE sent to @{recipientData?.username}
+                  {amount} USDC sent to @{recipientData?.username}
                 </p>
                 <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 border border-slate-200 dark:border-white/5 max-w-md mx-auto shadow-lg dark:shadow-none">
                   <p className="text-slate-500 dark:text-[#ad92c9] text-xs mb-1">Transaction Hash</p>
@@ -324,7 +273,7 @@ export default function SendPageContent() {
               <div className="space-y-6 animate-fade-in-up">
                 <div className="text-center mb-4">
                   <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-4">
-                    <span className="text-4xl">📝</span>
+                    <FileText className="w-10 h-10 text-[#7f13ec]" />
                   </div>
                   <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Confirm Transfer</h2>
                 </div>
@@ -334,7 +283,7 @@ export default function SendPageContent() {
                   <div className="relative bg-white dark:bg-[#251a30] rounded-3xl overflow-hidden border border-slate-200 dark:border-white/5 shadow-xl dark:shadow-none">
                     <div className="p-5 border-b border-slate-200 dark:border-white/5">
                       <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Amount</p>
-                      <p className="text-3xl font-bold text-slate-900 dark:text-white">{amount} MOVE</p>
+                      <p className="text-3xl font-bold text-slate-900 dark:text-white">{amount} USDC</p>
                       <p className="text-slate-500 dark:text-[#ad92c9] text-sm">≈ ${usdValue.toFixed(2)} USD</p>
                     </div>
                     <div className="p-5 border-b border-slate-200 dark:border-white/5">
@@ -360,9 +309,9 @@ export default function SendPageContent() {
                     <div className="p-5">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500 dark:text-[#ad92c9] flex items-center gap-1">
-                          <span>⛽</span> Est. Gas Fee
+                          <Fuel className="w-4 h-4" /> Est. Gas Fee
                         </span>
-                        <span className="font-bold text-slate-900 dark:text-white">~0.001 MOVE</span>
+                        <span className="font-bold text-slate-900 dark:text-white">~0.001 USDC</span>
                       </div>
                     </div>
                   </div>
@@ -416,8 +365,8 @@ export default function SendPageContent() {
                           M
                         </div>
                         <div className="flex flex-col items-start text-left">
-                          <span className="font-bold text-sm text-slate-900 dark:text-white leading-tight">MOVE</span>
-                          <span className="text-xs text-slate-500 dark:text-[#ad92c9]">Movement</span>
+                          <span className="font-bold text-sm text-slate-900 dark:text-white leading-tight">USDC</span>
+                          <span className="text-xs text-slate-500 dark:text-[#ad92c9]">Stellar</span>
                         </div>
                       </div>
                       
@@ -431,7 +380,7 @@ export default function SendPageContent() {
                           className="w-full bg-transparent text-5xl md:text-6xl font-black text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-[#362348] border-none focus:ring-0 p-0 leading-tight"
                         />
                         <div className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1 font-medium">
-                          ≈ ${usdValue.toFixed(2)} USD • Balance: {formatBalance(balance)} MOVE
+                          ≈ ${usdValue.toFixed(2)} USD • Balance: {formatBalance(balance)} USDC
                         </div>
                       </div>
                     </div>
@@ -468,7 +417,7 @@ export default function SendPageContent() {
                         onClick={() => setShowScanner(true)}
                         className="w-10 h-10 flex items-center justify-center bg-slate-200 dark:bg-[#362348] hover:bg-[#7f13ec] rounded-xl text-slate-700 dark:text-white transition-colors"
                       >
-                        📷
+                        <ScanLine className="w-5 h-5" />
                       </button>
                     </div>
                     
@@ -484,7 +433,17 @@ export default function SendPageContent() {
                             {recipientData.walletAddress.slice(0, 10)}...{recipientData.walletAddress.slice(-6)}
                           </p>
                         </div>
-                        <span className="text-emerald-400">✓</span>
+                        <div className="flex items-center gap-1">
+                          <Check className="w-5 h-5 text-emerald-400" />
+                          <button
+                            type="button"
+                            onClick={() => { setRecipientData(null); setRecipientUsername(''); setError(''); }}
+                            aria-label="Clear recipient"
+                            className="p-1 rounded-full text-slate-400 dark:text-[#ad92c9] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -519,9 +478,9 @@ export default function SendPageContent() {
                   <div className="mt-4 flex flex-col gap-4">
                     <div className="flex justify-between items-center text-sm px-1">
                       <span className="text-slate-500 dark:text-[#ad92c9] flex items-center gap-1">
-                        <span>⛽</span> Est. Gas Fee
+                        <Fuel className="w-4 h-4" /> Est. Gas Fee
                       </span>
-                      <span className="font-bold text-slate-900 dark:text-white">~0.001 MOVE</span>
+                      <span className="font-bold text-slate-900 dark:text-white">~0.001 USDC</span>
                     </div>
                     <button
                       onClick={() => setStep('confirm')}
@@ -546,11 +505,11 @@ export default function SendPageContent() {
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <p className="text-white/70 dark:text-[#ad92c9] text-sm font-medium mb-1">Your Balance</p>
-                    <h3 className="text-3xl font-bold tracking-tight">{formatBalance(balance)} MOVE</h3>
+                    <h3 className="text-3xl font-bold tracking-tight">{formatBalance(balance)} USDC</h3>
                     <p className="text-white/70 dark:text-[#ad92c9] text-sm mt-1">{formatUSD(balance)}</p>
                   </div>
                   <Link href="/receive" className="bg-white p-2 rounded-xl shadow-lg hover:scale-105 transition-transform">
-                    <div className="w-14 h-14 flex items-center justify-center text-3xl">📲</div>
+                    <div className="w-14 h-14 flex items-center justify-center text-[#7f13ec]"><QrCode className="w-7 h-7" /></div>
                   </Link>
                 </div>
                 <div className="flex gap-2">
@@ -558,13 +517,13 @@ export default function SendPageContent() {
                     onClick={copyAddress}
                     className="flex-1 bg-white/20 dark:bg-[#362348] hover:bg-white/30 dark:hover:bg-[#482e5e] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
                   >
-                    📋 Copy Address
+                    <Copy className="w-4 h-4" /> Copy Address
                   </button>
                   <Link 
                     href="/receive"
                     className="flex-1 bg-white/20 dark:bg-[#362348] hover:bg-white/30 dark:hover:bg-[#482e5e] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
                   >
-                    🔗 Share
+                    <Share2 className="w-4 h-4" /> Share
                   </Link>
                 </div>
               </div>
@@ -617,7 +576,7 @@ export default function SendPageContent() {
                     <p className="text-sm">No recent transactions</p>
                   </div>
                 ) : (
-                  recentTransactions.map((tx) => {
+                  recentTransactions.map((tx: Transaction) => {
                     const isSent = tx.senderAddress === walletAddress;
                     return (
                       <div 
@@ -628,7 +587,7 @@ export default function SendPageContent() {
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                             isSent ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'
                           }`}>
-                            <span className="text-lg">{isSent ? '📤' : '📥'}</span>
+                            {isSent ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownLeft className="w-5 h-5" />}
                           </div>
                           <div className="flex flex-col">
                             <span className="font-bold text-sm text-slate-900 dark:text-white">
@@ -641,7 +600,7 @@ export default function SendPageContent() {
                         </div>
                         <div className="flex flex-col items-end">
                           <span className={`font-bold text-sm ${isSent ? 'text-slate-900 dark:text-white' : 'text-emerald-400'}`}>
-                            {isSent ? '-' : '+'}{tx.amount} MOVE
+                            {isSent ? '-' : '+'}{tx.amount} USDC
                           </span>
                           <span className="text-xs text-slate-500 dark:text-[#ad92c9]">{tx.status}</span>
                         </div>
@@ -652,7 +611,7 @@ export default function SendPageContent() {
               </div>
               <Link 
                 href="/history"
-                className="w-full mt-4 py-2 text-sm font-bold text-slate-500 dark:text-[#ad92c9] hover:text-[#7f13ec] transition-colors border-t border-slate-200 dark:border-white/5 pt-4 text-center block"
+                className="w-full mt-auto py-2 text-sm font-bold text-slate-500 dark:text-[#ad92c9] hover:text-[#7f13ec] transition-colors border-t border-slate-200 dark:border-white/5 pt-4 text-center block"
               >
                 View All Transactions
               </Link>

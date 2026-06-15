@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { Flame, Rocket } from 'lucide-react';
+import { useWallet } from '@/app/lib/chain';
 import CounterItem from './counterItem';
 import WalletDropdown from './WalletDropdown';
 import Toast from './Toast';
@@ -12,15 +12,14 @@ interface CounterArenaProps {
 }
 
 export default function CounterArena({ username }: CounterArenaProps) {
-  const { logout: privyLogout, authenticated } = usePrivy();
-  const { disconnect, connected } = useWallet();
+  const { authenticated, isConnected, logout } = useWallet();
   const [showStats, setShowStats] = useState(false);
   const [showWalletDropdown, setShowWalletDropdown] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info'; isVisible: boolean }>({ message: '', type: 'info', isVisible: false });
 
   // Determine which wallet type is being used
   const isPrivyWallet = authenticated;
-  const isNativeWallet = connected && !authenticated;
+  const isNativeWallet = isConnected && !authenticated;
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type, isVisible: true });
@@ -35,10 +34,10 @@ export default function CounterArena({ username }: CounterArenaProps) {
   const handleLogout = async () => {
     try {
       if (isPrivyWallet) {
-        await privyLogout();
+        await logout();
         showToast('Logged out from Privy', 'info');
       } else if (isNativeWallet) {
-        await disconnect();
+        await logout();
         showToast('Wallet disconnected', 'info');
       }
     } catch (error) {
@@ -184,8 +183,8 @@ export default function CounterArena({ username }: CounterArenaProps) {
           <h2 className="text-2xl font-black mb-4">🎲 HOW TO PLAY</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <h3 className="text-lg font-bold mb-2" style={{ color: '#0099ff' }}>
-                🚀 Level Up System
+              <h3 className="text-lg font-bold mb-2 inline-flex items-center gap-2" style={{ color: '#0099ff' }}>
+                <Rocket size={18} /> Level Up System
               </h3>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Every 100 counter points = 1 level</li>
@@ -196,8 +195,8 @@ export default function CounterArena({ username }: CounterArenaProps) {
             </div>
             
             <div>
-              <h3 className="text-lg font-bold mb-2" style={{ color: '#ff6600' }}>
-                🔥 Streak System
+              <h3 className="text-lg font-bold mb-2 inline-flex items-center gap-2" style={{ color: '#ff6600' }}>
+                <Flame size={18} /> Streak System
               </h3>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• Each successful action increases streak</li>

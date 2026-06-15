@@ -2,6 +2,7 @@
 
 import { WalletSelectionModal } from './wallet-selection-modal';
 import ThemeToggle from './ThemeToggle';
+import { Zap, Lock, Gift } from 'lucide-react';
 
 export default function LoginPage() {
   return (
@@ -51,24 +52,24 @@ export default function LoginPage() {
 
           {/* Title */}
           <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-3">
-            SuperPay
+            Zoopfi
           </h1>
           <p className="text-slate-500 dark:text-gray-400 text-lg mb-8">
-            Send crypto by username
+            Private payments by username
           </p>
 
           {/* Features */}
           <div className="grid grid-cols-3 gap-3 mb-8">
             <div className="card-solid p-3 rounded-xl">
-              <div className="text-2xl mb-1">⚡</div>
+              <div className="mb-1 flex justify-center"><Zap className="w-6 h-6" /></div>
               <p className="text-xs text-slate-600 dark:text-gray-400">Instant</p>
             </div>
             <div className="card-solid p-3 rounded-xl">
-              <div className="text-2xl mb-1">🔒</div>
+              <div className="mb-1 flex justify-center"><Lock className="w-6 h-6" /></div>
               <p className="text-xs text-slate-600 dark:text-gray-400">Secure</p>
             </div>
             <div className="card-solid p-3 rounded-xl">
-              <div className="text-2xl mb-1">🎁</div>
+              <div className="mb-1 flex justify-center"><Gift className="w-6 h-6" /></div>
               <p className="text-xs text-slate-600 dark:text-gray-400">Rewards</p>
             </div>
           </div>
@@ -83,7 +84,7 @@ export default function LoginPage() {
           {/* Trust badges */}
           <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/5">
             <p className="text-xs text-slate-500 dark:text-gray-500 mb-3">
-              Powered by Movement Network
+              Powered by Stellar
             </p>
             <div className="flex justify-center gap-4 flex-wrap">
               <span className="text-xs text-slate-600 dark:text-gray-600 flex items-center gap-1">

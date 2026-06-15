@@ -19,7 +19,11 @@ export interface IUser extends Document {
   avatarUrl?: string;            // Profile pic or business logo
   email?: string;                // Optional contact email
   phone?: string;                // Optional contact phone
-  
+
+  // === Private payments (shielded pool) ===
+  notePubKey?: string;           // BN254 note public key (for receiving private transfers)
+  encryptionPubKey?: string;     // X25519 key to encrypt note payloads to this user
+
   // === Stats (shared) ===
   createdAt: Date;
   totalSent: number;
@@ -103,6 +107,14 @@ const UserSchema = new Schema<IUser>({
     lowercase: true,
   },
   phone: {
+    type: String,
+    trim: true,
+  },
+  notePubKey: {
+    type: String,
+    trim: true,
+  },
+  encryptionPubKey: {
     type: String,
     trim: true,
   },

@@ -1,204 +1,123 @@
-# 💳 SuperPay
+# 🛡️ Zoopfi
 
-A full-featured cryptocurrency wallet built on Movement Network, enabling username-based payments, QR codes, payment requests, and gamified rewards.
+Private payments by username, built on **Stellar / Soroban**. Send and receive USDC with a normal Web2-style login, plus an optional **private (shielded) balance** powered by zero-knowledge proofs.
+
+> See [`docs/stellar-migration/`](./docs/stellar-migration/) for the full research, architecture, and design docs.
 
 ## ✨ Features
 
-### Core Wallet Features
-- **Username-based Payments** - Send crypto using @usernames instead of long addresses
-- **QR Code Payments** - Generate and scan QR codes for quick payments
-- **Payment Requests** - Request payments from specific users or anyone
-- **Transaction History** - Full history with filtering and blockchain explorer links
-- **Contacts** - Save frequent recipients for quick access
+### Payments
+- **Username payments** - send USDC using `@usernames` instead of long addresses
+- **QR payments** - generate and scan QR codes
+- **Payment requests**, **contacts / friend requests**, **groups with bill-splitting**, **business invoices**
+- **Transaction history** with Stellar explorer links
 
-### Wallet Support
-- **Privy Social Login** - Email, Google, Twitter, Discord, GitHub
-- **Native Wallets** - Nightly and other Aptos-compatible wallets
-- **Auto Wallet Creation** - Seamless embedded wallet setup for new users
+### Private payments (ZK)
+- **Shield / Unshield** - move USDC in and out of a private balance
+- **Send privately** - pay a `@username` with the sender↔recipient link hidden
+- On-device proving (your keys never leave the browser)
+- Lives at `/private`. Runs against a simulated shielded pool today (see Status).
 
-### Gamification
-- **Daily Streaks** - Maintain activity for growing streak rewards
-- **Transfer Milestones** - Unlock badges at 10, 50, 100, 500 transfers
-- **Counter Game** - On-chain counter game integrated from original template
-- **Level System** - Progress through levels with visual indicators
+### Wallet & auth
+- **Privy social login** (email, Google, X, Discord, GitHub) auto-provisions a self-custodial **Stellar embedded wallet** (`chainType: 'stellar'`, Tier 2)
+- External wallets (Freighter / xBull via Stellar Wallets Kit) planned as a secondary path
 
-### User Experience
-- **Dark Mode Design** - Modern, sleek dark interface
-- **Real-time Notifications** - In-app alerts for incoming payments
-- **Mobile-First** - Responsive design with bottom navigation
-- **Instant Feedback** - Toast notifications and loading states
+### UX
+- Dark + light themes, mobile-first PWA, real-time notifications, gamified rewards/streaks
 
 ## 🏗️ Tech Stack
 
-### Frontend
-- **Next.js 16** with React 19
-- **TypeScript** for type safety
-- **Tailwind CSS 4** for styling
-- **Radix UI** for accessible components
-
-### Backend
-- **Express.js** REST API
-- **MongoDB** with Mongoose ODM
-- **TypeScript** throughout
-
-### Blockchain
-- **Movement Network** (Aptos-based L2)
-- **Aptos SDK** for transactions
-- **Privy SDK** for social login wallets
-- **Aptos Wallet Adapter** for native wallets
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS 4
+- **Chain**: Stellar / Soroban via [`@stellar/stellar-sdk`](https://www.npmjs.com/package/@stellar/stellar-sdk) (v15)
+- **Asset**: native Circle **USDC** (7 decimals) over the Stellar Asset Contract (SEP-41)
+- **Auth/wallet**: Privy embedded Stellar wallet
+- **Backend**: Express + MongoDB (chain-agnostic; keyed by wallet address)
+- **Privacy**: Privacy-Pools-style shielded pool (Circom Groth16 / BN254 / Poseidon2). Modeled on [NethermindEth/stellar-private-payments](https://github.com/NethermindEth/stellar-private-payments).
 
 ## 📁 Project Structure
 
 ```
-superpay-app/
-├── app/                          # Next.js frontend
-│   ├── page.tsx                  # Landing/login
-│   ├── onboarding/               # Username registration
-│   ├── dashboard/                # Main wallet view
-│   ├── send/                     # Send payments
-│   ├── receive/                  # QR codes & requests
-│   ├── history/                  # Transaction history
-│   ├── contacts/                 # Saved contacts
-│   ├── rewards/                  # Gamification & counter game
-│   ├── settings/                 # Profile & settings
-│   ├── components/               # React components
-│   └── lib/                      # Utilities & API client
-├── backend/                      # Express API
-│   └── src/
-│       ├── index.ts              # Server entry
-│       ├── models/               # Mongoose schemas
-│       └── routes/               # API endpoints
-└── modules/                      # Move smart contracts
-    └── sources/
-        └── counter.move
+zoopfi/
+├── app/
+│   ├── lib/chain/            # chain-abstraction layer (the migration's core)
+│   │   ├── config.ts         # network, USDC asset, decimals, explorer
+│   │   ├── types.ts          # ChainOps / PrivacyOps interfaces
+│   │   ├── stellar.ts        # real Stellar adapter (@stellar/stellar-sdk)
+│   │   ├── mock.ts           # mock adapter + simulated shielded pool
+│   │   └── useWallet.tsx     # the single wallet hook + provider
+│   ├── dashboard/ send/ transact/ receive/ private/ ...  # pages
+│   └── components/
+├── backend/                  # Express API (MongoDB)
+└── docs/stellar-migration/   # research + architecture + plan + privacy design
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
-- Node.js 18+
+- Node.js 20+ (the Stellar SDK dropped Node 18)
 - MongoDB (local or Atlas)
-- Movement CLI (for contract deployment)
+- A Privy app ID (https://dashboard.privy.io)
 
-### 1. Frontend Setup
-
+### 1. Frontend
 ```bash
-# Install dependencies
 npm install
-
-# Set environment variables
-cp .env.example .env.local
-# Edit .env.local with your values:
+cp .env.example .env   # .env or .env.local both work (both gitignored)
 # NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id
 # NEXT_PUBLIC_API_URL=http://localhost:4000
-
-# Start development server
+# NEXT_PUBLIC_CHAIN_ADAPTER=mock        # "mock" (default) or "stellar"
+# NEXT_PUBLIC_STELLAR_NETWORK=testnet
 npm run dev
 ```
 
-### 2. Backend Setup
-
+### 2. Backend
 ```bash
 cd backend
-
-# Install dependencies
 npm install
-
-# Set environment variables
-cp .env.example .env
-# Edit .env with:
-# MONGODB_URI=mongodb://localhost:27017/superpay
-# PORT=4000
-
-# Start backend
+cp .env.example .env   # MONGODB_URI, PORT=4000
 npm run dev
 ```
 
-### 3. Smart Contract (Optional)
+## 🔀 Chain adapter modes
 
-```bash
-cd modules
+Auth always runs through Privy. The `NEXT_PUBLIC_CHAIN_ADAPTER` flag only switches the on-chain data layer:
 
-# Initialize Movement CLI
-movement init --network custom \
-  --rest-url https://testnet.movementnetwork.xyz/v1 \
-  --faucet-url https://faucet.testnet.movementnetwork.xyz/
+| Mode | Balances / payments / privacy | Use it for |
+|------|-------------------------------|-----------|
+| `mock` (default) | Canned balances, fake hashes, fully simulated shielded pool | Demoing the full UX with no funding, trustlines, or deployed contracts |
+| `stellar` | Real Stellar **testnet**: USDC over Horizon, Soroban via RPC | Real on-chain payments (set a Privy app ID; onboarding friendbot-funds XLM + adds the USDC trustline) |
 
-# Deploy counter contract
-movement move deploy
-```
+## 🔐 Status & safety
+
+- The **public USDC payment** path uses the audited Stellar Asset Contract and is safe on testnet.
+- The **private-payments** layer is a **demo**: in `mock` mode it is fully simulated; the real shielded-pool integration (Nethermind Privacy Pools fork) is **unaudited and testnet-only**. Do not use it with real-asset value. See [`docs/stellar-migration/03-migration-plan.md`](./docs/stellar-migration/03-migration-plan.md) for the risk register.
+- Non-custodial: Privy holds the embedded key; the app builds/signs/submits transactions. Private spending keys are derived and stored on-device.
 
 ## 📡 API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/auth/register` | POST | Register username |
-| `/api/auth/check-username/:username` | GET | Check availability |
 | `/api/users/:username` | GET | Get user by username |
 | `/api/users/address/:address` | GET | Get user by wallet |
 | `/api/transactions` | GET/POST | Transaction history |
 | `/api/contacts` | GET/POST/DELETE | Manage contacts |
 | `/api/requests` | GET/POST/PUT | Payment requests |
+| `/api/groups` | ... | Groups + bill-splitting |
+| `/api/invoices` | ... | Business invoices |
 | `/api/rewards/streak` | GET/POST | Streak tracking |
-
-## 🔐 Security
-
-- Non-custodial - users control their own keys
-- No private keys stored in frontend or backend
-- Wallet signature verification for auth
-- All transactions require user approval
-- Privy handles embedded wallet security
-
-## 🌐 Network Configuration
-
-Edit `app/lib/aptos.ts` to switch networks:
-
-```typescript
-export const CURRENT_NETWORK = 'testnet'; // or 'mainnet'
-
-export const MOVEMENT_CONFIGS = {
-  mainnet: {
-    chainId: 126,
-    fullnode: "https://full.mainnet.movementinfra.xyz/v1",
-  },
-  testnet: {
-    chainId: 250,
-    fullnode: "https://testnet.movementnetwork.xyz/v1",
-  }
-};
-```
 
 ## 🎨 Design System
 
-SuperPay uses a modern dark theme with emerald accents:
-
-- **Background**: `#0a0a0f` (near black)
-- **Cards**: `#1a1a2e` to `#16213e` gradients
-- **Accent**: `#10b981` (emerald)
-- **Text**: White with gray variants
-- **Borders**: `rgba(255,255,255,0.1)`
-
-## 📱 Screens
-
-1. **Login** - Connect wallet options
-2. **Onboarding** - Username registration
-3. **Dashboard** - Balance, quick actions, recent activity
-4. **Send** - 4-step flow: recipient → amount → confirm → success
-5. **Receive** - QR code & payment requests
-6. **History** - Filterable transaction list
-7. **Contacts** - Saved recipients
-8. **Rewards** - Streaks, milestones, counter game
-9. **Settings** - Profile, wallet info, logout
-
-## 🤝 Contributing
-
-Contributions welcome! Please read the contributing guidelines first.
+Dark-first theme with a purple accent:
+- **Background**: `#191022`
+- **Cards**: `#251a30`
+- **Accent**: `#7f13ec`
+- **Text secondary**: `#ad92c9`
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+MIT.
 
 ---
 
-Built with ❤️ on Movement Network
+Built on Stellar.

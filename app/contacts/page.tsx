@@ -2,21 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet } from '@/app/lib/chain';
+import { useUser } from '@/app/lib/hooks';
 import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
-import { 
-  getContacts, 
-  deleteContact, 
-  getUserByUsername, 
-  getUserByAddress,
+import {
+  getContacts,
+  deleteContact,
+  getUserByUsername,
   sendContactRequest,
   getContactRequests,
   respondToContactRequest,
   cancelContactRequest,
 } from '../lib/api';
 import { toast } from 'sonner';
+import {
+  UserPlus,
+  Users,
+  Inbox,
+  Send,
+  MailOpen,
+  Search,
+  User,
+  Trash2,
+  Check,
+  X,
+} from 'lucide-react';
 
 interface Contact {
   _id: string;
@@ -41,15 +52,14 @@ type Tab = 'friends' | 'requests' | 'sent';
 
 export default function ContactsPage() {
   const router = useRouter();
-  const { user, authenticated } = usePrivy();
-  const { account, connected } = useWallet();
+  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { data: userData } = useUser();
+  const username = userData?.username ?? '';
 
-  const [walletAddress, setWalletAddress] = useState('');
-  const [username, setUsername] = useState('');
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [receivedRequests, setReceivedRequests] = useState<ContactRequest[]>([]);
   const [sentRequests, setSentRequests] = useState<ContactRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('friends');
   
   // Add friend form
@@ -60,40 +70,12 @@ export default function ContactsPage() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Get wallet address and username
-  useEffect(() => {
-    const setup = async () => {
-      let address = '';
-      
-      if (authenticated && user) {
-        const moveWallet = user.linkedAccounts?.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-        if (moveWallet?.address) {
-          address = moveWallet.address;
-        }
-      } else if (connected && account?.address) {
-        address = account.address.toString();
-      }
-
-      if (address) {
-        setWalletAddress(address);
-        const userData = await getUserByAddress(address);
-        if (userData) {
-          setUsername(userData.username);
-        }
-      }
-    };
-
-    setup();
-  }, [authenticated, user, connected, account]);
-
   // Fetch all data
   useEffect(() => {
     if (!walletAddress) return;
 
     const fetchData = async () => {
-      setIsLoading(true);
+      setListLoading(true);
       try {
         const [contactsResult, receivedResult, sentResult] = await Promise.all([
           getContacts(walletAddress),
@@ -111,7 +93,7 @@ export default function ContactsPage() {
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
-        setIsLoading(false);
+        setListLoading(false);
       }
     };
 
@@ -121,7 +103,7 @@ export default function ContactsPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -267,7 +249,7 @@ export default function ContactsPage() {
               onClick={() => setShowAddForm(true)}
               className="flex items-center gap-2 px-5 py-3 bg-[#7f13ec] text-white font-bold rounded-xl hover:bg-[#6a10c7] transition-colors shadow-lg shadow-[#7f13ec]/25"
             >
-              <span>👤+</span>
+              <UserPlus className="w-5 h-5" />
               Add Friend
             </button>
           </header>
@@ -283,7 +265,7 @@ export default function ContactsPage() {
                     : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
-                <span>👥</span>
+                <Users className="w-4 h-4" />
                 Friends ({contacts.length})
               </button>
               <button
@@ -294,7 +276,7 @@ export default function ContactsPage() {
                     : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
-                <span>📬</span>
+                <Inbox className="w-4 h-4" />
                 Requests
                 {pendingCount > 0 && (
                   <span className="w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center ml-1">
@@ -310,7 +292,7 @@ export default function ContactsPage() {
                     : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                 }`}
               >
-                <span>📤</span>
+                <Send className="w-4 h-4" />
                 Sent ({sentRequests.length})
               </button>
             </div>
@@ -322,7 +304,7 @@ export default function ContactsPage() {
               {/* Search */}
               <div className="w-full">
                 <label className="flex w-full items-center rounded-2xl bg-white dark:bg-[#362348] h-14 px-4 border border-slate-200 dark:border-transparent focus-within:border-[#7f13ec]/50 transition-colors shadow-sm dark:shadow-none">
-                  <span className="text-slate-400 dark:text-[#ad92c9]">🔍</span>
+                  <Search className="w-5 h-5 text-slate-400 dark:text-[#ad92c9]" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -334,14 +316,14 @@ export default function ContactsPage() {
               </div>
 
               {/* Friends List */}
-              {isLoading ? (
+              {listLoading ? (
                 <div className="flex justify-center py-12">
                   <div className="spinner" />
                 </div>
               ) : filteredContacts.length === 0 ? (
                 <div className="bg-white dark:bg-[#362348]/50 rounded-3xl p-12 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                   <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-6">
-                    <span className="text-5xl">👥</span>
+                    <Users className="w-12 h-12 text-[#7f13ec]" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
                     {searchQuery ? 'No friends found' : 'No friends yet'}
@@ -356,7 +338,7 @@ export default function ContactsPage() {
                       onClick={() => setShowAddForm(true)}
                       className="inline-flex items-center gap-2 px-6 py-3 bg-[#7f13ec] text-white font-bold rounded-xl hover:bg-[#6a10c7] transition-colors"
                     >
-                      <span>👤+</span>
+                      <UserPlus className="w-5 h-5" />
                       Add Your First Friend
                     </button>
                   )}
@@ -392,20 +374,20 @@ export default function ContactsPage() {
                           href={`/transact?to=${contact.contactUsername}`}
                           className="flex-1 h-11 flex items-center justify-center gap-2 bg-[#7f13ec] hover:bg-[#6a10c7] text-white font-bold rounded-xl text-sm transition-colors"
                         >
-                          <span>💸</span>
+                          <Send className="w-4 h-4" />
                           Send
                         </Link>
                         <Link
                           href={`/profile/${contact.contactUsername}`}
-                          className="h-11 w-11 flex items-center justify-center bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-xl transition-colors"
+                          className="h-11 w-11 flex items-center justify-center bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-xl transition-colors text-slate-700 dark:text-white"
                         >
-                          <span>👤</span>
+                          <User className="w-5 h-5" />
                         </Link>
                         <button
                           onClick={() => handleRemoveFriend(contact._id)}
                           className="h-11 w-11 flex items-center justify-center bg-slate-100 dark:bg-white/10 hover:bg-red-500/20 text-slate-500 dark:text-[#ad92c9] hover:text-red-500 rounded-xl transition-colors"
                         >
-                          <span>🗑️</span>
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
@@ -421,7 +403,7 @@ export default function ContactsPage() {
               {receivedRequests.length === 0 ? (
                 <div className="bg-white dark:bg-[#362348]/50 rounded-3xl p-12 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                   <div className="w-20 h-20 mx-auto rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6">
-                    <span className="text-5xl">📭</span>
+                    <MailOpen className="w-12 h-12 text-amber-500" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No pending requests</h3>
                   <p className="text-slate-500 dark:text-[#ad92c9] max-w-sm mx-auto">
@@ -468,7 +450,7 @@ export default function ContactsPage() {
                           onClick={() => handleRespondToRequest(request._id, 'accept')}
                           className="flex-1 h-12 flex items-center justify-center gap-2 bg-[#7f13ec] hover:bg-[#6a10c7] text-white font-bold rounded-xl transition-colors shadow-lg shadow-[#7f13ec]/25"
                         >
-                          <span>✓</span>
+                          <Check className="w-5 h-5" />
                           Accept
                         </button>
                       </div>
@@ -485,7 +467,7 @@ export default function ContactsPage() {
               {sentRequests.length === 0 ? (
                 <div className="bg-white dark:bg-[#362348]/50 rounded-3xl p-12 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                   <div className="w-20 h-20 mx-auto rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6">
-                    <span className="text-5xl">📤</span>
+                    <Send className="w-12 h-12 text-blue-500" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No sent requests</h3>
                   <p className="text-slate-500 dark:text-[#ad92c9] max-w-sm mx-auto">
@@ -545,7 +527,7 @@ export default function ContactsPage() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center">
-                  <span className="text-2xl">👤+</span>
+                  <UserPlus className="w-6 h-6 text-[#7f13ec]" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-slate-900 dark:text-white">Add Friend</h2>
@@ -561,7 +543,7 @@ export default function ContactsPage() {
                 }}
                 className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-[#ad92c9] hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
             
@@ -587,7 +569,7 @@ export default function ContactsPage() {
                   type="text"
                   value={requestMessage}
                   onChange={(e) => setRequestMessage(e.target.value)}
-                  placeholder="Hey! Let's be friends on SuperPay 👋"
+                  placeholder="Hey! Let's be friends on Zoopfi 👋"
                   className="w-full h-14 rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] px-4 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400"
                   maxLength={200}
                 />
@@ -623,7 +605,7 @@ export default function ContactsPage() {
                     </>
                   ) : (
                     <>
-                      <span>📤</span>
+                      <Send className="w-5 h-5" />
                       Send Request
                     </>
                   )}
