@@ -6,9 +6,9 @@ import { usePathname } from 'next/navigation';
 const navItems = [
   { href: '/dashboard', label: 'Home', icon: '🏠' },
   { href: '/send', label: 'Send', icon: '📤' },
+  { href: '/groups', label: 'Groups', icon: '👥' },
   { href: '/receive', label: 'Receive', icon: '📥' },
   { href: '/history', label: 'History', icon: '📜' },
-  { href: '/rewards', label: 'Rewards', icon: '🏆' },
 ];
 
 export default function Navbar() {
