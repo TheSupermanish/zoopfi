@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import Group from '../models/Group';
 import GroupExpense from '../models/GroupExpense';
+import GroupInvitation from '../models/GroupInvitation';
 import { User } from '../models/User';
 
 const router = Router();
@@ -124,14 +125,18 @@ router.put('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/groups/:id/members - Add a member to group
+// POST /api/groups/:id/members - Invite a member to group (sends invitation)
 router.post('/:id/members', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { username } = req.body;
+    const { username, inviterAddress } = req.body;
 
     if (!username) {
       return res.status(400).json({ error: 'Username is required' });
+    }
+
+    if (!inviterAddress) {
+      return res.status(400).json({ error: 'Inviter address is required' });
     }
 
     const user = await User.findOne({ username: username.toLowerCase() });
@@ -144,22 +149,166 @@ router.post('/:id/members', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Group not found' });
     }
 
+    // Check if inviter is a member
+    const inviter = group.members.find(m => m.walletAddress === inviterAddress);
+    if (!inviter) {
+      return res.status(403).json({ error: 'Only group members can invite others' });
+    }
+
     // Check if already a member
     if (group.members.some(m => m.walletAddress === user.walletAddress)) {
       return res.status(400).json({ error: 'User is already a member' });
     }
 
+    // Check if there's already a pending invitation
+    const existingInvite = await GroupInvitation.findOne({
+      groupId: id,
+      invitedAddress: user.walletAddress,
+      status: 'pending',
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (existingInvite) {
+      return res.status(400).json({ error: 'Invitation already sent to this user' });
+    }
+
+    // Create invitation
+    const invitation = await GroupInvitation.create({
+      groupId: id,
+      groupName: group.name,
+      groupIcon: group.icon,
+      groupColor: group.color,
+      invitedUsername: user.username,
+      invitedAddress: user.walletAddress,
+      inviterUsername: inviter.username,
+      inviterAddress,
+    });
+
+    res.status(201).json({ invitation, message: 'Invitation sent successfully' });
+  } catch (error) {
+    console.error('Invite member error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/groups/invitations - Get pending invitations for a user
+router.get('/invitations/pending', async (req: Request, res: Response) => {
+  try {
+    const { address } = req.query;
+
+    if (!address) {
+      return res.status(400).json({ error: 'Wallet address is required' });
+    }
+
+    const invitations = await GroupInvitation.find({
+      invitedAddress: address,
+      status: 'pending',
+      expiresAt: { $gt: new Date() },
+    }).sort({ createdAt: -1 });
+
+    res.json({ invitations });
+  } catch (error) {
+    console.error('Get invitations error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/groups/invitations/:id/accept - Accept an invitation
+router.post('/invitations/:invitationId/accept', async (req: Request, res: Response) => {
+  try {
+    const { invitationId } = req.params;
+    const { address } = req.body;
+
+    if (!address) {
+      return res.status(400).json({ error: 'Wallet address is required' });
+    }
+
+    const invitation = await GroupInvitation.findById(invitationId);
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    // Verify the user is the invitee
+    if (invitation.invitedAddress !== address) {
+      return res.status(403).json({ error: 'This invitation is not for you' });
+    }
+
+    // Check if invitation is still valid
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ error: 'Invitation is no longer pending' });
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      return res.status(400).json({ error: 'Invitation has expired' });
+    }
+
+    // Get the group
+    const group = await Group.findById(invitation.groupId);
+    if (!group) {
+      invitation.status = 'declined';
+      await invitation.save();
+      return res.status(404).json({ error: 'Group no longer exists' });
+    }
+
+    // Check if already a member (edge case)
+    if (group.members.some(m => m.walletAddress === address)) {
+      invitation.status = 'accepted';
+      await invitation.save();
+      return res.status(400).json({ error: 'You are already a member of this group' });
+    }
+
+    // Add user to group
     group.members.push({
-      username: user.username,
-      walletAddress: user.walletAddress,
+      username: invitation.invitedUsername,
+      walletAddress: invitation.invitedAddress,
       balance: 0,
       joinedAt: new Date(),
     });
 
     await group.save();
-    res.json({ group });
+
+    // Update invitation status
+    invitation.status = 'accepted';
+    await invitation.save();
+
+    res.json({ group, message: 'You have joined the group!' });
   } catch (error) {
-    console.error('Add member error:', error);
+    console.error('Accept invitation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/groups/invitations/:id/decline - Decline an invitation
+router.post('/invitations/:invitationId/decline', async (req: Request, res: Response) => {
+  try {
+    const { invitationId } = req.params;
+    const { address } = req.body;
+
+    if (!address) {
+      return res.status(400).json({ error: 'Wallet address is required' });
+    }
+
+    const invitation = await GroupInvitation.findById(invitationId);
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invitation not found' });
+    }
+
+    // Verify the user is the invitee
+    if (invitation.invitedAddress !== address) {
+      return res.status(403).json({ error: 'This invitation is not for you' });
+    }
+
+    if (invitation.status !== 'pending') {
+      return res.status(400).json({ error: 'Invitation is no longer pending' });
+    }
+
+    // Update invitation status
+    invitation.status = 'declined';
+    await invitation.save();
+
+    res.json({ message: 'Invitation declined' });
+  } catch (error) {
+    console.error('Decline invitation error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

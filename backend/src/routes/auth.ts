@@ -1,15 +1,33 @@
 import { Router, Request, Response } from 'express';
-import { User } from '../models/User';
+import { User, IBusinessInfo } from '../models/User';
 
 const router = Router();
+
+// Valid business categories
+const BUSINESS_CATEGORIES = ['retail', 'food', 'services', 'technology', 'healthcare', 'entertainment', 'other'];
 
 // POST /api/auth/register - Register a new user with username
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { username, walletAddress } = req.body;
+    const { 
+      username, 
+      walletAddress, 
+      accountType = 'personal',
+      displayName,
+      avatarUrl,
+      email,
+      phone,
+      businessInfo 
+    } = req.body;
 
-    if (!username || !walletAddress) {
-      return res.status(400).json({ error: 'Username and wallet address are required' });
+    // Basic validation
+    if (!username || !walletAddress || !displayName) {
+      return res.status(400).json({ error: 'Username, wallet address, and display name are required' });
+    }
+
+    // Validate account type
+    if (!['personal', 'business'].includes(accountType)) {
+      return res.status(400).json({ error: 'Account type must be "personal" or "business"' });
     }
 
     // Validate username format
@@ -18,6 +36,21 @@ router.post('/register', async (req: Request, res: Response) => {
       return res.status(400).json({ 
         error: 'Username must be 3-20 characters, lowercase letters, numbers, and underscores only' 
       });
+    }
+
+    // Validate business info if business account
+    if (accountType === 'business') {
+      if (!businessInfo) {
+        return res.status(400).json({ error: 'Business info is required for business accounts' });
+      }
+      if (!businessInfo.ownerFirstName || !businessInfo.ownerLastName) {
+        return res.status(400).json({ error: 'Owner first name and last name are required for business accounts' });
+      }
+      if (!businessInfo.category || !BUSINESS_CATEGORIES.includes(businessInfo.category)) {
+        return res.status(400).json({ 
+          error: `Business category is required and must be one of: ${BUSINESS_CATEGORIES.join(', ')}` 
+        });
+      }
     }
 
     // Check if username already exists
@@ -33,11 +66,31 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     // Create new user
-    const user = new User({
+    const userData: any = {
       username: username.toLowerCase(),
       walletAddress,
-    });
+      accountType,
+      displayName: displayName.trim(),
+    };
 
+    // Add optional fields
+    if (avatarUrl) userData.avatarUrl = avatarUrl;
+    if (email) userData.email = email;
+    if (phone) userData.phone = phone;
+
+    // Add business info if business account
+    if (accountType === 'business' && businessInfo) {
+      userData.businessInfo = {
+        ownerFirstName: businessInfo.ownerFirstName.trim(),
+        ownerLastName: businessInfo.ownerLastName.trim(),
+        category: businessInfo.category,
+        description: businessInfo.description?.trim(),
+        address: businessInfo.address?.trim(),
+        website: businessInfo.website?.trim(),
+      };
+    }
+
+    const user = new User(userData);
     await user.save();
 
     res.status(201).json({
@@ -45,6 +98,12 @@ router.post('/register', async (req: Request, res: Response) => {
       user: {
         username: user.username,
         walletAddress: user.walletAddress,
+        accountType: user.accountType,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        email: user.email,
+        phone: user.phone,
+        businessInfo: user.businessInfo,
         createdAt: user.createdAt,
       },
     });
