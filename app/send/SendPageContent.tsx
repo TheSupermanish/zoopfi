@@ -5,14 +5,32 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '@aptos-labs/wallet-adapter-react';
 import { useSignRawHash } from '@privy-io/react-auth/extended-chains';
-import Navbar from '../components/Navbar';
+import Link from 'next/link';
+import DashboardLayout from '../components/DashboardLayout';
 import QRScanner from '../components/QRScanner';
-import { getUserByUsername, getUserByAddress, recordTransaction, updateStreak } from '../lib/api';
-import { fetchBalance, formatBalance } from '../lib/balance';
+import { getUserByUsername, getUserByAddress, recordTransaction, updateStreak, getTransactions, getContacts } from '../lib/api';
+import { fetchBalance, formatBalance, formatUSD } from '../lib/balance';
 import { transferWithPrivy, transferWithNativeWallet } from '../lib/transfer';
 import { getExplorerUrl } from '../lib/aptos';
 
-type Step = 'recipient' | 'amount' | 'confirm' | 'success';
+type Step = 'form' | 'confirm' | 'success';
+type Mode = 'send' | 'receive';
+
+interface Contact {
+  _id: string;
+  username: string;
+  nickname?: string;
+}
+
+interface Transaction {
+  _id: string;
+  senderUsername: string;
+  receiverUsername: string;
+  amount: number;
+  timestamp: string;
+  senderAddress: string;
+  status: string;
+}
 
 export default function SendPageContent() {
   const router = useRouter();
@@ -21,7 +39,8 @@ export default function SendPageContent() {
   const { account, connected, signAndSubmitTransaction } = useWallet();
   const { signRawHash } = useSignRawHash();
 
-  const [step, setStep] = useState<Step>('recipient');
+  const [mode, setMode] = useState<Mode>('send');
+  const [step, setStep] = useState<Step>('form');
   const [recipientUsername, setRecipientUsername] = useState(searchParams.get('to') || '');
   const [recipientData, setRecipientData] = useState<any>(null);
   const [amount, setAmount] = useState(searchParams.get('amount') || '');
@@ -35,6 +54,8 @@ export default function SendPageContent() {
   const [walletAddress, setWalletAddress] = useState('');
   const [senderUsername, setSenderUsername] = useState('');
   const [balance, setBalance] = useState(0);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
 
   // Handle QR scan result
   const handleQRScan = async (data: { username: string; amount?: string }) => {
@@ -42,28 +63,7 @@ export default function SendPageContent() {
     if (data.amount) {
       setAmount(data.amount);
     }
-    // Auto-search for the recipient
-    setIsSearching(true);
-    setError('');
-    try {
-      const result = await getUserByUsername(data.username);
-      if (result) {
-        if (result.walletAddress === walletAddress) {
-          setError("You can't send to yourself");
-          setRecipientData(null);
-        } else {
-          setRecipientData(result);
-          setStep('amount');
-        }
-      } else {
-        setError('User not found');
-        setRecipientData(null);
-      }
-    } catch (err) {
-      setError('Failed to search for user');
-    } finally {
-      setIsSearching(false);
-    }
+    await searchRecipient(data.username);
   };
 
   // Get wallet info
@@ -84,20 +84,26 @@ export default function SendPageContent() {
 
       if (address) {
         setWalletAddress(address);
-        const bal = await fetchBalance(address);
-        setBalance(bal);
+        const [bal, userData, contactsResult, txResult] = await Promise.all([
+          fetchBalance(address),
+          getUserByAddress(address),
+          getContacts(address).catch(() => ({ contacts: [] })),
+          getTransactions(address, 5, 0).catch(() => ({ transactions: [] })),
+        ]);
         
-        const userData = await getUserByAddress(address);
+        setBalance(bal);
         if (userData) {
           setSenderUsername(userData.username);
         }
+        setContacts(contactsResult.contacts || []);
+        setRecentTransactions(txResult.transactions || []);
       }
     };
 
     setup();
   }, [authenticated, user, connected, account]);
 
-  // Redirect if not connected (only check once after initial load)
+  // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!authenticated && !connected) {
@@ -108,8 +114,9 @@ export default function SendPageContent() {
   }, []);
 
   // Search for recipient
-  const searchRecipient = async () => {
-    if (!recipientUsername || recipientUsername.length < 3) {
+  const searchRecipient = async (username?: string) => {
+    const searchName = username || recipientUsername;
+    if (!searchName || searchName.length < 3) {
       setError('Username must be at least 3 characters');
       return;
     }
@@ -118,14 +125,14 @@ export default function SendPageContent() {
     setError('');
 
     try {
-      const result = await getUserByUsername(recipientUsername);
+      const result = await getUserByUsername(searchName);
       if (result) {
         if (result.walletAddress === walletAddress) {
           setError("You can't send to yourself");
           setRecipientData(null);
         } else {
           setRecipientData(result);
-          setStep('amount');
+          setError('');
         }
       } else {
         setError('User not found');
@@ -147,11 +154,10 @@ export default function SendPageContent() {
     setAmount(cleaned);
   };
 
-  // Set percentage of balance
-  const setPercentage = (percent: number) => {
-    const value = (balance * percent) / 100;
-    const adjusted = percent === 100 ? Math.max(0, value - 0.01) : value;
-    setAmount(adjusted.toFixed(4));
+  // Quick select contact
+  const selectContact = (contact: Contact) => {
+    setRecipientUsername(contact.username);
+    searchRecipient(contact.username);
   };
 
   // Send transaction
@@ -215,283 +221,444 @@ export default function SendPageContent() {
     }
   };
 
-  const stepIndex = ['recipient', 'amount', 'confirm', 'success'].indexOf(step);
+  // Calculate USD value
+  const usdValue = Number(amount) * 0.05; // Placeholder rate
+
+  // Copy wallet address
+  const copyAddress = async () => {
+    await navigator.clipboard.writeText(walletAddress);
+  };
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--color-background)' }}>
-      {/* Header */}
-      <header className="p-4 pt-safe flex items-center gap-4">
-        <button 
-          onClick={() => step === 'recipient' ? router.back() : setStep(stepIndex > 0 ? ['recipient', 'amount', 'confirm', 'success'][stepIndex - 1] as Step : 'recipient')}
-          className="p-2 rounded-xl glass touch-target hover:bg-white/10 transition-colors"
-        >
-          <span className="text-xl">←</span>
-        </button>
-        <h1 className="text-xl font-bold text-white">Send MOVE</h1>
-      </header>
-
-      {/* Progress Steps */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center justify-center gap-2">
-          {['recipient', 'amount', 'confirm', 'success'].map((s, i) => (
-            <div key={s} className="flex items-center">
-              <div 
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                  step === s 
-                    ? 'bg-emerald-500 text-white scale-110' 
-                    : stepIndex > i 
-                      ? 'bg-emerald-500/20 text-emerald-400'
-                      : 'bg-white/10 text-gray-500'
-                }`}
-              >
-                {stepIndex > i ? '✓' : i + 1}
+    <DashboardLayout username={senderUsername} walletAddress={walletAddress}>
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10">
+        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
+          
+          {/* LEFT COLUMN: Main Transaction Interface */}
+          <div className="flex-1 flex flex-col gap-8">
+            {/* Page Heading & Toggle */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div className="flex flex-col gap-2">
+                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">Send & Receive</h1>
+                <p className="text-slate-500 dark:text-[#ad92c9] text-lg">Move your assets securely and instantly.</p>
               </div>
-              {i < 3 && (
-                <div className={`w-8 h-0.5 transition-colors ${stepIndex > i ? 'bg-emerald-500/50' : 'bg-white/10'}`} />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="px-4">
-        {/* Step 1: Recipient */}
-        {step === 'recipient' && (
-          <div className="space-y-6 animate-fade-in-up">
-            <div className="text-center mb-8">
-              <span className="text-5xl">👤</span>
-              <h2 className="text-2xl font-bold text-white mt-4">Who are you sending to?</h2>
-              <p className="text-gray-400 mt-2">Enter username or scan QR code</p>
-            </div>
-
-            {/* Scan QR Button */}
-            <button
-              onClick={() => setShowScanner(true)}
-              className="w-full py-4 rounded-xl border-2 border-dashed border-emerald-500/50 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-3 touch-target"
-            >
-              <span className="text-3xl">📷</span>
-              <div className="text-left">
-                <p className="text-white font-semibold">Scan QR Code</p>
-                <p className="text-emerald-400 text-sm">Quick & easy payment</p>
-              </div>
-            </button>
-
-            {/* Divider */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-gray-500 text-sm">or enter username</span>
-              <div className="flex-1 h-px bg-white/10" />
-            </div>
-
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 text-lg font-medium z-10">@</span>
-              <input
-                type="text"
-                value={recipientUsername}
-                onChange={(e) => setRecipientUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                placeholder="username"
-                className="input text-lg"
-                style={{ paddingLeft: '2.5rem' }}
-                onKeyDown={(e) => e.key === 'Enter' && searchRecipient()}
-              />
-            </div>
-
-            {error && (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 animate-fade-in">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            <button
-              onClick={searchRecipient}
-              disabled={isSearching || recipientUsername.length < 3}
-              className="w-full btn btn-primary py-4 text-lg"
-            >
-              {isSearching ? (
-                <span className="flex items-center gap-2">
-                  <div className="spinner spinner-sm" />
-                  Searching...
-                </span>
-              ) : (
-                'Continue'
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* Step 2: Amount */}
-        {step === 'amount' && recipientData && (
-          <div className="space-y-6 animate-fade-in-up">
-            {/* Recipient Card */}
-            <div className="card p-4">
-              <p className="text-gray-400 text-sm">Sending to</p>
-              <p className="text-white text-lg font-bold">@{recipientData.username}</p>
-              <p className="text-gray-500 text-xs font-mono mt-1">
-                {recipientData.walletAddress.slice(0, 10)}...{recipientData.walletAddress.slice(-8)}
-              </p>
-            </div>
-
-            {/* Amount Input */}
-            <div className="text-center py-8">
-              <div className="relative inline-block">
-                <input
-                  type="text"
-                  value={amount}
-                  onChange={(e) => handleAmountChange(e.target.value)}
-                  placeholder="0"
-                  className="text-5xl font-bold text-white bg-transparent text-center w-48 outline-none"
-                  autoFocus
-                />
-                <span className="text-2xl text-gray-400 ml-2">MOVE</span>
-              </div>
-              <p className="text-gray-500 mt-2">
-                Balance: {formatBalance(balance)} MOVE
-              </p>
-            </div>
-
-            {/* Quick Amount Buttons */}
-            <div className="flex gap-2">
-              {[25, 50, 75, 100].map((percent) => (
+              
+              {/* Segmented Control */}
+              <div className="bg-slate-200 dark:bg-[#362348] p-1.5 rounded-2xl inline-flex self-start sm:self-end">
                 <button
-                  key={percent}
-                  onClick={() => setPercentage(percent)}
-                  className="flex-1 py-2 rounded-lg btn-secondary text-sm font-medium"
+                  onClick={() => setMode('send')}
+                  className={`px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+                    mode === 'send' 
+                      ? 'bg-white dark:bg-[#1a1122] text-[#7f13ec] shadow-sm' 
+                      : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
+                  }`}
                 >
-                  {percent}%
+                  <span>📤</span>
+                  Send
                 </button>
-              ))}
+                <button
+                  onClick={() => {
+                    setMode('receive');
+                    router.push('/receive');
+                  }}
+                  className={`px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
+                    mode === 'receive' 
+                      ? 'bg-white dark:bg-[#1a1122] text-[#7f13ec] shadow-sm' 
+                      : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>📥</span>
+                  Receive
+                </button>
+              </div>
             </div>
 
-            {/* Note */}
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Add a note (optional)"
-              className="input"
-              maxLength={200}
-            />
-
-            {Number(amount) > balance && (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-                <p className="text-red-400 text-sm">Insufficient balance</p>
-              </div>
-            )}
-
-            <button
-              onClick={() => setStep('confirm')}
-              disabled={!amount || Number(amount) <= 0 || Number(amount) > balance}
-              className="w-full btn btn-primary py-4 text-lg"
-            >
-              Review
-            </button>
-          </div>
-        )}
-
-        {/* Step 3: Confirm */}
-        {step === 'confirm' && recipientData && (
-          <div className="space-y-6 animate-fade-in-up">
-            <div className="text-center mb-8">
-              <span className="text-5xl">📝</span>
-              <h2 className="text-2xl font-bold text-white mt-4">Confirm Transfer</h2>
-            </div>
-
-            <div className="card overflow-hidden">
-              <div className="p-4 border-b border-white/5">
-                <p className="text-gray-400 text-sm">Amount</p>
-                <p className="text-3xl font-bold text-white">{amount} MOVE</p>
-              </div>
-              <div className="p-4 border-b border-white/5">
-                <p className="text-gray-400 text-sm">To</p>
-                <p className="text-lg font-bold text-white">@{recipientData.username}</p>
-                <p className="text-gray-500 text-xs font-mono break-all">
-                  {recipientData.walletAddress}
-                </p>
-              </div>
-              {note && (
-                <div className="p-4 border-b border-white/5">
-                  <p className="text-gray-400 text-sm">Note</p>
-                  <p className="text-white">{note}</p>
+            {/* Success State */}
+            {step === 'success' && (
+              <div className="text-center space-y-6 animate-scale-in py-12">
+                <div className="w-24 h-24 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center mb-6">
+                  <span className="text-5xl">✅</span>
                 </div>
-              )}
-              <div className="p-4">
-                <p className="text-gray-400 text-sm">Network Fee</p>
-                <p className="text-white">~0.001 MOVE</p>
-              </div>
-            </div>
-
-            {error && (
-              <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-                <p className="text-red-400 text-sm">{error}</p>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Payment Sent!</h2>
+                <p className="text-slate-500 dark:text-[#ad92c9]">
+                  {amount} MOVE sent to @{recipientData?.username}
+                </p>
+                <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 border border-slate-200 dark:border-white/5 max-w-md mx-auto shadow-lg dark:shadow-none">
+                  <p className="text-slate-500 dark:text-[#ad92c9] text-xs mb-1">Transaction Hash</p>
+                  <a 
+                    href={getExplorerUrl(txHash)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#7f13ec] text-sm font-mono hover:underline break-all"
+                  >
+                    {txHash}
+                  </a>
+                </div>
+                <div className="space-y-3 max-w-md mx-auto">
+                  <button
+                    onClick={() => router.push('/dashboard')}
+                    className="w-full btn btn-primary py-4 text-lg h-14"
+                  >
+                    Back to Home
+                  </button>
+                  <button
+                    onClick={() => {
+                      setStep('form');
+                      setRecipientUsername('');
+                      setRecipientData(null);
+                      setAmount('');
+                      setNote('');
+                      setTxHash('');
+                      setError('');
+                    }}
+                    className="w-full btn btn-secondary py-4 h-14"
+                  >
+                    Send Another
+                  </button>
+                </div>
               </div>
             )}
 
-            <button
-              onClick={handleSend}
-              disabled={isSending}
-              className="w-full btn btn-primary py-4 text-lg"
-            >
-              {isSending ? (
-                <span className="flex items-center gap-2">
-                  <div className="spinner spinner-sm" />
-                  Sending...
-                </span>
-              ) : (
-                'Confirm & Send'
-              )}
-            </button>
-          </div>
-        )}
+            {/* Confirm State */}
+            {step === 'confirm' && recipientData && (
+              <div className="space-y-6 animate-fade-in-up">
+                <div className="text-center mb-4">
+                  <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-4">
+                    <span className="text-4xl">📝</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Confirm Transfer</h2>
+                </div>
 
-        {/* Step 4: Success */}
-        {step === 'success' && (
-          <div className="text-center space-y-6 animate-scale-in">
-            <div className="py-8">
-              <div className="w-24 h-24 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center mb-6">
-                <span className="text-5xl">✅</span>
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-[#7f13ec] to-purple-600 rounded-3xl blur opacity-10 dark:opacity-20"></div>
+                  <div className="relative bg-white dark:bg-[#251a30] rounded-3xl overflow-hidden border border-slate-200 dark:border-white/5 shadow-xl dark:shadow-none">
+                    <div className="p-5 border-b border-slate-200 dark:border-white/5">
+                      <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Amount</p>
+                      <p className="text-3xl font-bold text-slate-900 dark:text-white">{amount} MOVE</p>
+                      <p className="text-slate-500 dark:text-[#ad92c9] text-sm">≈ ${usdValue.toFixed(2)} USD</p>
+                    </div>
+                    <div className="p-5 border-b border-slate-200 dark:border-white/5">
+                      <p className="text-slate-500 dark:text-[#ad92c9] text-sm">To</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <div className="w-10 h-10 rounded-full bg-[#7f13ec] flex items-center justify-center text-white font-bold">
+                          {recipientData.username[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold text-slate-900 dark:text-white">@{recipientData.username}</p>
+                          <p className="text-slate-500 dark:text-[#ad92c9] text-xs font-mono">
+                            {recipientData.walletAddress.slice(0, 12)}...{recipientData.walletAddress.slice(-8)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {note && (
+                      <div className="p-5 border-b border-slate-200 dark:border-white/5">
+                        <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Note</p>
+                        <p className="text-slate-900 dark:text-white">{note}</p>
+                      </div>
+                    )}
+                    <div className="p-5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500 dark:text-[#ad92c9] flex items-center gap-1">
+                          <span>⛽</span> Est. Gas Fee
+                        </span>
+                        <span className="font-bold text-slate-900 dark:text-white">~0.001 MOVE</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {error && (
+                  <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setStep('form')}
+                    className="flex-1 btn btn-secondary py-4 h-14"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={handleSend}
+                    disabled={isSending}
+                    className="flex-1 btn btn-primary py-4 text-lg h-14"
+                  >
+                    {isSending ? (
+                      <span className="flex items-center gap-2">
+                        <div className="spinner spinner-sm" />
+                        Sending...
+                      </span>
+                    ) : (
+                      <>Confirm & Send →</>
+                    )}
+                  </button>
+                </div>
               </div>
-              <h2 className="text-2xl font-bold text-white">Payment Sent!</h2>
-              <p className="text-gray-400 mt-2">
-                {amount} MOVE sent to @{recipientData?.username}
-              </p>
+            )}
+
+            {/* Main Send Card */}
+            {step === 'form' && (
+              <div className="relative group">
+                {/* Glow Effect */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-[#7f13ec] to-purple-600 rounded-3xl blur opacity-10 dark:opacity-20 group-hover:opacity-20 dark:group-hover:opacity-30 transition duration-500"></div>
+                
+                <div className="relative bg-white dark:bg-[#251a30] rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-white/5 flex flex-col gap-6 shadow-xl dark:shadow-none">
+                  {/* Amount Section */}
+                  <div className="flex flex-col gap-4">
+                    <label className="text-sm font-bold text-slate-500 dark:text-[#ad92c9] uppercase tracking-wider">Amount to send</label>
+                    <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                      {/* Asset Badge */}
+                      <div className="flex items-center gap-3 bg-slate-100 dark:bg-[#130b1b] p-3 pr-4 rounded-2xl border border-slate-200 dark:border-white/10">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7f13ec] to-[#a855f7] flex items-center justify-center text-white font-bold text-sm">
+                          M
+                        </div>
+                        <div className="flex flex-col items-start text-left">
+                          <span className="font-bold text-sm text-slate-900 dark:text-white leading-tight">MOVE</span>
+                          <span className="text-xs text-slate-500 dark:text-[#ad92c9]">Movement</span>
+                        </div>
+                      </div>
+                      
+                      {/* Amount Input */}
+                      <div className="flex-1 w-full">
+                        <input
+                          type="text"
+                          value={amount}
+                          onChange={(e) => handleAmountChange(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-transparent text-5xl md:text-6xl font-black text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-[#362348] border-none focus:ring-0 p-0 leading-tight"
+                        />
+                        <div className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1 font-medium">
+                          ≈ ${usdValue.toFixed(2)} USD • Balance: {formatBalance(balance)} MOVE
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-200 dark:border-white/5 my-2" />
+
+                  {/* Recipient Section */}
+                  <div className="flex flex-col gap-3">
+                    <label className="text-sm font-bold text-slate-500 dark:text-[#ad92c9] uppercase tracking-wider">Recipient</label>
+                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-[#130b1b] p-2 rounded-2xl border border-slate-200 dark:border-white/10 focus-within:border-[#7f13ec]/50 focus-within:ring-2 ring-[#7f13ec]/20 transition-all">
+                      <div className="p-2 text-slate-400 dark:text-[#ad92c9]">
+                        <span className="text-xl font-bold">@</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={recipientUsername}
+                        onChange={(e) => setRecipientUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                        onBlur={() => recipientUsername.length >= 3 && searchRecipient()}
+                        onKeyDown={(e) => e.key === 'Enter' && searchRecipient()}
+                        placeholder="Username or wallet address"
+                        className="bg-transparent flex-1 border-none focus:ring-0 text-slate-900 dark:text-white font-medium placeholder-slate-400 dark:placeholder-[#ad92c9]/50"
+                      />
+                      <button 
+                        onClick={async () => {
+                          const text = await navigator.clipboard.readText();
+                          setRecipientUsername(text);
+                        }}
+                        className="p-2 hover:bg-slate-200 dark:hover:bg-[#362348] rounded-xl text-[#7f13ec] transition-colors flex items-center gap-2 text-sm font-bold px-3"
+                      >
+                        Paste
+                      </button>
+                      <button 
+                        onClick={() => setShowScanner(true)}
+                        className="w-10 h-10 flex items-center justify-center bg-slate-200 dark:bg-[#362348] hover:bg-[#7f13ec] rounded-xl text-slate-700 dark:text-white transition-colors"
+                      >
+                        📷
+                      </button>
+                    </div>
+                    
+                    {/* Recipient Found */}
+                    {recipientData && (
+                      <div className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl animate-fade-in">
+                        <div className="w-10 h-10 rounded-full bg-[#7f13ec] flex items-center justify-center text-white font-bold">
+                          {recipientData.username[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-slate-900 dark:text-white font-bold">@{recipientData.username}</p>
+                          <p className="text-slate-500 dark:text-[#ad92c9] text-xs font-mono">
+                            {recipientData.walletAddress.slice(0, 10)}...{recipientData.walletAddress.slice(-6)}
+                          </p>
+                        </div>
+                        <span className="text-emerald-400">✓</span>
+                      </div>
+                    )}
+
+                    {error && (
+                      <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                        <p className="text-red-400 text-sm">{error}</p>
+                      </div>
+                    )}
+
+                    {isSearching && (
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-[#ad92c9] text-sm">
+                        <div className="spinner spinner-sm" />
+                        Searching...
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Note (optional) */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-bold text-slate-500 dark:text-[#ad92c9] uppercase tracking-wider">Note (optional)</label>
+                    <input
+                      type="text"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="What's this for?"
+                      className="input h-12"
+                      maxLength={200}
+                    />
+                  </div>
+
+                  {/* Action */}
+                  <div className="mt-4 flex flex-col gap-4">
+                    <div className="flex justify-between items-center text-sm px-1">
+                      <span className="text-slate-500 dark:text-[#ad92c9] flex items-center gap-1">
+                        <span>⛽</span> Est. Gas Fee
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-white">~0.001 MOVE</span>
+                    </div>
+                    <button
+                      onClick={() => setStep('confirm')}
+                      disabled={!recipientData || !amount || Number(amount) <= 0 || Number(amount) > balance}
+                      className="w-full py-4 bg-[#7f13ec] hover:bg-[#7f13ec]/90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-bold text-lg shadow-lg shadow-[#7f13ec]/25 transition-all active:scale-[0.99] flex items-center justify-center gap-2"
+                    >
+                      Review Transaction
+                      <span>→</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT COLUMN: Sidebar */}
+          <div className="w-full lg:w-[400px] flex flex-col gap-6">
+            {/* Wallet Card */}
+            <div className="bg-gradient-to-br from-[#7f13ec] to-[#5b0ba8] dark:from-[#2a1e35] dark:to-[#150d1d] rounded-3xl p-6 text-white relative overflow-hidden border border-[#7f13ec]/20 dark:border-white/5 shadow-xl dark:shadow-none">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 dark:bg-[#7f13ec]/30 rounded-full blur-[50px] -mr-10 -mt-10"></div>
+              <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <p className="text-white/70 dark:text-[#ad92c9] text-sm font-medium mb-1">Your Balance</p>
+                    <h3 className="text-3xl font-bold tracking-tight">{formatBalance(balance)} MOVE</h3>
+                    <p className="text-white/70 dark:text-[#ad92c9] text-sm mt-1">{formatUSD(balance)}</p>
+                  </div>
+                  <Link href="/receive" className="bg-white p-2 rounded-xl shadow-lg hover:scale-105 transition-transform">
+                    <div className="w-14 h-14 flex items-center justify-center text-3xl">📲</div>
+                  </Link>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={copyAddress}
+                    className="flex-1 bg-white/20 dark:bg-[#362348] hover:bg-white/30 dark:hover:bg-[#482e5e] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                  >
+                    📋 Copy Address
+                  </button>
+                  <Link 
+                    href="/receive"
+                    className="flex-1 bg-white/20 dark:bg-[#362348] hover:bg-white/30 dark:hover:bg-[#482e5e] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                  >
+                    🔗 Share
+                  </Link>
+                </div>
+              </div>
             </div>
 
-            <div className="card p-4">
-              <p className="text-gray-400 text-xs mb-1">Transaction Hash</p>
-              <a 
-                href={getExplorerUrl(txHash)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-emerald-400 text-sm font-mono hover:underline break-all"
-              >
-                {txHash}
-              </a>
+            {/* Quick Send */}
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-between items-center px-1">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Quick Send</h3>
+                <Link href="/contacts" className="text-[#7f13ec] text-sm font-bold hover:underline">View All</Link>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                <Link href="/contacts" className="flex flex-col items-center gap-2 min-w-[70px] group">
+                  <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-[#362348] border-2 border-transparent group-hover:border-[#7f13ec] flex items-center justify-center transition-all">
+                    <span className="text-[#7f13ec] text-2xl">+</span>
+                  </div>
+                  <span className="text-xs font-medium text-slate-500 dark:text-[#ad92c9]">New</span>
+                </Link>
+                
+                {contacts.slice(0, 4).map((contact) => (
+                  <button 
+                    key={contact._id}
+                    onClick={() => selectContact(contact)}
+                    className="flex flex-col items-center gap-2 min-w-[70px] group"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#7f13ec] to-[#a855f7] border-2 border-transparent group-hover:border-[#7f13ec] flex items-center justify-center text-white font-bold text-lg transition-all">
+                      {contact.username[0].toUpperCase()}
+                    </div>
+                    <span className="text-xs font-medium text-slate-500 dark:text-[#ad92c9] truncate max-w-[60px]">
+                      {contact.nickname || contact.username}
+                    </span>
+                  </button>
+                ))}
+                
+                {contacts.length === 0 && (
+                  <div className="flex items-center justify-center text-slate-500 dark:text-[#ad92c9] text-sm py-4 w-full">
+                    No contacts yet
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="w-full btn btn-primary py-4 text-lg"
+            {/* Recent Activity */}
+            <div className="flex-1 bg-white dark:bg-[#251a30] rounded-3xl p-6 border border-slate-200 dark:border-white/5 flex flex-col shadow-lg dark:shadow-none">
+              <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">Recent Activity</h3>
+              <div className="flex flex-col gap-1 overflow-y-auto max-h-[300px] pr-1">
+                {recentTransactions.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500 dark:text-[#ad92c9]">
+                    <span className="text-3xl mb-2 block">📭</span>
+                    <p className="text-sm">No recent transactions</p>
+                  </div>
+                ) : (
+                  recentTransactions.map((tx) => {
+                    const isSent = tx.senderAddress === walletAddress;
+                    return (
+                      <div 
+                        key={tx._id}
+                        className="flex items-center justify-between p-3 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            isSent ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'
+                          }`}>
+                            <span className="text-lg">{isSent ? '📤' : '📥'}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-sm text-slate-900 dark:text-white">
+                              {isSent ? `To: @${tx.receiverUsername}` : `From: @${tx.senderUsername}`}
+                            </span>
+                            <span className="text-xs text-slate-500 dark:text-[#ad92c9]">
+                              {new Date(tx.timestamp).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className={`font-bold text-sm ${isSent ? 'text-slate-900 dark:text-white' : 'text-emerald-400'}`}>
+                            {isSent ? '-' : '+'}{tx.amount} MOVE
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-[#ad92c9]">{tx.status}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              <Link 
+                href="/history"
+                className="w-full mt-4 py-2 text-sm font-bold text-slate-500 dark:text-[#ad92c9] hover:text-[#7f13ec] transition-colors border-t border-slate-200 dark:border-white/5 pt-4 text-center block"
               >
-                Back to Home
-              </button>
-              <button
-                onClick={() => {
-                  setStep('recipient');
-                  setRecipientUsername('');
-                  setRecipientData(null);
-                  setAmount('');
-                  setNote('');
-                  setTxHash('');
-                  setError('');
-                }}
-                className="w-full btn btn-secondary py-4"
-              >
-                Send Another
-              </button>
+                View All Transactions
+              </Link>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* QR Scanner Modal */}
@@ -500,9 +667,6 @@ export default function SendPageContent() {
         onClose={() => setShowScanner(false)}
         onScan={handleQRScan}
       />
-
-      <Navbar />
-    </div>
+    </DashboardLayout>
   );
 }
-
