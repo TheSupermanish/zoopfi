@@ -48,9 +48,6 @@ backend/.env.local
 backend/node_modules
 .gstack/
 
-# Privacy engine build artifacts (regenerate via scripts/build-privacy-engine.sh)
-/public/js/*_bg.wasm
-/public/js/web_bg.wasm
-/public/circuits/*.r1cs
-/public/circuits/*.wasm
-/public/circuits/source-bundle.tar.gz
+# Privacy engine WASM + circuit artifacts (in public/js, public/circuits) are
+# COMMITTED so Vercel can serve them — it can't build the Rust/WASM engine.
+# Regenerate with scripts/build-privacy-engine.sh when the engine changes.
