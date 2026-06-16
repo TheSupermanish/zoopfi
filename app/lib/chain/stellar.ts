@@ -28,7 +28,7 @@ import {
   type Transaction,
 } from '@stellar/stellar-sdk';
 import { NETWORK, USDC, CURRENT_NETWORK, getExplorerUrl } from './config';
-import type { AssetCode, ChainOps, TxResult, WalletContext } from './types';
+import type { AssetCode, ChainOps, SwapQuote, TxResult, WalletContext } from './types';
 import { createMockChainOps } from './mock';
 
 const horizon = new Horizon.Server(NETWORK.horizonUrl);
@@ -183,6 +183,55 @@ export function createStellarChainOps(ctx: WalletContext): ChainOps {
       } catch (e: any) {
         console.error('[stellar] viewContract', e?.message || e);
         return null;
+      }
+    },
+
+    async getSwapQuote(from: AssetCode, to: AssetCode, amount: string): Promise<SwapQuote> {
+      const empty: SwapQuote = { estimate: '0', price: '0', available: false };
+      if (from === to || !amount || Number(amount) <= 0) return empty;
+      try {
+        // Stellar DEX path-finding: best destination amount for a strict-send.
+        const paths = await horizon
+          .strictSendPaths(assetFor(from), amount, [assetFor(to)])
+          .call();
+        const best = (paths.records || [])[0];
+        if (!best) return empty;
+        const estimate = best.destination_amount;
+        const price = (Number(estimate) / Number(amount)).toFixed(7);
+        return { estimate, price, available: true };
+      } catch (e: any) {
+        console.error('[stellar] getSwapQuote', e?.message || e);
+        return empty;
+      }
+    },
+
+    async swap(from: AssetCode, to: AssetCode, amount: string, minReceive: string): Promise<TxResult> {
+      try {
+        const account = await horizon.loadAccount(ctx.address);
+        // Strict-send path payment to self: spend exactly `amount` of `from`,
+        // receive at least `minReceive` of `to` via the DEX orderbook.
+        const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: PASSPHRASE })
+          .addOperation(
+            Operation.pathPaymentStrictSend({
+              sendAsset: assetFor(from),
+              sendAmount: amount,
+              destination: ctx.address,
+              destAsset: assetFor(to),
+              destMin: minReceive,
+              path: [],
+            }),
+          )
+          .setTimeout(180)
+          .build();
+        const signed = await signTx(tx, ctx);
+        const res = await horizon.submitTransaction(signed);
+        return { success: true, hash: res.hash, explorerUrl: getExplorerUrl(res.hash) };
+      } catch (e: any) {
+        const detail = e?.response?.data?.extras?.result_codes
+          ? JSON.stringify(e.response.data.extras.result_codes)
+          : e?.message || 'swap failed';
+        console.error('[stellar] swap', detail);
+        return fail(detail);
       }
     },
 

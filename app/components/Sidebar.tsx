@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   ArrowLeftRight,
+  ArrowDownUp,
   Shield,
   Receipt,
   History,
@@ -32,6 +33,7 @@ interface SidebarProps {
 const personalNavItems = [
   { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/transact', label: 'Transact', Icon: ArrowLeftRight },
+  { href: '/swap', label: 'Swap', Icon: ArrowDownUp },
   { href: '/shielded', label: 'Private', Icon: Shield },
   { href: '/groups', label: 'Groups', Icon: Receipt },
   { href: '/history', label: 'History', Icon: History },
@@ -43,6 +45,7 @@ const personalNavItems = [
 const businessNavItems = [
   { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/transact', label: 'Payments', Icon: CreditCard },
+  { href: '/swap', label: 'Swap', Icon: ArrowDownUp },
   { href: '/invoices', label: 'Invoices', Icon: FileText },
   { href: '/shielded', label: 'Private', Icon: Shield },
   { href: '/history', label: 'History', Icon: History },

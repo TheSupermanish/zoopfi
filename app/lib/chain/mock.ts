@@ -9,7 +9,10 @@
  */
 import type { AssetCode } from './config';
 import { getExplorerUrl } from './config';
-import type { ChainOps, PrivacyOps, PrivacyOpResult, PrivateNote, TxResult, WalletContext } from './types';
+import type { ChainOps, PrivacyOps, PrivacyOpResult, PrivateNote, SwapQuote, TxResult, WalletContext } from './types';
+
+// Canned DEX rates for mock-mode swaps (XLM ~ $0.12).
+const MOCK_RATES: Record<string, number> = { 'XLM->USDC': 0.12, 'USDC->XLM': 8.3333 };
 
 const LS = {
   publicBal: (addr: string, asset: string) => `zoopfi.mock.bal.${addr}.${asset}`,
@@ -147,6 +150,18 @@ export function createMockChainOps(ctx: WalletContext): ChainOps {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async viewContract(_id: string, _method: string) {
       return 0;
+    },
+    async getSwapQuote(from: AssetCode, to: AssetCode, amount: string): Promise<SwapQuote> {
+      await delay(200);
+      if (from === to || !amount || Number(amount) <= 0) return { estimate: '0', price: '0', available: false };
+      const rate = MOCK_RATES[`${from}->${to}`] ?? 1;
+      return { estimate: (Number(amount) * rate).toFixed(7), price: rate.toFixed(7), available: true };
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async swap(_from: AssetCode, _to: AssetCode, _amount: string, _minReceive: string): Promise<TxResult> {
+      await delay(800);
+      const hash = fakeHash(`swap${Date.now()}`);
+      return { success: true, hash, explorerUrl: getExplorerUrl(hash) };
     },
     getExplorerUrl,
     privacy,

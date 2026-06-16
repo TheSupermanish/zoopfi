@@ -20,6 +20,16 @@ export interface TxResult {
   error?: string;
 }
 
+/** A DEX swap quote (Stellar orderbook path payment). */
+export interface SwapQuote {
+  /** Estimated amount of the destination asset, in human units. */
+  estimate: string;
+  /** Implied price (destination per 1 source), human units. */
+  price: string;
+  /** True if the DEX found a path with liquidity. */
+  available: boolean;
+}
+
 /** Context the active chain adapter is built from (provided by useWallet). */
 export interface WalletContext {
   address: string;          // G... account address
@@ -46,6 +56,10 @@ export interface ChainOps {
   invokeContract(contractId: string, method: string, args: unknown[]): Promise<TxResult>;
   /** Read-only Soroban contract call (simulated). */
   viewContract(contractId: string, method: string, args: unknown[]): Promise<unknown>;
+  /** Quote a DEX swap: how much `to` you'd receive for `amount` of `from`. */
+  getSwapQuote(from: AssetCode, to: AssetCode, amount: string): Promise<SwapQuote>;
+  /** Execute a swap over the Stellar DEX (strict-send path payment to self). */
+  swap(from: AssetCode, to: AssetCode, amount: string, minReceive: string): Promise<TxResult>;
   getExplorerUrl(txHash: string): string;
   /** Privacy / shielded-pool operations. */
   privacy: PrivacyOps;
