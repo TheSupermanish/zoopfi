@@ -20,6 +20,7 @@ import {
   Operation,
   Asset,
   Address,
+  Account,
   Memo,
   BASE_FEE,
   Contract,
@@ -169,7 +170,11 @@ export function createStellarChainOps(ctx: WalletContext): ChainOps {
 
     async viewContract(contractId: string, method: string, args: unknown[]): Promise<unknown> {
       try {
-        const account = await rpc.getAccount(ctx.address);
+        // Read-only simulation: any source works; use a placeholder when no
+        // wallet is connected so reads (e.g. APY/index) work on public pages.
+        const account = ctx.address
+          ? await rpc.getAccount(ctx.address)
+          : new Account('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', '0');
         const contract = new Contract(contractId);
         const scArgs = args.map((a) => toScVal(a));
         const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: PASSPHRASE })
