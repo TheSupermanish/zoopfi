@@ -8,6 +8,8 @@ export {
   XLM,
   PRIMARY_ASSET,
   CONTRACTS,
+  PRIVACY,
+  PRIVACY_LIVE,
   getExplorerUrl,
   getAddressExplorerUrl,
 } from './config';
