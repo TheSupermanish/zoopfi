@@ -1,123 +1,171 @@
-# 🛡️ Zoopfi
+# 🛡️ Zoopfi — the privacy point for Stellar
 
-Private payments by username, built on **Stellar / Soroban**. Send and receive USDC with a normal Web2-style login, plus an optional **private (shielded) balance** powered by zero-knowledge proofs.
+A consumer + business payments wallet where money moves **privately by default**.
+Amounts and counterparties stay hidden, and every private transaction is proven
+with a **zero-knowledge proof that is verified on-chain by a Stellar smart
+contract**. Compliance is built in via an Association Set Provider (ASP) allow/deny
+model, so legitimate users get privacy without the pool becoming a haven for bad
+actors.
 
-> See [`docs/stellar-migration/`](./docs/stellar-migration/) for the full research, architecture, and design docs.
-
-## ✨ Features
-
-### Payments
-- **Username payments** - send USDC using `@usernames` instead of long addresses
-- **QR payments** - generate and scan QR codes
-- **Payment requests**, **contacts / friend requests**, **groups with bill-splitting**, **business invoices**
-- **Transaction history** with Stellar explorer links
-
-### Private payments (ZK)
-- **Shield / Unshield** - move USDC in and out of a private balance
-- **Send privately** - pay a `@username` with the sender↔recipient link hidden
-- On-device proving (your keys never leave the browser)
-- Lives at `/private`. Runs against a simulated shielded pool today (see Status).
-
-### Wallet & auth
-- **Privy social login** (email, Google, X, Discord, GitHub) auto-provisions a self-custodial **Stellar embedded wallet** (`chainType: 'stellar'`, Tier 2)
-- External wallets (Freighter / xBull via Stellar Wallets Kit) planned as a secondary path
-
-### UX
-- Dark + light themes, mobile-first PWA, real-time notifications, gamified rewards/streaks
-
-## 🏗️ Tech Stack
-
-- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS 4
-- **Chain**: Stellar / Soroban via [`@stellar/stellar-sdk`](https://www.npmjs.com/package/@stellar/stellar-sdk) (v15)
-- **Asset**: native Circle **USDC** (7 decimals) over the Stellar Asset Contract (SEP-41)
-- **Auth/wallet**: Privy embedded Stellar wallet
-- **Backend**: Express + MongoDB (chain-agnostic; keyed by wallet address)
-- **Privacy**: Privacy-Pools-style shielded pool (Circom Groth16 / BN254 / Poseidon2). Modeled on [NethermindEth/stellar-private-payments](https://github.com/NethermindEth/stellar-private-payments).
-
-## 📁 Project Structure
-
-```
-zoopfi/
-├── app/
-│   ├── lib/chain/            # chain-abstraction layer (the migration's core)
-│   │   ├── config.ts         # network, USDC asset, decimals, explorer
-│   │   ├── types.ts          # ChainOps / PrivacyOps interfaces
-│   │   ├── stellar.ts        # real Stellar adapter (@stellar/stellar-sdk)
-│   │   ├── mock.ts           # mock adapter + simulated shielded pool
-│   │   └── useWallet.tsx     # the single wallet hook + provider
-│   ├── dashboard/ send/ transact/ receive/ private/ ...  # pages
-│   └── components/
-├── backend/                  # Express API (MongoDB)
-└── docs/stellar-migration/   # research + architecture + plan + privacy design
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 20+ (the Stellar SDK dropped Node 18)
-- MongoDB (local or Atlas)
-- A Privy app ID (https://dashboard.privy.io)
-
-### 1. Frontend
-```bash
-npm install
-cp .env.example .env   # .env or .env.local both work (both gitignored)
-# NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id
-# NEXT_PUBLIC_API_URL=http://localhost:4000
-# NEXT_PUBLIC_CHAIN_ADAPTER=mock        # "mock" (default) or "stellar"
-# NEXT_PUBLIC_STELLAR_NETWORK=testnet
-npm run dev
-```
-
-### 2. Backend
-```bash
-cd backend
-npm install
-cp .env.example .env   # MONGODB_URI, PORT=4000
-npm run dev
-```
-
-## 🔀 Chain adapter modes
-
-Auth always runs through Privy. The `NEXT_PUBLIC_CHAIN_ADAPTER` flag only switches the on-chain data layer:
-
-| Mode | Balances / payments / privacy | Use it for |
-|------|-------------------------------|-----------|
-| `mock` (default) | Canned balances, fake hashes, fully simulated shielded pool | Demoing the full UX with no funding, trustlines, or deployed contracts |
-| `stellar` | Real Stellar **testnet**: USDC over Horizon, Soroban via RPC | Real on-chain payments (set a Privy app ID; onboarding friendbot-funds XLM + adds the USDC trustline) |
-
-## 🔐 Status & safety
-
-- The **public USDC payment** path uses the audited Stellar Asset Contract and is safe on testnet.
-- The **private-payments** layer is a **demo**: in `mock` mode it is fully simulated; the real shielded-pool integration (Nethermind Privacy Pools fork) is **unaudited and testnet-only**. Do not use it with real-asset value. See [`docs/stellar-migration/03-migration-plan.md`](./docs/stellar-migration/03-migration-plan.md) for the risk register.
-- Non-custodial: Privy holds the embedded key; the app builds/signs/submits transactions. Private spending keys are derived and stored on-device.
-
-## 📡 API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/register` | POST | Register username |
-| `/api/users/:username` | GET | Get user by username |
-| `/api/users/address/:address` | GET | Get user by wallet |
-| `/api/transactions` | GET/POST | Transaction history |
-| `/api/contacts` | GET/POST/DELETE | Manage contacts |
-| `/api/requests` | GET/POST/PUT | Payment requests |
-| `/api/groups` | ... | Groups + bill-splitting |
-| `/api/invoices` | ... | Business invoices |
-| `/api/rewards/streak` | GET/POST | Streak tracking |
-
-## 🎨 Design System
-
-Dark-first theme with a purple accent:
-- **Background**: `#191022`
-- **Cards**: `#251a30`
-- **Accent**: `#7f13ec`
-- **Text secondary**: `#ad92c9`
-
-## 📄 License
-
-MIT.
+> **Submission: Stellar Hacks — Real-World ZK.** The ZK is load-bearing: a shielded
+> payment cannot be constructed or settled without a valid Groth16 proof that the
+> on-chain verifier accepts.
 
 ---
 
-Built on Stellar.
+## What the ZK actually does
+
+Zoopfi runs a **shielded pool** (a Privacy-Pools / Tornado-style UTXO design) on
+Stellar testnet:
+
+- **Notes & commitments.** Funds in the pool are represented as notes. A note
+  commitment is `Poseidon2(amount, owner_pubkey, blinding)` — published on-chain,
+  revealing nothing about amount or owner.
+- **Spending in zero knowledge.** To spend, you prove in a Circom/Groth16 circuit
+  (over **BN254**, using **Poseidon2** for hashing) that: you know the opening of
+  input notes that exist in the pool's Merkle tree, their nullifiers are correct
+  (so they can't be double-spent), inputs balance outputs, and the spend satisfies
+  the **ASP membership / non-membership** policy. Amounts and the sender↔recipient
+  link never appear in the clear.
+- **On-chain verification.** The proof is checked by a **Groth16 verifier contract
+  on Stellar** (using Protocol 25/26 BN254 host functions). The pool contract only
+  mutates state if `verifier.verify(proof, public_inputs) == true`.
+
+Public deposit/withdraw at the pool boundary is visible (like any token transfer);
+**in-pool transfers are private**. That boundary is intentional and documented.
+
+---
+
+## 🔗 Deployed on Stellar testnet
+
+Our own deployment (deployer `GCYETQHS…LWI5LR44`). The proof is verified by the
+verifier contract below.
+
+| Contract | Address | Explorer |
+|----------|---------|----------|
+| **Shielded pool** | `CAO6RPMITSCQTUOFUMFCNELXLNURXMQMRBDZLSIKZX36VH7MBA4LD3UA` | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CAO6RPMITSCQTUOFUMFCNELXLNURXMQMRBDZLSIKZX36VH7MBA4LD3UA) |
+| **Groth16 verifier** | `CCIRAIRRTZN4QMUE7XVPLBO2II7UQPCPK7GGVSMFJW5HO44LL37SQDCN` | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CCIRAIRRTZN4QMUE7XVPLBO2II7UQPCPK7GGVSMFJW5HO44LL37SQDCN) |
+| **ASP membership** | `CANLVYWPTVIBPG2L2PS4GT6BXRXDAWGGZ7PL62WNDXSLWRNGDJYUILHG` | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CANLVYWPTVIBPG2L2PS4GT6BXRXDAWGGZ7PL62WNDXSLWRNGDJYUILHG) |
+| **ASP non-membership** | `CB3ECD5HYWQDCB34ZYQWLN3PCVMYUBE3WLLH7IVHG5YJSSN7B3IU4IYE` | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CB3ECD5HYWQDCB34ZYQWLN3PCVMYUBE3WLLH7IVHG5YJSSN7B3IU4IYE) |
+
+The verifier's on-chain interface:
+
+```rust
+fn verify(proof: Groth16Proof, public_inputs: Vec<U256>) -> Result<bool, Groth16Error>
+```
+
+The deployment record is in [`deployments/testnet.json`](./deployments/testnet.json).
+
+---
+
+## 🧱 Architecture
+
+```
+Browser (Next.js / React)
+ ├─ Wallets:  Privy social-login embedded wallet  +  StellarWalletsKit
+ │            (Freighter / xBull / Albedo / Lobstr / Rabet …)
+ ├─ ZK engine (WASM, loaded from /public/js):
+ │     prover-worker  → Groth16 proving (arkworks/BN254) + Poseidon2
+ │     storage-worker → encrypted note store (OPFS-backed SQLite)
+ │     web client     → Merkle proofs, witness assembly, tx prep
+ └─ app/lib/privacy/  → engine loader, wallet shim, submit path, usePrivacyPool hook
+        │
+        ▼  signed Soroban tx
+Stellar testnet:  Pool → Groth16 verifier → ASP membership / non-membership
+```
+
+- **Proving runs in the browser** (your spending keys never leave the device).
+- The ZK engine (circuits, proving keys, Rust→WASM prover) is **forked from
+  [NethermindEth/stellar-private-payments](https://github.com/NethermindEth/stellar-private-payments)**
+  (Apache-2.0; circuit artifacts LGPL-3.0). We deployed our own instance of the
+  contracts, embedded the prover, and built Zoopfi's UI + wallet integration on top.
+  See [`public/privacy-legal/`](./public/privacy-legal) for upstream notices.
+
+**Tech:** Next.js 16 · React 19 · TypeScript · Tailwind 4 · `@stellar/stellar-sdk` ·
+`@creit.tech/stellar-wallets-kit` · Privy · Circom/Groth16 · BN254 · Poseidon2 · Soroban (Rust).
+
+---
+
+## 🖼️ Wallet options
+
+The login modal offers Privy social login **and** a full StellarWalletsKit picker
+(Freighter, xBull, Albedo, LOBSTR, Rabet, Hana, Klever).
+
+![Wallet options](./docs/screenshots/wallet-options.png)
+
+---
+
+## 🚀 Run it locally
+
+### Prerequisites
+- Node.js 20+
+- A Privy app ID (https://dashboard.privy.io) — only needed for social login
+- A StellarWalletsKit-supported extension (e.g. Freighter) for the external-wallet path
+
+```bash
+npm install            # or: bun install
+cp .env.example .env.local
+#   NEXT_PUBLIC_PRIVY_APP_ID=...            (social login)
+#   NEXT_PUBLIC_CHAIN_ADAPTER=stellar       (real testnet; "mock" for UI-only)
+#   NEXT_PUBLIC_STELLAR_NETWORK=testnet
+#   privacy contract IDs are pre-filled to our testnet deployment
+npm run dev            # http://localhost:3000 — open /shielded
+```
+
+The shielded contract addresses ship in `.env.example`, so the ZK feature points
+at our live deployment out of the box.
+
+### Rebuilding the ZK engine (optional)
+The WASM prover + circuit artifacts are large and gitignored. To regenerate:
+
+```bash
+# prereqs: brew install llvm  (wasm-capable clang for sqlite-wasm-rs)
+#          rustup target add wasm32-unknown-unknown && cargo install trunk
+PRIVACY_ENGINE_SRC=/path/to/stellar-private-payments ./scripts/build-privacy-engine.sh
+```
+
+### Redeploying the contracts (optional)
+```bash
+cd /path/to/stellar-private-payments
+deployments/scripts/deploy.sh testnet --deployer <key> \
+  --asp-levels 10 --pool-levels 10 --max-deposit 1000000000 \
+  --vk-file deployments/testnet/circuit_keys/policy_tx_2_2_vk.json
+```
+
+---
+
+## ✅ Status — what's real vs in progress
+
+Honest breakdown (the hackathon explicitly welcomes WIP, so here it is):
+
+| Piece | Status |
+|-------|--------|
+| Pool + Groth16 verifier + ASP deployed on testnet | ✅ Live (addresses above) |
+| ZK proof verified by on-chain contract | ✅ Proven (verifier deployed; proof→verify exercised in the engine's e2e suite) |
+| Browser proving engine (Groth16/Poseidon2) embedded in Zoopfi | ✅ Loads + runs in-app |
+| Multi-wallet (Privy + StellarWalletsKit) | ✅ Both wired as real sessions |
+| Shielded UI: shield / send privately / unshield, live notes + activity | ✅ Built (`/shielded`) |
+| Full in-browser end-to-end shield with a funded wallet | 🔄 Final integration test in progress |
+| ASP admin console + business selective-disclosure (view-key) view | 🔜 Planned (circuits + contracts already support it) |
+
+**Safety:** unaudited, **testnet-only**, no real-asset value. The shielded stack is a
+demo of compliant private payments, not production custody.
+
+---
+
+## 📂 Where to look
+
+- `app/shielded/page.tsx` — the private-payments UI
+- `app/lib/privacy/` — engine loader, wallet shim, Soroban submit, `usePrivacyPool` hook
+- `app/lib/chain/` — chain abstraction, multi-wallet (`useWallet`), Stellar adapter
+- `deployments/testnet.json` — deployed contract addresses
+- `docs/stellar-migration/` — research, architecture, and privacy design docs
+
+## 📄 License
+
+Zoopfi app code: MIT. Bundled privacy engine: Apache-2.0 / LGPL-3.0 (see
+`public/privacy-legal/`).
+
+---
+
+Built for **Stellar Hacks: Real-World ZK**. Privacy that real people and businesses can actually use.

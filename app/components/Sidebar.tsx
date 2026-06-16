@@ -32,7 +32,7 @@ interface SidebarProps {
 const personalNavItems = [
   { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/transact', label: 'Transact', Icon: ArrowLeftRight },
-  { href: '/private', label: 'Private', Icon: Shield },
+  { href: '/shielded', label: 'Private', Icon: Shield },
   { href: '/groups', label: 'Groups', Icon: Receipt },
   { href: '/history', label: 'History', Icon: History },
   { href: '/contacts', label: 'Friends', Icon: Users },
@@ -44,7 +44,7 @@ const businessNavItems = [
   { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/transact', label: 'Payments', Icon: CreditCard },
   { href: '/invoices', label: 'Invoices', Icon: FileText },
-  { href: '/private', label: 'Private', Icon: Shield },
+  { href: '/shielded', label: 'Private', Icon: Shield },
   { href: '/history', label: 'History', Icon: History },
   { href: '/contacts', label: 'Customers', Icon: Users },
   { href: '/settings', label: 'Settings', Icon: Settings },
