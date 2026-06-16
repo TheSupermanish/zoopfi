@@ -170,11 +170,16 @@ export function createStellarChainOps(ctx: WalletContext): ChainOps {
 
     async viewContract(contractId: string, method: string, args: unknown[]): Promise<unknown> {
       try {
-        // Read-only simulation: any source works; use a placeholder when no
-        // wallet is connected so reads (e.g. APY/index) work on public pages.
-        const account = ctx.address
-          ? await rpc.getAccount(ctx.address)
-          : new Account('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF', '0');
+        // Read-only simulation: any source works. Use a placeholder when no
+        // wallet is connected — and fall back to it if the connected account
+        // isn't funded on-chain yet — so reads (APY/index) never break a page.
+        const PLACEHOLDER = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF';
+        let account;
+        if (ctx.address) {
+          account = await rpc.getAccount(ctx.address).catch(() => new Account(PLACEHOLDER, '0'));
+        } else {
+          account = new Account(PLACEHOLDER, '0');
+        }
         const contract = new Contract(contractId);
         const scArgs = args.map((a) => toScVal(a));
         const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: PASSPHRASE })
@@ -213,8 +218,20 @@ export function createStellarChainOps(ctx: WalletContext): ChainOps {
     async swap(from: AssetCode, to: AssetCode, amount: string, minReceive: string): Promise<TxResult> {
       try {
         const account = await horizon.loadAccount(ctx.address);
+        // Re-fetch the best path so execution matches the quote: the DEX may
+        // route through an intermediate asset, not just a direct orderbook.
+        let path: Asset[] = [];
+        try {
+          const paths = await horizon.strictSendPaths(assetFor(from), amount, [assetFor(to)]).call();
+          const best = (paths.records || [])[0];
+          if (best?.path) {
+            path = best.path.map((p: any) =>
+              p.asset_type === 'native' ? Asset.native() : new Asset(p.asset_code, p.asset_issuer),
+            );
+          }
+        } catch { /* fall back to direct path */ }
         // Strict-send path payment to self: spend exactly `amount` of `from`,
-        // receive at least `minReceive` of `to` via the DEX orderbook.
+        // receive at least `minReceive` of `to` via the DEX.
         const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: PASSPHRASE })
           .addOperation(
             Operation.pathPaymentStrictSend({
@@ -223,7 +240,7 @@ export function createStellarChainOps(ctx: WalletContext): ChainOps {
               destination: ctx.address,
               destAsset: assetFor(to),
               destMin: minReceive,
-              path: [],
+              path,
             }),
           )
           .setTimeout(180)

@@ -21,6 +21,8 @@ const ONE: i128 = 1_000_000_000;
 /// ~5s ledgers → ledgers per year, used to prorate APY accrual.
 const LEDGERS_PER_YEAR: i128 = 6_307_200;
 const BPS: i128 = 10_000;
+/// Cap APY at 1000% so accrual math can't be pushed to overflow.
+const MAX_APY_BPS: u32 = 100_000;
 
 // Extend whenever the live-until is within ~30 days, pushing it out ~60 days.
 // High threshold so the entry is bumped on first use (not only near expiry).
@@ -33,8 +35,10 @@ const TTL_EXTEND_TO: u32 = 1_036_800;
 pub enum Error {
     InvalidAmount = 1,
     InsufficientShares = 2,
-    NotInitialized = 3,
-    AlreadyInitialized = 4,
+    /// Resulting share/asset amount would round to zero — rejected to avoid silent dust loss.
+    DustAmount = 5,
+    /// APY out of range (must be <= MAX_APY_BPS).
+    ApyTooHigh = 6,
 }
 
 #[contracttype]
@@ -45,6 +49,7 @@ enum DataKey {
     Index,
     ApyBps,
     LastAccrual,
+    Admin,
 }
 
 #[contract]
@@ -52,16 +57,29 @@ pub struct YieldVault;
 
 #[contractimpl]
 impl YieldVault {
-    /// One-time setup: starting index = 1.0, with a fixed demo APY (basis points).
-    pub fn initialize(env: Env, apy_bps: u32) -> Result<(), Error> {
-        if env.storage().instance().has(&DataKey::Index) {
-            return Err(Error::AlreadyInitialized);
+    /// Runs once, atomically, at deploy — so the APY and admin can't be front-run
+    /// (unlike a separate `initialize`). Index starts at 1.0.
+    pub fn __constructor(env: Env, admin: Address, apy_bps: u32) {
+        if apy_bps > MAX_APY_BPS {
+            panic_with(&env, Error::ApyTooHigh);
         }
+        env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Index, &ONE);
         env.storage().instance().set(&DataKey::ApyBps, &(apy_bps as i128));
         env.storage().instance().set(&DataKey::TotalShares, &0i128);
         env.storage().instance().set(&DataKey::LastAccrual, &env.ledger().sequence());
         env.storage().instance().extend_ttl(TTL_THRESHOLD, TTL_EXTEND_TO);
+    }
+
+    /// Admin-only: update the APY (bounded by MAX_APY_BPS).
+    pub fn set_apy(env: Env, apy_bps: u32) -> Result<(), Error> {
+        let admin: Address = env.storage().instance().get(&DataKey::Admin).unwrap();
+        admin.require_auth();
+        if apy_bps > MAX_APY_BPS {
+            return Err(Error::ApyTooHigh);
+        }
+        Self::accrue(env.clone()); // settle accrued yield at the old rate first
+        env.storage().instance().set(&DataKey::ApyBps, &(apy_bps as i128));
         Ok(())
     }
 
@@ -77,11 +95,17 @@ impl YieldVault {
             return index;
         }
         let elapsed = (now - last) as i128;
-        // simple (linear) accrual: index += index * apy * elapsed / (BPS * ledgers_per_year)
+        // simple (linear) accrual: index += index * apy * elapsed / (BPS * ledgers_per_year).
+        // apy_bps is capped at construction so this can't overflow at realistic indexes.
         let growth = index
             .saturating_mul(apy_bps)
             .saturating_mul(elapsed)
             / (BPS * LEDGERS_PER_YEAR);
+        if growth == 0 {
+            // Don't advance LastAccrual when sub-ledger growth rounds to 0, so a
+            // bot calling accrue() rapidly can't grind away fractional yield.
+            return index;
+        }
         let next = index.saturating_add(growth);
         env.storage().instance().set(&DataKey::Index, &next);
         env.storage().instance().set(&DataKey::LastAccrual, &now);
@@ -96,6 +120,9 @@ impl YieldVault {
         }
         let index = Self::accrue(env.clone());
         let minted = assets.saturating_mul(ONE) / index;
+        if minted == 0 {
+            return Err(Error::DustAmount); // deposit too small to mint a share
+        }
         let key = DataKey::Shares(from.clone());
         let prev: i128 = env.storage().persistent().get(&key).unwrap_or(0);
         env.storage().persistent().set(&key, &(prev + minted));
@@ -118,11 +145,14 @@ impl YieldVault {
         if prev < shares {
             return Err(Error::InsufficientShares);
         }
+        let assets = shares.saturating_mul(index) / ONE;
+        if assets == 0 {
+            return Err(Error::DustAmount); // shares too few to redeem any asset
+        }
         env.storage().persistent().set(&key, &(prev - shares));
         env.storage().persistent().extend_ttl(&key, TTL_THRESHOLD, TTL_EXTEND_TO);
         let total: i128 = env.storage().instance().get(&DataKey::TotalShares).unwrap_or(0);
         env.storage().instance().set(&DataKey::TotalShares, &(total - shares));
-        let assets = shares.saturating_mul(index) / ONE;
         env.events().publish((soroban_sdk::symbol_short!("redeem"), from), (shares, assets, index));
         Ok(assets)
     }
@@ -151,6 +181,10 @@ impl YieldVault {
     pub fn total_shares(env: Env) -> i128 {
         env.storage().instance().get(&DataKey::TotalShares).unwrap_or(0)
     }
+}
+
+fn panic_with(env: &Env, error: Error) -> ! {
+    soroban_sdk::panic_with_error!(env, error)
 }
 
 #[cfg(test)]

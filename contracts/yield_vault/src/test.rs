@@ -13,9 +13,10 @@ fn setup(apy_bps: u32) -> (Env, YieldVaultClient<'static>) {
         l.min_temp_entry_ttl = 16;
         l.max_entry_ttl = 10_000_000;
     });
-    let id = env.register(YieldVault, ());
+    let admin = Address::generate(&env);
+    // Constructor runs atomically at deploy (admin + apy_bps).
+    let id = env.register(YieldVault, (admin, apy_bps));
     let client = YieldVaultClient::new(&env, &id);
-    client.initialize(&apy_bps);
     (env, client)
 }
 
@@ -79,4 +80,26 @@ fn later_depositor_gets_fewer_shares_after_growth() {
     let bob_shares = client.deposit(&bob, &1_000_000_000);
     // Bob deposits the same assets but at a higher index → fewer shares than Alice.
     assert!(bob_shares < 1_000_000_000, "bob gets fewer shares: {}", bob_shares);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #5)")]
+fn deposit_dust_after_growth_rejected() {
+    let (env, client) = setup(1000);
+    let alice = Address::generate(&env);
+    client.deposit(&alice, &1_000_000_000);
+    env.ledger().with_mut(|l| l.sequence_number += JUMP); // index > 1.0
+    client.accrue();
+    // assets=1 with index>1.0 would mint 0 shares → DustAmount.
+    client.deposit(&alice, &1);
+}
+
+#[test]
+#[should_panic]
+fn constructor_rejects_excessive_apy() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    // 200_000 bps = 2000% > MAX_APY_BPS (100_000) → constructor panics.
+    env.register(YieldVault, (admin, 200_000u32));
 }

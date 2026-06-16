@@ -55,23 +55,31 @@ export default function VaultPage() {
   }, [ops, address]);
 
   useEffect(() => { void refresh(); }, [refresh]);
-  // Live index tick so the position visibly grows.
+  // Live index tick so the position visibly grows. Pause when the tab is hidden
+  // so we don't spam the shared testnet RPC in the background.
   useEffect(() => {
-    const t = setInterval(refresh, 12_000);
+    const t = setInterval(() => {
+      if (typeof document === 'undefined' || document.visibilityState === 'visible') void refresh();
+    }, 15_000);
     return () => clearInterval(t);
   }, [refresh]);
 
   const onAction = async () => {
-    if (!VAULT || !amount) return;
+    const n = Number(amount);
+    if (!VAULT || !address || !Number.isFinite(n) || n <= 0) {
+      setError('Enter a valid amount and connect your wallet.');
+      return;
+    }
     setBusy(true); setError(null); setLastTx(null);
     try {
       let res;
       if (tab === 'deposit') {
         res = await ops.invokeContract(VAULT, 'deposit', [address, toBase(amount)]);
       } else {
-        // Withdraw by share amount (approximate from asset amount at current index).
-        const idx = index ?? 1;
-        const shareAmt = BigInt(Math.round((Number(amount) * UNIT) / idx));
+        // Withdraw by share amount = assets / price. Requires a fresh index;
+        // never fall back to 1.0 (that would over-redeem shares).
+        if (index == null) throw new Error('Price unavailable — try again in a moment.');
+        const shareAmt = BigInt(Math.round((n * UNIT) / index));
         res = await ops.invokeContract(VAULT, 'redeem', [address, shareAmt]);
       }
       if (!res.success) throw new Error(res.error || 'Transaction failed');

@@ -35,11 +35,12 @@ ERC-4626-style yield vault: deposits mint shares at the current price index
 (`shares = assets * 1e9 / index`); the index accrues a configured APY over time,
 so each share gains value (that's the yield). Redeem burns shares for
 `shares * index / 1e9` assets (principal + yield). Methods:
-- `initialize(apy_bps)`, `accrue()` (permissionless), `deposit(from, assets) -> shares`,
-  `redeem(from, shares) -> assets`, `index()`, `apy_bps()`, `shares_of(user)`,
-  `value_of(user)`, `total_shares()`
+- `__constructor(admin, apy_bps)` (atomic at deploy; APY capped at 1000%),
+  `set_apy(apy_bps)` (admin-only), `accrue()` (permissionless),
+  `deposit(from, assets) -> shares`, `redeem(from, shares) -> assets`,
+  `index()`, `apy_bps()`, `shares_of(user)`, `value_of(user)`, `total_shares()`
 
-**Deployed:** `CAIGCDRWEX3UCRE3AES6WG4ESRRRPC5ERYSYSWJWEMEIXBLUTIYM6T5O` (8% APY) ([explorer](https://stellar.expert/explorer/testnet/contract/CAIGCDRWEX3UCRE3AES6WG4ESRRRPC5ERYSYSWJWEMEIXBLUTIYM6T5O))
+**Deployed:** `CBD637UVMIYLTPCVWEOLTV26OCL77NVPZOLDYUEHXTBC7RDEJKN7JOBE` (8% APY) ([explorer](https://stellar.expert/explorer/testnet/contract/CBD637UVMIYLTPCVWEOLTV26OCL77NVPZOLDYUEHXTBC7RDEJKN7JOBE))
 
 Privacy: hold vault shares as shielded notes for *private yield* — the index is
 public, the share count (and balance/gains) stays private. The yield index here
