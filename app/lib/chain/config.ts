@@ -126,3 +126,17 @@ export const CONTRACTS = {
   vault: process.env.NEXT_PUBLIC_VAULT_CONTRACT_ID || '',
   privacyPool: process.env.NEXT_PUBLIC_PRIVACY_POOL_CONTRACT_ID || '',
 } as const;
+
+// Compliant shielded-payments stack (Groth16 over BN254, Poseidon2), deployed to
+// Stellar testnet. Forked from NethermindEth/stellar-private-payments; the proof
+// is verified on-chain by the Groth16 verifier contract. Empty => UI runs the mock.
+export const PRIVACY = {
+  pool: process.env.NEXT_PUBLIC_PRIVACY_POOL_CONTRACT_ID || '',
+  verifier: process.env.NEXT_PUBLIC_PRIVACY_VERIFIER_CONTRACT_ID || '',
+  aspMembership: process.env.NEXT_PUBLIC_ASP_MEMBERSHIP_CONTRACT_ID || '',
+  aspNonMembership: process.env.NEXT_PUBLIC_ASP_NON_MEMBERSHIP_CONTRACT_ID || '',
+  token: process.env.NEXT_PUBLIC_PRIVACY_TOKEN_CONTRACT_ID || '',
+} as const;
+
+/** True when the real on-chain shielded pool is configured (vs the mock). */
+export const PRIVACY_LIVE = !!(PRIVACY.pool && PRIVACY.verifier);
