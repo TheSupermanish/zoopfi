@@ -26,7 +26,9 @@ interface WalletSelectionModalProps {
 export function WalletSelectionModal({ children }: WalletSelectionModalProps) {
   const [open, setOpen] = useState(false);
   const { ready, authenticated } = usePrivy();
-  const { address, creatingWallet } = useWallet();
+  const { address, creatingWallet, connectExternalWallet } = useWallet();
+  const [connectingExternal, setConnectingExternal] = useState(false);
+  const [externalError, setExternalError] = useState<string | null>(null);
 
   const { login } = useLogin({
     onComplete: () => {
@@ -37,6 +39,20 @@ export function WalletSelectionModal({ children }: WalletSelectionModalProps) {
       console.error("Login failed:", error);
     },
   });
+
+  const onConnectExternal = async () => {
+    setExternalError(null);
+    setConnectingExternal(true);
+    try {
+      await connectExternalWallet();
+      setOpen(false);
+    } catch (e) {
+      const msg = (e as Error)?.message || "Failed to connect wallet";
+      if (!/cancel|reject|declin|closed/i.test(msg)) setExternalError(msg);
+    } finally {
+      setConnectingExternal(false);
+    }
+  };
 
   const busy = !ready || (authenticated && !address) || creatingWallet;
 
@@ -76,6 +92,37 @@ export function WalletSelectionModal({ children }: WalletSelectionModalProps) {
               <span>Continue</span>
             )}
           </Button>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 py-1">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+
+          {/* External Stellar wallet via StellarWalletsKit */}
+          <Button
+            variant="outline"
+            className="w-full justify-center h-12 font-medium"
+            onClick={onConnectExternal}
+            disabled={connectingExternal || !!address}
+          >
+            {connectingExternal ? (
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                <span>Opening wallet…</span>
+              </div>
+            ) : (
+              <span>Connect a Stellar wallet</span>
+            )}
+          </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            Freighter · xBull · Albedo · Lobstr · Rabet
+          </p>
+
+          {externalError && (
+            <p className="text-xs text-center text-red-500">{externalError}</p>
+          )}
 
           {authenticated && address && (
             <div className="text-sm text-center bg-muted/50 p-3 rounded-lg">

@@ -25,6 +25,11 @@ export interface WalletContext {
   address: string;          // G... account address
   publicKey: string;        // hex/base64 public key (Stellar: same key as address)
   signRawHash: SignRawHashFn | null;
+  /**
+   * External-wallet signer (StellarWalletsKit: Freighter/xBull/…). When present,
+   * the adapter signs the full tx XDR with it instead of Privy raw-hash signing.
+   */
+  signXdr?: ((xdr: string) => Promise<string>) | null;
 }
 
 /** Public on-chain operations. Implemented by StellarChainOps and MockChainOps. */

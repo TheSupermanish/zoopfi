@@ -51,6 +51,20 @@ async function privySign(tx: Transaction, ctx: WalletContext): Promise<void> {
   tx.addSignature(ctx.address, sigB64);
 }
 
+/**
+ * Sign a built tx and return a submittable Transaction. External wallets
+ * (StellarWalletsKit) sign the full XDR and return a signed envelope; Privy
+ * embedded wallets raw-hash sign in place.
+ */
+async function signTx(tx: Transaction, ctx: WalletContext): Promise<Transaction> {
+  if (ctx.signXdr) {
+    const signedXdr = await ctx.signXdr(tx.toXDR());
+    return TransactionBuilder.fromXDR(signedXdr, PASSPHRASE) as Transaction;
+  }
+  await privySign(tx, ctx);
+  return tx;
+}
+
 export function createStellarChainOps(ctx: WalletContext): ChainOps {
   // Public payments are real; privacy is mocked until the pool is deployed.
   const mockPrivacy = createMockChainOps(ctx).privacy;
@@ -82,8 +96,8 @@ export function createStellarChainOps(ctx: WalletContext): ChainOps {
           .setTimeout(180);
         if (memo) builder.addMemo(Memo.text(memo.slice(0, 28))); // Stellar text memo: max 28 bytes
         const tx = builder.build();
-        await privySign(tx, ctx);
-        const res = await horizon.submitTransaction(tx);
+        const signed = await signTx(tx, ctx);
+        const res = await horizon.submitTransaction(signed);
         return { success: true, hash: res.hash, explorerUrl: getExplorerUrl(res.hash) };
       } catch (e: any) {
         const detail = e?.response?.data?.extras?.result_codes
@@ -114,8 +128,8 @@ export function createStellarChainOps(ctx: WalletContext): ChainOps {
           .addOperation(Operation.changeTrust({ asset: assetFor(asset) }))
           .setTimeout(180)
           .build();
-        await privySign(tx, ctx);
-        const res = await horizon.submitTransaction(tx);
+        const signed = await signTx(tx, ctx);
+        const res = await horizon.submitTransaction(signed);
         return { success: true, hash: res.hash, explorerUrl: getExplorerUrl(res.hash) };
       } catch (e: any) {
         console.error('[stellar] addTrustline', e?.message || e);
@@ -133,8 +147,8 @@ export function createStellarChainOps(ctx: WalletContext): ChainOps {
           .setTimeout(180)
           .build();
         const prepared = await rpc.prepareTransaction(tx);
-        await privySign(prepared as Transaction, ctx);
-        const sent = await rpc.sendTransaction(prepared as Transaction);
+        const signed = await signTx(prepared as Transaction, ctx);
+        const sent = await rpc.sendTransaction(signed);
         if (sent.status === 'ERROR') return fail(JSON.stringify(sent.errorResult));
         let got = await rpc.getTransaction(sent.hash);
         for (let i = 0; i < 30 && got.status === 'NOT_FOUND'; i++) {

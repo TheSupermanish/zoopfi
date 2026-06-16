@@ -18,6 +18,9 @@ import { useCreateWallet, useSignRawHash } from '@privy-io/react-auth/extended-c
 import { CHAIN_ADAPTER, NETWORK, getExplorerUrl } from './config';
 import type { ChainOps, SignRawHashFn, WalletContext as WC } from './types';
 import { createMockChainOps } from './mock';
+import { connectWallet as kitConnect, signWalletTransaction as kitSignTx } from '../privacy/wallet';
+
+const EXTERNAL_KEY = 'zoopfi.externalWallet';
 // NOTE: the real Stellar adapter (./stellar) is loaded lazily only when
 // CHAIN_ADAPTER === 'stellar', so mock mode never bundles @stellar/stellar-sdk.
 
@@ -34,6 +37,10 @@ export interface WalletState {
   adapterMode: typeof CHAIN_ADAPTER;
   ops: ChainOps;
   createStellarWallet: () => Promise<void>;
+  /** Connect an external Stellar wallet (Freighter/xBull/… via StellarWalletsKit). */
+  connectExternalWallet: () => Promise<void>;
+  /** 'privy' (social embedded) or 'external' (StellarWalletsKit), or '' if none. */
+  walletSource: 'privy' | 'external' | '';
   /** testnet setup: friendbot-fund XLM + add USDC trustline (no-op in mock). */
   setupAccount: () => Promise<void>;
   logout: () => Promise<void>;
@@ -58,9 +65,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [creatingWallet, setCreatingWallet] = useState(false);
   const creatingRef = useRef(false);
 
+  // External wallet (StellarWalletsKit). Takes precedence over the Privy
+  // embedded wallet when connected, and persists across reloads.
+  const [externalAddress, setExternalAddress] = useState('');
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(EXTERNAL_KEY);
+      if (saved) setExternalAddress(saved);
+    }
+  }, []);
+
   const stellar = findStellarAccount(user);
-  const address = stellar?.address || '';
-  const publicKey = stellar?.publicKey || '';
+  const address = externalAddress || stellar?.address || '';
+  const publicKey = externalAddress || stellar?.publicKey || '';
+  const walletSource: 'privy' | 'external' | '' = externalAddress ? 'external' : stellar?.address ? 'privy' : '';
 
   const signFn: SignRawHashFn | null = useMemo(() => {
     if (!signRawHash) return null;
@@ -70,12 +88,31 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     };
   }, [signRawHash]);
 
+  // External-wallet XDR signer (full-envelope signing via the kit).
+  const signXdr = useMemo(() => {
+    if (!externalAddress) return null;
+    return (xdr: string) =>
+      kitSignTx(xdr, { address: externalAddress, networkPassphrase: NETWORK.networkPassphrase })
+        .then((r) => r.signedTxXdr);
+  }, [externalAddress]);
+
+  const connectExternalWallet = async () => {
+    const addr = await kitConnect();
+    setExternalAddress(addr);
+    if (typeof window !== 'undefined') localStorage.setItem(EXTERNAL_KEY, addr);
+  };
+
   const [ops, setOps] = useState<ChainOps>(() =>
     createMockChainOps({ address: '', publicKey: '', signRawHash: null }),
   );
 
   useEffect(() => {
-    const ctx: WC = { address, publicKey, signRawHash: signFn };
+    const ctx: WC = {
+      address,
+      publicKey,
+      signRawHash: externalAddress ? null : signFn,
+      signXdr,
+    };
     if (CHAIN_ADAPTER === 'stellar') {
       let cancelled = false;
       (async () => {
@@ -90,7 +127,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return () => { cancelled = true; };
     }
     setOps(createMockChainOps(ctx));
-  }, [address, publicKey, signFn]);
+  }, [address, publicKey, signFn, signXdr, externalAddress]);
 
   const createStellarWallet = async () => {
     if (creatingRef.current || address) return;
@@ -130,17 +167,25 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const value: WalletState = {
     ready,
-    authenticated,
+    authenticated: authenticated || !!externalAddress,
     address,
     publicKey,
-    isConnected: !!(authenticated && address),
+    isConnected: !!address,
     hasWallet: !!address,
     creatingWallet,
     adapterMode: CHAIN_ADAPTER,
     ops,
     createStellarWallet,
+    connectExternalWallet,
+    walletSource,
     setupAccount,
-    logout: async () => { await privyLogout(); },
+    logout: async () => {
+      if (externalAddress) {
+        setExternalAddress('');
+        if (typeof window !== 'undefined') localStorage.removeItem(EXTERNAL_KEY);
+      }
+      if (authenticated) await privyLogout();
+    },
     getExplorerUrl,
   };
 
