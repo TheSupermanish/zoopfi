@@ -1,8 +1,9 @@
 'use client';
 
 import NotificationBell from '../NotificationBell';
-import { formatBalance } from '../../lib/balance';
+import { formatBalance, formatUSD } from '@/app/lib/chain';
 import { UserData } from '../../lib/api';
+import { Flame, Wallet, BarChart3, Sprout } from 'lucide-react';
 
 interface PersonalHeroSectionProps {
   userData: UserData | null;
@@ -67,11 +68,11 @@ export default function PersonalHeroSection({
           <div className="flex items-center gap-2">
             <div className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-medium text-white/80">Movement Network</span>
+              <span className="text-xs font-medium text-white/80">Stellar Network</span>
             </div>
             {streakInfo?.streak > 0 && (
               <div className="px-3 py-1.5 rounded-full bg-[#7f13ec]/20 backdrop-blur-sm border border-[#7f13ec]/30 flex items-center gap-2">
-                <span className="text-sm">🔥</span>
+                <Flame className="w-3.5 h-3.5 text-[#7f13ec]" />
                 <span className="text-xs font-bold text-[#7f13ec]">{streakInfo.streak} day streak</span>
               </div>
             )}
@@ -111,17 +112,17 @@ export default function PersonalHeroSection({
         <div className="flex flex-wrap gap-3 mt-6">
           <div className="px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#7f13ec] to-[#a855f7] flex items-center justify-center">
-              <span className="text-white text-lg">💰</span>
+              <Wallet className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-[#ad92c9] text-xs">Balance</p>
-              <p className="text-white font-bold">{formatBalance(balance)} MOVE</p>
+              <p className="text-white font-bold">{formatBalance(balance)} USDC</p>
             </div>
           </div>
           
           <div className="px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-              <span className="text-white text-lg">📊</span>
+              <BarChart3 className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-[#ad92c9] text-xs">Transfers</p>
@@ -131,7 +132,11 @@ export default function PersonalHeroSection({
           
           <div className="px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-              <span className="text-white text-lg">{streakInfo?.currentMilestone?.emoji || '🌱'}</span>
+              {streakInfo?.currentMilestone?.emoji ? (
+                <span className="text-white text-lg">{streakInfo.currentMilestone.emoji}</span>
+              ) : (
+                <Sprout className="w-5 h-5 text-white" />
+              )}
             </div>
             <div>
               <p className="text-[#ad92c9] text-xs">Rank</p>

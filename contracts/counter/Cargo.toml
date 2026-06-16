@@ -1,0 +1,25 @@
+[package]
+name = "counter"
+version = "0.1.0"
+edition = "2021"
+description = "Zoopfi per-user counter mini-game (Soroban port of the original Move counter)"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Pin to the latest stable soroban-sdk for your toolchain (check crates.io).
+soroban-sdk = "22"
+
+[dev-dependencies]
+soroban-sdk = { version = "22", features = ["testutils"] }
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true

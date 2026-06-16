@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { CheckCircle2, XCircle, Info } from 'lucide-react';
 
 interface ToastProps {
   message: string;
@@ -43,13 +44,13 @@ export default function Toast({ message, type, isVisible, onClose, duration = 30
   const getToastIcon = () => {
     switch (type) {
       case 'success':
-        return '✅';
+        return <CheckCircle2 size={24} className="text-emerald-500" />;
       case 'error':
-        return '❌';
+        return <XCircle size={24} className="text-red-500" />;
       case 'info':
-        return 'ℹ️';
+        return <Info size={24} className="text-blue-500" />;
       default:
-        return 'ℹ️';
+        return <Info size={24} className="text-blue-500" />;
     }
   };
 

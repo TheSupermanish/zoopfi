@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { Bell } from 'lucide-react';
 import { getPaymentRequests, getUserByAddress, getContactRequests, respondToContactRequest } from '../lib/api';
 import PaymentRequestModal from './PaymentRequestModal';
 
@@ -128,7 +129,7 @@ export default function NotificationBell({ walletAddress }: NotificationBellProp
           onClick={() => setIsOpen(!isOpen)}
           className="relative p-2 rounded-xl touch-target transition-colors hover:bg-slate-100 dark:hover:bg-white/10"
         >
-          <span className="text-xl">🔔</span>
+          <Bell size={20} className="text-slate-700 dark:text-white" />
           {totalCount > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center animate-pulse">
               {totalCount > 9 ? '9+' : totalCount}
@@ -180,7 +181,7 @@ export default function NotificationBell({ walletAddress }: NotificationBellProp
                                 💰 Payment Request
                               </p>
                               <p className="text-slate-700 dark:text-white text-sm">
-                                {req.amount} MOVE from @{req.requesterUsername}
+                                {req.amount} USDC from @{req.requesterUsername}
                               </p>
                               <p className="text-slate-500 dark:text-[#ad92c9] text-xs mt-1">
                                 {new Date(req.createdAt).toLocaleDateString()}

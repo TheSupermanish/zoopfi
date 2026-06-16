@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet } from '@/app/lib/chain';
+import { useUser, useChainInvalidate } from '@/app/lib/hooks';
 import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
-import { getUserByAddress, getGroups, getGroup, createGroup, inviteGroupMember, addGroupExpense, getGroupInvitations, acceptGroupInvitation, declineGroupInvitation } from '../lib/api';
+import { getGroups, getGroup, createGroup, inviteGroupMember, addGroupMember, addGroupExpense, getGroupInvitations, acceptGroupInvitation, declineGroupInvitation } from '../lib/api';
+import { Plus, Users, UserPlus, Coins, Check, ArrowUpRight, Receipt, X, Mail } from 'lucide-react';
 
 interface GroupInvitation {
   _id: string;
@@ -72,15 +73,15 @@ const EXPENSE_CATEGORIES = [
 
 export default function GroupsPage() {
   const router = useRouter();
-  const { user, authenticated } = usePrivy();
-  const { account, connected } = useWallet();
+  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { data: userData } = useUser();
+  const username = userData?.username ?? '';
+  const invalidate = useChainInvalidate();
 
-  const [walletAddress, setWalletAddress] = useState('');
-  const [username, setUsername] = useState('');
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(true);
   
   // Mobile view state - controls whether to show list or detail on mobile
   const [showMobileDetail, setShowMobileDetail] = useState(false);
@@ -111,40 +112,12 @@ export default function GroupsPage() {
 
   const [error, setError] = useState('');
 
-  // Get wallet address
-  useEffect(() => {
-    const setup = async () => {
-      let address = '';
-      
-      if (authenticated && user) {
-        const moveWallet = user.linkedAccounts?.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-        if (moveWallet?.address) {
-          address = moveWallet.address;
-        }
-      } else if (connected && account?.address) {
-        address = account.address.toString();
-      }
-
-      if (address) {
-        setWalletAddress(address);
-        const userData = await getUserByAddress(address);
-        if (userData) {
-          setUsername(userData.username);
-        }
-      }
-    };
-
-    setup();
-  }, [authenticated, user, connected, account]);
-
   // Fetch groups
   useEffect(() => {
     if (!walletAddress) return;
 
     const fetchGroups = async () => {
-      setIsLoading(true);
+      setListLoading(true);
       try {
         const result = await getGroups(walletAddress);
         setGroups(result.groups || []);
@@ -156,7 +129,7 @@ export default function GroupsPage() {
       } catch (error) {
         console.error('Error fetching groups:', error);
       } finally {
-        setIsLoading(false);
+        setListLoading(false);
       }
     };
 
@@ -166,7 +139,7 @@ export default function GroupsPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -369,6 +342,7 @@ export default function GroupsPage() {
         setExpenseCategory('other');
         setSplitType('equal');
         setMemberSplits({});
+        invalidate();
       }
     } catch (error) {
       setError('Failed to add expense');
@@ -388,7 +362,7 @@ export default function GroupsPage() {
     setError('');
 
     try {
-      const result = await addGroupMember(selectedGroup._id, newMemberUsername);
+      const result = await addGroupMember(selectedGroup._id, newMemberUsername, walletAddress);
       
       if (result.error) {
         setError(result.error);
@@ -397,6 +371,7 @@ export default function GroupsPage() {
         setGroups(groups.map(g => g._id === result.group._id ? result.group : g));
         setShowAddMember(false);
         setNewMemberUsername('');
+        invalidate();
       }
     } catch (error) {
       setError('Failed to add member');
@@ -408,8 +383,8 @@ export default function GroupsPage() {
   // Get balance display
   const getBalanceDisplay = (balance: number) => {
     if (Math.abs(balance) < 0.0001) return { text: 'Settled', color: 'text-gray-500' };
-    if (balance > 0) return { text: `+${balance.toFixed(4)} MOVE`, color: 'text-emerald-500' };
-    return { text: `${balance.toFixed(4)} MOVE`, color: 'text-red-400' };
+    if (balance > 0) return { text: `+${balance.toFixed(4)} USDC`, color: 'text-emerald-500' };
+    return { text: `${balance.toFixed(4)} USDC`, color: 'text-red-400' };
   };
 
   // Get user's balance in selected group
@@ -429,23 +404,23 @@ export default function GroupsPage() {
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Groups</h1>
                 <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Split bills with friends</p>
               </div>
-              <button 
+              <button
                 onClick={() => setShowCreateGroup(true)}
-                className="w-10 h-10 rounded-full bg-[#7f13ec] text-white flex items-center justify-center text-xl shadow-lg shadow-[#7f13ec]/30"
+                className="w-10 h-10 rounded-full bg-[#7f13ec] text-white flex items-center justify-center shadow-lg shadow-[#7f13ec]/30"
               >
-                +
+                <Plus className="w-5 h-5" />
               </button>
             </div>
 
             {/* Groups List */}
-            {isLoading ? (
+            {listLoading ? (
               <div className="flex justify-center py-12">
                 <div className="spinner" />
               </div>
             ) : groups.length === 0 ? (
               <div className="bg-white dark:bg-[#251a30] rounded-2xl p-8 text-center border border-slate-200 dark:border-white/5">
                 <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-4">
-                  <span className="text-4xl">👥</span>
+                  <Users className="w-10 h-10 text-[#7f13ec]" />
                 </div>
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No groups yet</h2>
                 <p className="text-slate-500 dark:text-[#ad92c9] text-sm mb-6">
@@ -500,7 +475,7 @@ export default function GroupsPage() {
                   onClick={() => setShowCreateGroup(true)}
                   className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-[#362348] text-slate-500 dark:text-[#ad92c9] hover:border-[#7f13ec] hover:text-[#7f13ec] transition-colors"
                 >
-                  <span className="text-xl">+</span>
+                  <Plus className="w-5 h-5" />
                   <span className="font-medium">Create New Group</span>
                 </button>
               </div>
@@ -513,22 +488,22 @@ export default function GroupsPage() {
           <div className="p-4 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4 px-2">
               <h1 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-[#ad92c9]">My Groups</h1>
-              <button 
+              <button
                 onClick={() => setShowCreateGroup(true)}
                 className="text-[#7f13ec] hover:text-[#7f13ec]/80 transition-colors"
               >
-                <span className="text-xl">+</span>
+                <Plus className="w-5 h-5" />
               </button>
             </div>
 
             <div className="flex flex-col gap-2 flex-1 overflow-y-auto pr-2">
-              {isLoading ? (
+              {listLoading ? (
                 <div className="flex justify-center py-8">
                   <div className="spinner" />
                 </div>
               ) : groups.length === 0 ? (
                 <div className="text-center py-8 text-slate-500 dark:text-[#ad92c9]">
-                  <span className="text-3xl mb-2 block">👥</span>
+                  <Users className="w-8 h-8 mx-auto mb-2" />
                   <p className="text-sm">No groups yet</p>
                 </div>
               ) : (
@@ -572,7 +547,7 @@ export default function GroupsPage() {
                 onClick={() => setShowCreateGroup(true)}
                 className="flex w-full items-center justify-center rounded-xl h-12 bg-[#7f13ec] text-white text-sm font-bold shadow-lg hover:shadow-[#7f13ec]/30 transition-shadow"
               >
-                <span className="mr-2">+</span>
+                <Plus className="w-4 h-4 mr-2" />
                 Create New Group
               </button>
             </div>
@@ -587,7 +562,7 @@ export default function GroupsPage() {
             // Empty State - Desktop Only (mobile has its own empty state)
             <div className="h-full hidden lg:flex flex-col items-center justify-center text-center p-8">
               <div className="w-24 h-24 rounded-3xl bg-[#7f13ec]/10 flex items-center justify-center mb-6">
-                <span className="text-5xl">👥</span>
+                <Users className="w-12 h-12 text-[#7f13ec]" />
               </div>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Welcome to Groups</h2>
               <p className="text-slate-500 dark:text-[#ad92c9] mb-6 max-w-md">
@@ -628,7 +603,7 @@ export default function GroupsPage() {
                   <div className="flex items-center gap-2 text-slate-500 dark:text-[#ad92c9]">
                     <span className="text-sm">📅 Created {new Date(selectedGroup.createdAt).toLocaleDateString()}</span>
                     <span className="text-slate-300 dark:text-[#362348] mx-2">|</span>
-                    <span className="text-sm font-medium text-slate-900 dark:text-white">Total: {selectedGroup.totalSpent.toFixed(4)} MOVE</span>
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">Total: {selectedGroup.totalSpent.toFixed(4)} USDC</span>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -636,7 +611,7 @@ export default function GroupsPage() {
                     onClick={() => setShowAddMember(true)}
                     className="h-10 px-4 rounded-xl border border-slate-300 dark:border-[#362348] text-slate-600 dark:text-gray-300 font-bold text-sm hover:bg-slate-100 dark:hover:bg-[#362348] transition-colors flex items-center gap-2"
                   >
-                    <span>👤+</span>
+                    <UserPlus className="w-4 h-4" />
                     Invite
                   </button>
                 </div>
@@ -647,7 +622,7 @@ export default function GroupsPage() {
                 {/* Balance Card */}
                 <div className="relative overflow-hidden rounded-2xl p-6 bg-white dark:bg-[#251a30] border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                   <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <span className="text-7xl">💰</span>
+                    <Coins className="w-16 h-16" />
                   </div>
                   <p className="text-slate-500 dark:text-[#ad92c9] font-medium text-sm mb-1">Your Balance</p>
                   <div className="flex items-baseline gap-2">
@@ -663,7 +638,7 @@ export default function GroupsPage() {
                 {/* Members Card */}
                 <div className="relative overflow-hidden rounded-2xl p-6 bg-white dark:bg-[#251a30] border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                   <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <span className="text-7xl">👥</span>
+                    <Users className="w-16 h-16" />
                   </div>
                   <p className="text-slate-500 dark:text-[#ad92c9] font-medium text-sm mb-1">Members</p>
                   <p className="text-3xl font-bold text-slate-900 dark:text-white">{selectedGroup.members.length}</p>
@@ -691,13 +666,15 @@ export default function GroupsPage() {
                     : 'bg-gradient-to-br from-[#7f13ec] to-[#5b0cb3]'
                 } text-white`}>
                   <div className="absolute top-0 right-0 p-4 opacity-20">
-                    <span className="text-7xl">{selectedGroup.isSettled ? '✅' : '⏳'}</span>
+                    {selectedGroup.isSettled
+                      ? <Check className="w-16 h-16" />
+                      : <span className="text-7xl">⏳</span>}
                   </div>
                   <p className="text-white/80 font-medium text-sm mb-1">Status</p>
                   <p className="text-3xl font-bold mb-4">{selectedGroup.isSettled ? 'Settled' : 'Unsettled'}</p>
                   {!selectedGroup.isSettled && (
                     <button className="w-full py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2">
-                      <span>💸</span>
+                      <ArrowUpRight className="w-4 h-4" />
                       Settle Up Now
                     </button>
                   )}
@@ -750,7 +727,7 @@ export default function GroupsPage() {
                         onClick={() => setShowAddMember(true)}
                         className="flex items-center justify-center gap-2 p-3 mt-2 rounded-xl border border-dashed border-slate-300 dark:border-gray-600 text-slate-500 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-[#251a30] transition-colors text-sm font-medium"
                       >
-                        <span>👤+</span>
+                        <UserPlus className="w-4 h-4" />
                         Add Member
                       </button>
                     </div>
@@ -805,7 +782,7 @@ export default function GroupsPage() {
                   <div className="p-6 overflow-y-auto flex-1 max-h-[500px]">
                     {expenses.length === 0 ? (
                       <div className="text-center py-12">
-                        <span className="text-4xl mb-3 block">📝</span>
+                        <Receipt className="w-10 h-10 mx-auto mb-3" />
                         <p className="text-slate-900 dark:text-white font-medium">No expenses yet</p>
                         <p className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1">Add your first expense to get started</p>
                       </div>
@@ -823,7 +800,9 @@ export default function GroupsPage() {
                                     ? 'bg-emerald-500/10 text-emerald-500'
                                     : 'bg-[#7f13ec]/10 text-[#7f13ec]'
                                 }`}>
-                                  <span className="text-lg">{isSettlement ? '💸' : category?.icon || '📦'}</span>
+                                  {isSettlement
+                                    ? <ArrowUpRight className="w-5 h-5" />
+                                    : <span className="text-lg">{category?.icon || '📦'}</span>}
                                 </div>
                                 {index < expenses.length - 1 && (
                                   <div className="w-px h-full bg-slate-200 dark:bg-[#362348] absolute top-10" />
@@ -844,7 +823,7 @@ export default function GroupsPage() {
                                     </p>
                                   </div>
                                   <span className={`text-sm font-bold ${isSettlement ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`}>
-                                    {expense.amount.toFixed(4)} MOVE
+                                    {expense.amount.toFixed(4)} USDC
                                   </span>
                                 </div>
                                 <div className="mt-2 text-xs text-gray-500">
@@ -864,7 +843,7 @@ export default function GroupsPage() {
                       onClick={() => setShowAddExpense(true)}
                       className="w-full h-12 rounded-xl bg-[#7f13ec] hover:bg-[#7f13ec]/90 text-white font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#7f13ec]/30"
                     >
-                      <span>+</span>
+                      <Plus className="w-4 h-4" />
                       Add New Expense
                     </button>
                   </div>
@@ -881,11 +860,11 @@ export default function GroupsPage() {
           <div className="bg-white dark:bg-[#251a30] rounded-3xl p-6 w-full max-w-md border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-none animate-scale-in">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Create New Group</h2>
-              <button 
+              <button
                 onClick={() => setShowCreateGroup(false)}
                 className="text-slate-500 dark:text-[#ad92c9] hover:text-slate-700 dark:hover:text-white"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -999,7 +978,7 @@ export default function GroupsPage() {
                 }}
                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#362348] flex items-center justify-center text-slate-500 dark:text-[#ad92c9] hover:bg-slate-200 dark:hover:bg-[#4a3061] transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -1031,7 +1010,7 @@ export default function GroupsPage() {
                       className="input h-14 text-2xl font-bold pr-20"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#ad92c9] font-medium">
-                      MOVE
+                      USDC
                     </span>
                   </div>
                 </div>
@@ -1120,7 +1099,7 @@ export default function GroupsPage() {
                     }`}>
                       {splitType === 'percentage' 
                         ? `${getTotalAssigned().toFixed(0)}% of 100%`
-                        : `${getTotalAssigned().toFixed(4)} of ${expenseAmount || '0'} MOVE`
+                        : `${getTotalAssigned().toFixed(4)} of ${expenseAmount || '0'} USDC`
                       }
                     </span>
                   )}
@@ -1159,7 +1138,7 @@ export default function GroupsPage() {
                             <p className="text-sm font-bold text-slate-900 dark:text-white">
                               {memberAmount.toFixed(4)}
                             </p>
-                            <p className="text-xs text-slate-500 dark:text-[#ad92c9]">MOVE</p>
+                            <p className="text-xs text-slate-500 dark:text-[#ad92c9]">USDC</p>
                           </div>
                         ) : splitType === 'percentage' ? (
                           <div className="flex items-center gap-2">
@@ -1183,7 +1162,7 @@ export default function GroupsPage() {
                               min="0"
                               step="0.0001"
                             />
-                            <span className="text-xs text-slate-500 dark:text-[#ad92c9]">MOVE</span>
+                            <span className="text-xs text-slate-500 dark:text-[#ad92c9]">USDC</span>
                           </div>
                         )}
                       </div>
@@ -1201,7 +1180,7 @@ export default function GroupsPage() {
                   <div className="p-4 text-slate-900 dark:text-white">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-[#ad92c9]">Split Summary</span>
-                      <span className="text-lg">🧾</span>
+                      <Receipt className="w-5 h-5" />
                     </div>
                     
                     <div className="border-t border-dashed border-slate-300 dark:border-[#362348] my-2" />
@@ -1209,7 +1188,7 @@ export default function GroupsPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600 dark:text-[#ad92c9]">Total Amount</span>
-                        <span className="font-bold font-mono">{Number(expenseAmount).toFixed(4)} MOVE</span>
+                        <span className="font-bold font-mono">{Number(expenseAmount).toFixed(4)} USDC</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600 dark:text-[#ad92c9]">Split Type</span>
@@ -1220,7 +1199,7 @@ export default function GroupsPage() {
                       <div className="flex justify-between">
                         <span className="text-slate-600 dark:text-[#ad92c9]">Your Share</span>
                         <span className="font-bold font-mono text-[#7f13ec]">
-                          {calculateSplitAmounts()[walletAddress]?.toFixed(4) || '0.0000'} MOVE
+                          {calculateSplitAmounts()[walletAddress]?.toFixed(4) || '0.0000'} USDC
                         </span>
                       </div>
                     </div>
@@ -1251,7 +1230,7 @@ export default function GroupsPage() {
                   <p className="text-sm text-amber-600 dark:text-amber-400">
                     {splitType === 'percentage' 
                       ? `Percentages must add up to 100% (currently ${getTotalAssigned().toFixed(0)}%)`
-                      : `Amounts must equal ${expenseAmount} MOVE (currently ${getTotalAssigned().toFixed(4)} MOVE)`
+                      : `Amounts must equal ${expenseAmount} USDC (currently ${getTotalAssigned().toFixed(4)} USDC)`
                     }
                   </p>
                 </div>
@@ -1304,11 +1283,11 @@ export default function GroupsPage() {
           <div className="bg-white dark:bg-[#251a30] rounded-3xl p-6 w-full max-w-md border border-slate-200 dark:border-white/10 shadow-xl dark:shadow-none animate-scale-in">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white">Add Member</h2>
-              <button 
+              <button
                 onClick={() => setShowAddMember(false)}
                 className="text-slate-500 dark:text-[#ad92c9] hover:text-slate-700 dark:hover:text-white"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -1327,7 +1306,7 @@ export default function GroupsPage() {
                   />
                 </div>
                 <p className="text-xs text-[#ad92c9] mt-2">
-                  The user must be registered on SuperPay
+                  The user must be registered on Zoopfi
                 </p>
               </div>
 
@@ -1356,7 +1335,7 @@ export default function GroupsPage() {
                     </>
                   ) : (
                     <>
-                      <span>📨</span>
+                      <Mail className="w-4 h-4" />
                       <span>Send Invite</span>
                     </>
                   )}

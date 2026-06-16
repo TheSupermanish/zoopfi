@@ -31,8 +31,8 @@ export default function WalletDropdown({ walletAddress, isOpen, onClose, onCopy 
   if (!isOpen) return null;
 
   const shortAddress = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
-  const explorerUrl = `https://explorer.movementnetwork.xyz/account/${walletAddress}?network=bardock+testnet`;
-  const faucetUrl = 'https://faucet.movementnetwork.xyz/';
+  const explorerUrl = `https://stellar.expert/explorer/testnet/account/${walletAddress}`;
+  const faucetUrl = `https://friendbot.stellar.org/?addr=${walletAddress}`;
 
   const handleCopyAddress = () => {
     navigator.clipboard.writeText(walletAddress);
@@ -109,7 +109,7 @@ export default function WalletDropdown({ walletAddress, isOpen, onClose, onCopy 
       {/* Network Info */}
       <div className="mt-4 pt-3 border-t-2 border-gray-200">
         <div className="text-xs text-gray-500 text-center">
-          Movement Testnet (Bardock)
+          Stellar Testnet
         </div>
       </div>
     </div>

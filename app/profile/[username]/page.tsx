@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet, getAddressExplorerUrl } from '@/app/lib/chain';
+import { useUser } from '@/app/lib/hooks';
 import Link from 'next/link';
-import { getUserByUsername, getUserByAddress, getTransactions } from '../../lib/api';
+import { getUserByUsername, getTransactions } from '../../lib/api';
 import { toast } from 'sonner';
+import { Ghost, Pencil, ArrowUpRight, ArrowDownLeft, Copy, Check, Calendar, Clock, ArrowLeftRight, ArrowUp, ArrowDown, Flame, Wallet, ExternalLink, Zap, HandCoins, Share2, History } from 'lucide-react';
 
 interface UserProfile {
-  _id: string;
+  _id?: string;
   username: string;
   walletAddress: string;
   createdAt: string;
@@ -31,12 +32,9 @@ interface Transaction {
 export default function ProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const { user, authenticated } = usePrivy();
-  const { account, connected } = useWallet();
+  const { address: walletAddress } = useWallet();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [myWalletAddress, setMyWalletAddress] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState({
@@ -45,36 +43,11 @@ export default function ProfilePage() {
     transactionCount: 0,
   });
 
+  // Signed-in user (cached app-wide); only used to detect own profile.
+  const { data: currentUser } = useUser();
+
   const username = params.username as string;
   const isOwnProfile = currentUser?.username?.toLowerCase() === username?.toLowerCase();
-
-  // Get current user's wallet
-  useEffect(() => {
-    const setup = async () => {
-      let address = '';
-      
-      if (authenticated && user) {
-        const moveWallet = user.linkedAccounts?.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-        if (moveWallet?.address) {
-          address = moveWallet.address;
-        }
-      } else if (connected && account?.address) {
-        address = account.address.toString();
-      }
-
-      if (address) {
-        setMyWalletAddress(address);
-        const userData = await getUserByAddress(address);
-        if (userData) {
-          setCurrentUser(userData);
-        }
-      }
-    };
-
-    setup();
-  }, [authenticated, user, connected, account]);
 
   // Fetch profile data
   useEffect(() => {
@@ -165,7 +138,7 @@ export default function ProfilePage() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#191022] p-4">
         <div className="text-center">
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-slate-200 dark:bg-[#362348] flex items-center justify-center">
-            <span className="text-5xl">👻</span>
+            <Ghost className="w-12 h-12 text-slate-500 dark:text-[#ad92c9]" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">User Not Found</h1>
           <p className="text-slate-500 dark:text-[#ad92c9] mb-6">
@@ -240,7 +213,7 @@ export default function ProfilePage() {
                 href="/settings"
                 className="px-5 py-2.5 bg-white dark:bg-[#261933] text-slate-900 dark:text-white font-bold rounded-xl text-sm shadow-lg hover:scale-105 transition-all border border-slate-200 dark:border-[#4d3267] flex items-center gap-2"
               >
-                <span>✏️</span>
+                <Pencil className="w-4 h-4" />
                 Edit Profile
               </Link>
             ) : (
@@ -249,14 +222,14 @@ export default function ProfilePage() {
                   href={`/send?to=${profile.username}`}
                   className="px-5 py-2.5 bg-[#7f13ec] text-white font-bold rounded-xl text-sm shadow-lg shadow-[#7f13ec]/30 hover:scale-105 transition-all flex items-center gap-2"
                 >
-                  <span>💸</span>
+                  <ArrowUpRight className="w-4 h-4" />
                   Send Money
                 </Link>
                 <button
                   onClick={() => copyToClipboard(profile.walletAddress)}
                   className="px-5 py-2.5 bg-white dark:bg-[#261933] text-slate-900 dark:text-white font-bold rounded-xl text-sm shadow-lg hover:scale-105 transition-all border border-slate-200 dark:border-[#4d3267] flex items-center gap-2"
                 >
-                  <span>📋</span>
+                  <Copy className="w-4 h-4" />
                   Copy Address
                 </button>
               </>
@@ -270,17 +243,18 @@ export default function ProfilePage() {
             <h2 className="text-3xl font-black text-slate-900 dark:text-white">
               @{profile.username}
             </h2>
-            <span className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-xs font-bold">
-              ✓ Verified
+            <span className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-xs font-bold inline-flex items-center gap-1">
+              <Check className="w-3 h-3" />
+              Verified
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-slate-500 dark:text-[#ad92c9]">
             <span className="flex items-center gap-1.5">
-              <span>📅</span>
+              <Calendar className="w-4 h-4" />
               Joined {formatDate(profile.createdAt)}
             </span>
             <span className="flex items-center gap-1.5">
-              <span>⏱️</span>
+              <Clock className="w-4 h-4" />
               Member for {getMemberDuration(profile.createdAt)}
             </span>
           </div>
@@ -290,7 +264,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white dark:bg-[#261933] rounded-2xl p-5 border border-slate-200 dark:border-[#4d3267] shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">📊</span>
+              <ArrowLeftRight className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
               <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Transactions</span>
             </div>
             <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.transactionCount}</p>
@@ -298,25 +272,25 @@ export default function ProfilePage() {
           
           <div className="bg-white dark:bg-[#261933] rounded-2xl p-5 border border-slate-200 dark:border-[#4d3267] shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">📤</span>
+              <ArrowUp className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
               <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Total Sent</span>
             </div>
             <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.totalSent.toFixed(2)}</p>
-            <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60">MOVE</p>
+            <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60">USDC</p>
           </div>
           
           <div className="bg-white dark:bg-[#261933] rounded-2xl p-5 border border-slate-200 dark:border-[#4d3267] shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">📥</span>
+              <ArrowDown className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
               <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Total Received</span>
             </div>
             <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.totalReceived.toFixed(2)}</p>
-            <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60">MOVE</p>
+            <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60">USDC</p>
           </div>
           
           <div className="bg-white dark:bg-[#261933] rounded-2xl p-5 border border-slate-200 dark:border-[#4d3267] shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-xl">🔥</span>
+              <Flame className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
               <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Activity</span>
             </div>
             <p className="text-2xl font-black text-emerald-500">Active</p>
@@ -327,7 +301,7 @@ export default function ProfilePage() {
         {/* Wallet Info Card */}
         <div className="bg-white dark:bg-[#261933] rounded-3xl p-6 border border-slate-200 dark:border-[#4d3267] shadow-sm mb-8">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <span className="text-[#7f13ec]">💳</span>
+            <Wallet className="w-5 h-5 text-[#7f13ec]" />
             Wallet Information
           </h3>
           
@@ -337,7 +311,7 @@ export default function ProfilePage() {
                 <span className="text-white text-xl font-bold">M</span>
               </div>
               <div>
-                <p className="text-sm text-slate-500 dark:text-[#ad92c9]">Movement Network</p>
+                <p className="text-sm text-slate-500 dark:text-[#ad92c9]">Stellar Network</p>
                 <p className="font-mono text-sm text-slate-900 dark:text-white">
                   {profile.walletAddress.slice(0, 12)}...{profile.walletAddress.slice(-10)}
                 </p>
@@ -348,16 +322,16 @@ export default function ProfilePage() {
                 onClick={() => copyToClipboard(profile.walletAddress)}
                 className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-[#362348] text-slate-700 dark:text-white font-medium text-sm hover:bg-slate-300 dark:hover:bg-[#4d3267] transition-colors flex items-center gap-2"
               >
-                <span>📋</span>
+                <Copy className="w-4 h-4" />
                 Copy
               </button>
               <a
-                href={`https://explorer.movementlabs.xyz/account/${profile.walletAddress}?network=mainnet`}
+                href={getAddressExplorerUrl(profile.walletAddress)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 rounded-xl bg-[#7f13ec]/10 text-[#7f13ec] font-medium text-sm hover:bg-[#7f13ec]/20 transition-colors flex items-center gap-2"
               >
-                <span>🔍</span>
+                <ExternalLink className="w-4 h-4" />
                 Explorer
               </a>
             </div>
@@ -365,10 +339,10 @@ export default function ProfilePage() {
         </div>
 
         {/* Quick Actions */}
-        {!isOwnProfile && myWalletAddress && (
+        {!isOwnProfile && walletAddress && (
           <div className="bg-gradient-to-br from-[#7f13ec]/10 to-[#a855f7]/10 rounded-3xl p-6 border border-[#7f13ec]/20 mb-8">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <span>⚡</span>
+              <Zap className="w-5 h-5" />
               Quick Actions
             </h3>
             
@@ -378,11 +352,11 @@ export default function ProfilePage() {
                 className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-[#261933] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
               >
                 <div className="w-14 h-14 rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <span className="text-3xl">💸</span>
+                  <ArrowUpRight className="w-8 h-8 text-[#7f13ec]" />
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-slate-900 dark:text-white">Send Money</p>
-                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Transfer MOVE instantly</p>
+                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Transfer USDC instantly</p>
                 </div>
               </Link>
 
@@ -391,7 +365,7 @@ export default function ProfilePage() {
                 className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-[#261933] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
               >
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <span className="text-3xl">📩</span>
+                  <HandCoins className="w-8 h-8 text-emerald-500" />
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-slate-900 dark:text-white">Request Money</p>
@@ -407,7 +381,7 @@ export default function ProfilePage() {
                 className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-[#261933] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
               >
                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <span className="text-3xl">🔗</span>
+                  <Share2 className="w-8 h-8 text-blue-500" />
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-slate-900 dark:text-white">Share Profile</p>
@@ -423,7 +397,7 @@ export default function ProfilePage() {
           <div className="bg-white dark:bg-[#261933] rounded-3xl p-6 border border-slate-200 dark:border-[#4d3267] shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span className="text-[#7f13ec]">📜</span>
+                <History className="w-5 h-5 text-[#7f13ec]" />
                 Recent Activity
               </h3>
               {isOwnProfile && (
@@ -448,7 +422,9 @@ export default function ProfilePage() {
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                         isSent ? 'bg-red-500/10' : 'bg-emerald-500/10'
                       }`}>
-                        <span className="text-xl">{isSent ? '↗' : '↙'}</span>
+                        {isSent
+                          ? <ArrowUpRight className="w-5 h-5 text-red-400" />
+                          : <ArrowDownLeft className="w-5 h-5 text-emerald-400" />}
                       </div>
                       <div>
                         <p className="font-bold text-slate-900 dark:text-white text-sm">
@@ -460,7 +436,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <p className={`font-bold ${isSent ? 'text-red-400' : 'text-emerald-400'}`}>
-                      {isSent ? '-' : '+'}{tx.amount.toFixed(4)} MOVE
+                      {isSent ? '-' : '+'}{tx.amount.toFixed(4)} USDC
                     </p>
                   </div>
                 );
@@ -472,7 +448,7 @@ export default function ProfilePage() {
         {/* Footer */}
         <div className="mt-12 text-center">
           <p className="text-slate-400 dark:text-[#ad92c9]/40 text-xs">
-            SuperPay • Built on Movement Network
+            Zoopfi • Built on Stellar Network
           </p>
         </div>
       </main>

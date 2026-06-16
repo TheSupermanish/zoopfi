@@ -2,26 +2,21 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { useSignRawHash } from '@privy-io/react-auth/extended-chains';
 import Link from 'next/link';
+import { ArrowUpRight, ArrowDownLeft, ScanLine, FileText, Fuel, Shield, CheckCircle2, Check, X, Plus, Copy, Share2 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import QRScanner from '../components/QRScanner';
 import QRCodeCard from '../components/QRCodeCard';
-import { 
-  getUserByUsername, 
-  getUserByAddress, 
-  recordTransaction, 
-  updateStreak, 
-  getTransactions, 
+import {
+  getUserByUsername,
+  recordTransaction,
+  updateStreak,
   getContacts,
   getPaymentRequests,
   createPaymentRequest
 } from '../lib/api';
-import { fetchBalance, formatBalance, formatUSD } from '../lib/balance';
-import { transferWithPrivy, transferWithNativeWallet } from '../lib/transfer';
-import { getExplorerUrl } from '../lib/aptos';
+import { useWallet, formatBalance, formatUSD, getExplorerUrl } from '@/app/lib/chain';
+import { useUser, useBalance, useTransactions, useChainInvalidate } from '@/app/lib/hooks';
 import { toast } from 'sonner';
 
 type Step = 'form' | 'confirm' | 'success';
@@ -32,16 +27,6 @@ interface Contact {
   _id: string;
   username: string;
   nickname?: string;
-}
-
-interface Transaction {
-  _id: string;
-  senderUsername: string;
-  receiverUsername: string;
-  amount: number;
-  timestamp: string;
-  senderAddress: string;
-  status: string;
 }
 
 interface PaymentRequest {
@@ -58,9 +43,12 @@ interface PaymentRequest {
 export default function TransactPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, authenticated } = usePrivy();
-  const { account, connected, signAndSubmitTransaction } = useWallet();
-  const { signRawHash } = useSignRawHash();
+  const { address: walletAddress, authenticated, isConnected, ops } = useWallet();
+  const { data: userData } = useUser();
+  const { data: balance = 0 } = useBalance('USDC');
+  const { data: recentTransactions = [] } = useTransactions(5);
+  const invalidate = useChainInvalidate();
+  const senderUsername = userData?.username ?? '';
 
   // Mode: send or receive
   const [mode, setMode] = useState<Mode>(searchParams.get('mode') === 'receive' ? 'receive' : 'send');
@@ -71,6 +59,7 @@ export default function TransactPageContent() {
   const [recipientData, setRecipientData] = useState<any>(null);
   const [amount, setAmount] = useState(searchParams.get('amount') || '');
   const [note, setNote] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
@@ -81,6 +70,7 @@ export default function TransactPageContent() {
   const [receiveTab, setReceiveTab] = useState<ReceiveTab>('qr');
   const [receiveAmount, setReceiveAmount] = useState('');
   const [requests, setRequests] = useState<PaymentRequest[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [requestAmount, setRequestAmount] = useState('');
   const [requestMessage, setRequestMessage] = useState('');
@@ -88,12 +78,7 @@ export default function TransactPageContent() {
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
   
   // Common state
-  const [walletAddress, setWalletAddress] = useState('');
-  const [senderUsername, setSenderUsername] = useState('');
-  const [balance, setBalance] = useState(0);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Handle QR scan result
   const handleQRScan = async (data: { username: string; amount?: string }) => {
@@ -104,50 +89,30 @@ export default function TransactPageContent() {
     await searchRecipient(data.username);
   };
 
-  // Get wallet info
+  // Load lists that have no global hook (contacts + sent payment requests).
   useEffect(() => {
     const setup = async () => {
-      let address = '';
-      
-      if (authenticated && user) {
-        const moveWallet = user.linkedAccounts?.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-        if (moveWallet?.address) {
-          address = moveWallet.address;
-        }
-      } else if (connected && account?.address) {
-        address = account.address.toString();
-      }
+      const address = walletAddress;
 
       if (address) {
-        setWalletAddress(address);
-        const [bal, userData, contactsResult, txResult, requestsResult] = await Promise.all([
-          fetchBalance(address),
-          getUserByAddress(address),
+        const [contactsResult, requestsResult] = await Promise.all([
           getContacts(address).catch(() => ({ contacts: [] })),
-          getTransactions(address, 5, 0).catch(() => ({ transactions: [] })),
           getPaymentRequests(address, 'sent').catch(() => ({ requests: [] })),
         ]);
-        
-        setBalance(bal);
-        if (userData) {
-          setSenderUsername(userData.username);
-        }
+
         setContacts(contactsResult.contacts || []);
-        setRecentTransactions(txResult.transactions || []);
         setRequests(requestsResult.requests || []);
       }
-      setIsLoading(false);
+      setRequestsLoading(false);
     };
 
     setup();
-  }, [authenticated, user, connected, account]);
+  }, [authenticated, walletAddress, isConnected]);
 
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -212,47 +177,33 @@ export default function TransactPageContent() {
       let hash: string;
       const amountNum = Number(amount);
 
-      const isPrivyWallet = authenticated && user?.linkedAccounts?.find(
-        (acc: any) => acc.chainType === 'aptos'
-      );
-
-      if (isPrivyWallet && signRawHash) {
-        const moveWallet = user!.linkedAccounts!.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-
-        hash = await transferWithPrivy(
-          walletAddress,
-          recipientData.walletAddress,
-          amountNum,
-          moveWallet.publicKey,
-          signRawHash
-        );
-      } else if (connected && signAndSubmitTransaction) {
-        hash = await transferWithNativeWallet(
-          walletAddress,
-          recipientData.walletAddress,
-          amountNum,
-          signAndSubmitTransaction
-        );
+      if (isPrivate) {
+        // Private (shielded) transfer: routed through the privacy pool. The
+        // sender<->recipient link stays hidden, so it is NOT recorded in the
+        // public transaction history (it shows up in the user's /private feed).
+        if (!(await ops.privacy.isEnabled())) await ops.privacy.enable();
+        const result = await ops.privacy.transfer(recipientData.username, String(amountNum), 'USDC', note || undefined);
+        if (!result.success) throw new Error(result.error || 'Private transfer failed. Please try again.');
+        hash = result.hash;
       } else {
-        throw new Error('No wallet available for signing');
+        const result = await ops.sendPayment(recipientData.walletAddress, String(amountNum), 'USDC', note || undefined);
+        if (!result.success) throw new Error(result.error || 'Transaction failed. Please try again.');
+        hash = result.hash;
+        await recordTransaction({
+          senderAddress: walletAddress,
+          senderUsername: senderUsername,
+          receiverAddress: recipientData.walletAddress,
+          receiverUsername: recipientData.username,
+          amount: amountNum,
+          txHash: hash,
+          type: 'send',
+          note: note || undefined,
+        });
       }
 
       setTxHash(hash);
-
-      await recordTransaction({
-        senderAddress: walletAddress,
-        senderUsername: senderUsername,
-        receiverAddress: recipientData.walletAddress,
-        receiverUsername: recipientData.username,
-        amount: amountNum,
-        txHash: hash,
-        type: 'send',
-        note: note || undefined,
-      });
-
       await updateStreak(walletAddress);
+      invalidate();
       setStep('success');
     } catch (err: any) {
       console.error('Transfer error:', err);
@@ -292,8 +243,8 @@ export default function TransactPageContent() {
     }
   };
 
-  // Calculate USD value
-  const usdValue = Number(amount) * 0.05;
+  // USDC is dollar-denominated (1:1)
+  const usdValue = Number(amount);
 
   // Copy wallet address
   const copyAddress = async () => {
@@ -310,6 +261,7 @@ export default function TransactPageContent() {
     setNote('');
     setTxHash('');
     setError('');
+    setIsPrivate(false);
   };
 
   return (
@@ -336,7 +288,7 @@ export default function TransactPageContent() {
                       : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span>📤</span>
+                  <ArrowUpRight className="w-4 h-4" />
                   Send
                 </button>
                 <button
@@ -347,7 +299,7 @@ export default function TransactPageContent() {
                       : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span>📥</span>
+                  <ArrowDownLeft className="w-4 h-4" />
                   Receive
                 </button>
               </div>
@@ -360,11 +312,11 @@ export default function TransactPageContent() {
                 {step === 'success' && (
                   <div className="text-center space-y-6 animate-scale-in py-12">
                     <div className="w-24 h-24 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center mb-6">
-                      <span className="text-5xl">✅</span>
+                      <CheckCircle2 className="text-emerald-500 w-12 h-12" />
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Payment Sent!</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{isPrivate ? 'Sent Privately!' : 'Payment Sent!'}</h2>
                     <p className="text-slate-500 dark:text-[#ad92c9]">
-                      {amount} MOVE sent to @{recipientData?.username}
+                      {amount} USDC sent {isPrivate ? 'privately ' : ''}to @{recipientData?.username}
                     </p>
                     <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 border border-slate-200 dark:border-white/5 max-w-md mx-auto shadow-lg dark:shadow-none">
                       <p className="text-slate-500 dark:text-[#ad92c9] text-xs mb-1">Transaction Hash</p>
@@ -399,7 +351,7 @@ export default function TransactPageContent() {
                   <div className="space-y-6 animate-fade-in-up">
                     <div className="text-center mb-4">
                       <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-4">
-                        <span className="text-4xl">📝</span>
+                        <FileText className="w-10 h-10 text-[#7f13ec]" />
                       </div>
                       <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Confirm Transfer</h2>
                     </div>
@@ -409,7 +361,7 @@ export default function TransactPageContent() {
                       <div className="relative bg-white dark:bg-[#251a30] rounded-3xl overflow-hidden border border-slate-200 dark:border-white/5 shadow-xl dark:shadow-none">
                         <div className="p-5 border-b border-slate-200 dark:border-white/5">
                           <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Amount</p>
-                          <p className="text-3xl font-bold text-slate-900 dark:text-white">{amount} MOVE</p>
+                          <p className="text-3xl font-bold text-slate-900 dark:text-white">{amount} USDC</p>
                           <p className="text-slate-500 dark:text-[#ad92c9] text-sm">≈ ${usdValue.toFixed(2)} USD</p>
                         </div>
                         <div className="p-5 border-b border-slate-200 dark:border-white/5">
@@ -435,13 +387,35 @@ export default function TransactPageContent() {
                         <div className="p-5">
                           <div className="flex justify-between items-center">
                             <span className="text-slate-500 dark:text-[#ad92c9] flex items-center gap-1">
-                              <span>⛽</span> Est. Gas Fee
+                              <Fuel className="w-4 h-4" /> Est. Gas Fee
                             </span>
-                            <span className="font-bold text-slate-900 dark:text-white">~0.001 MOVE</span>
+                            <span className="font-bold text-slate-900 dark:text-white">~0.001 USDC</span>
                           </div>
                         </div>
                       </div>
                     </div>
+
+                    {/* Private toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setIsPrivate((v) => !v)}
+                      className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                        isPrivate
+                          ? 'border-[#7f13ec] bg-[#7f13ec]/10'
+                          : 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#251a30]'
+                      }`}
+                    >
+                      <span className="flex items-center gap-3 text-left">
+                        <Shield className="w-6 h-6 text-[#7f13ec]" />
+                        <span>
+                          <span className="block font-bold text-slate-900 dark:text-white">Send privately</span>
+                          <span className="block text-xs text-slate-500 dark:text-[#ad92c9]">Hide this payment with a zero-knowledge proof</span>
+                        </span>
+                      </span>
+                      <span className={`shrink-0 w-12 h-7 rounded-full p-1 transition-colors ${isPrivate ? 'bg-[#7f13ec]' : 'bg-slate-300 dark:bg-white/10'}`}>
+                        <span className={`block w-5 h-5 rounded-full bg-white transition-transform ${isPrivate ? 'translate-x-5' : ''}`} />
+                      </span>
+                    </button>
 
                     {error && (
                       <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
@@ -464,10 +438,10 @@ export default function TransactPageContent() {
                         {isSending ? (
                           <span className="flex items-center gap-2">
                             <div className="spinner spinner-sm" />
-                            Sending...
+                            {isPrivate ? 'Generating proof...' : 'Sending...'}
                           </span>
                         ) : (
-                          <>Confirm & Send →</>
+                          <>{isPrivate ? 'Confirm Private Send' : 'Confirm & Send'} →</>
                         )}
                       </button>
                     </div>
@@ -489,8 +463,8 @@ export default function TransactPageContent() {
                               M
                             </div>
                             <div className="flex flex-col items-start text-left">
-                              <span className="font-bold text-sm text-slate-900 dark:text-white leading-tight">MOVE</span>
-                              <span className="text-xs text-slate-500 dark:text-[#ad92c9]">Movement</span>
+                              <span className="font-bold text-sm text-slate-900 dark:text-white leading-tight">USDC</span>
+                              <span className="text-xs text-slate-500 dark:text-[#ad92c9]">Stellar</span>
                             </div>
                           </div>
                           
@@ -503,7 +477,7 @@ export default function TransactPageContent() {
                               className="w-full bg-transparent text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-[#362348] border-none focus:ring-0 p-0 leading-tight"
                             />
                             <div className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1 font-medium">
-                              ≈ ${usdValue.toFixed(2)} USD • Balance: {formatBalance(balance)} MOVE
+                              ≈ ${usdValue.toFixed(2)} USD • Balance: {formatBalance(balance)} USDC
                             </div>
                           </div>
                         </div>
@@ -540,7 +514,7 @@ export default function TransactPageContent() {
                             onClick={() => setShowScanner(true)}
                             className="w-10 h-10 flex items-center justify-center bg-slate-200 dark:bg-[#362348] hover:bg-[#7f13ec] rounded-xl text-slate-700 dark:text-white transition-colors"
                           >
-                            📷
+                            <ScanLine className="w-5 h-5" />
                           </button>
                         </div>
                         
@@ -555,7 +529,17 @@ export default function TransactPageContent() {
                                 {recipientData.walletAddress.slice(0, 10)}...{recipientData.walletAddress.slice(-6)}
                               </p>
                             </div>
-                            <span className="text-emerald-400">✓</span>
+                            <div className="flex items-center gap-1">
+                              <Check className="text-emerald-400 w-5 h-5" />
+                              <button
+                                type="button"
+                                onClick={() => { setRecipientData(null); setRecipientUsername(''); setError(''); }}
+                                aria-label="Clear recipient"
+                                className="p-1 rounded-full text-slate-400 dark:text-[#ad92c9] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         )}
 
@@ -590,9 +574,9 @@ export default function TransactPageContent() {
                       <div className="mt-4 flex flex-col gap-4">
                         <div className="flex justify-between items-center text-sm px-1">
                           <span className="text-slate-500 dark:text-[#ad92c9] flex items-center gap-1">
-                            <span>⛽</span> Est. Gas Fee
+                            <Fuel className="w-4 h-4" /> Est. Gas Fee
                           </span>
-                          <span className="font-bold text-slate-900 dark:text-white">~0.001 MOVE</span>
+                          <span className="font-bold text-slate-900 dark:text-white">~0.001 USDC</span>
                         </div>
                         <button
                           onClick={() => setStep('confirm')}
@@ -661,7 +645,7 @@ export default function TransactPageContent() {
                           className="input h-14 pr-20"
                         />
                         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#ad92c9] font-bold">
-                          MOVE
+                          USDC
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60 mt-2">
@@ -700,7 +684,7 @@ export default function TransactPageContent() {
                               autoFocus
                             />
                             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#ad92c9] font-bold">
-                              MOVE
+                              USDC
                             </span>
                           </div>
                         </div>
@@ -754,7 +738,7 @@ export default function TransactPageContent() {
                     <div>
                       <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Your Requests</h3>
                       
-                      {isLoading ? (
+                      {requestsLoading ? (
                         <div className="flex justify-center py-12">
                           <div className="spinner" />
                         </div>
@@ -775,7 +759,7 @@ export default function TransactPageContent() {
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                                  {req.amount} MOVE
+                                  {req.amount} USDC
                                 </span>
                                 <span className={`badge ${
                                   req.status === 'pending'
@@ -818,7 +802,7 @@ export default function TransactPageContent() {
                 <div className="flex justify-between items-start mb-5">
                   <div>
                     <p className="text-white/70 dark:text-[#ad92c9] text-sm font-medium mb-1">Your Balance</p>
-                    <h3 className="text-2xl md:text-3xl font-bold tracking-tight">{formatBalance(balance)} MOVE</h3>
+                    <h3 className="text-2xl md:text-3xl font-bold tracking-tight">{formatBalance(balance)} USDC</h3>
                     <p className="text-white/70 dark:text-[#ad92c9] text-sm mt-1">{formatUSD(balance)}</p>
                   </div>
                   <div className="bg-white p-2 rounded-xl shadow-lg">
@@ -830,7 +814,7 @@ export default function TransactPageContent() {
                     onClick={copyAddress}
                     className="flex-1 bg-white/20 dark:bg-[#362348] hover:bg-white/30 dark:hover:bg-[#482e5e] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
                   >
-                    📋 Copy Address
+                    <Copy className="w-4 h-4" /> Copy Address
                   </button>
                   <button 
                     onClick={() => {
@@ -840,7 +824,7 @@ export default function TransactPageContent() {
                     }}
                     className="flex-1 bg-white/20 dark:bg-[#362348] hover:bg-white/30 dark:hover:bg-[#482e5e] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
                   >
-                    🔗 Share
+                    <Share2 className="w-4 h-4" /> Share
                   </button>
                 </div>
               </div>
@@ -855,7 +839,7 @@ export default function TransactPageContent() {
               <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                 <Link href="/contacts" className="flex flex-col items-center gap-2 min-w-[70px] group">
                   <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-[#362348] border-2 border-transparent group-hover:border-[#7f13ec] flex items-center justify-center transition-all">
-                    <span className="text-[#7f13ec] text-2xl">+</span>
+                    <Plus className="text-[#7f13ec] w-6 h-6" />
                   </div>
                   <span className="text-xs font-medium text-slate-500 dark:text-[#ad92c9]">New</span>
                 </Link>
@@ -893,7 +877,7 @@ export default function TransactPageContent() {
                     <p className="text-sm">No recent transactions</p>
                   </div>
                 ) : (
-                  recentTransactions.map((tx) => {
+                  recentTransactions.map((tx: any) => {
                     const isSent = tx.senderAddress === walletAddress;
                     return (
                       <div 
@@ -904,7 +888,7 @@ export default function TransactPageContent() {
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                             isSent ? 'bg-orange-500/20 text-orange-400' : 'bg-emerald-500/20 text-emerald-400'
                           }`}>
-                            <span className="text-lg">{isSent ? '📤' : '📥'}</span>
+                            {isSent ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownLeft className="w-5 h-5" />}
                           </div>
                           <div className="flex flex-col">
                             <span className="font-bold text-sm text-slate-900 dark:text-white">
@@ -917,7 +901,7 @@ export default function TransactPageContent() {
                         </div>
                         <div className="flex flex-col items-end">
                           <span className={`font-bold text-sm ${isSent ? 'text-slate-900 dark:text-white' : 'text-emerald-400'}`}>
-                            {isSent ? '-' : '+'}{tx.amount} MOVE
+                            {isSent ? '-' : '+'}{tx.amount} USDC
                           </span>
                           <span className="text-xs text-slate-500 dark:text-[#ad92c9]">{tx.status}</span>
                         </div>
@@ -928,7 +912,7 @@ export default function TransactPageContent() {
               </div>
               <Link 
                 href="/history"
-                className="w-full mt-4 py-2 text-sm font-bold text-slate-500 dark:text-[#ad92c9] hover:text-[#7f13ec] transition-colors border-t border-slate-200 dark:border-white/5 pt-4 text-center block"
+                className="w-full mt-auto py-2 text-sm font-bold text-slate-500 dark:text-[#ad92c9] hover:text-[#7f13ec] transition-colors border-t border-slate-200 dark:border-white/5 pt-4 text-center block"
               >
                 View All Transactions
               </Link>

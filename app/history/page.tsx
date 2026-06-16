@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet } from '@/app/lib/chain';
+import { useUser, useTransactions } from '@/app/lib/hooks';
 import DashboardLayout from '../components/DashboardLayout';
-import { getTransactions, getUserByAddress } from '../lib/api';
-import { getExplorerUrl } from '../lib/aptos';
+import { getTransactions } from '../lib/api';
+import { ArrowUpRight, ArrowDownLeft, Search, Check, Copy } from 'lucide-react';
 
 interface Transaction {
   _id: string;
@@ -26,74 +26,70 @@ type FilterType = 'all' | 'sent' | 'received';
 
 export default function HistoryPage() {
   const router = useRouter();
-  const { user, authenticated } = usePrivy();
-  const { account, connected } = useWallet();
-
-  const [walletAddress, setWalletAddress] = useState('');
-  const [username, setUsername] = useState('');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filter, setFilter] = useState<FilterType>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [total, setTotal] = useState(0);
+  const { address: walletAddress, authenticated, isConnected, getExplorerUrl } = useWallet();
 
   const LIMIT = 20;
 
-  // Get wallet address and username
+  const { data: userData } = useUser();
+  const username = userData?.username ?? '';
+  const isLoading = userData === undefined;
+
+  // First page comes from the shared cache (instant + live-polled).
+  const { data: firstPage = [] } = useTransactions(LIMIT) as { data: Transaction[] };
+
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [serverTotal, setServerTotal] = useState(0);
+  // Additional pages appended via "Load More" (offset-based).
+  const [extraPages, setExtraPages] = useState<Transaction[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const transactions = useMemo(
+    () => [...firstPage, ...extraPages],
+    [firstPage, extraPages]
+  );
+
+  // Prefer the server total once a paged fetch reports it; otherwise fall back
+  // to the count currently loaded from the cached first page.
+  const total = serverTotal || transactions.length;
+
+  // Keep total / hasMore in sync with the cached first page.
   useEffect(() => {
-    const setup = async () => {
-      let address = '';
-      
-      if (authenticated && user) {
-        const moveWallet = user.linkedAccounts?.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-        if (moveWallet?.address) {
-          address = moveWallet.address;
-        }
-      } else if (connected && account?.address) {
-        address = account.address.toString();
-      }
+    setHasMore(firstPage.length === LIMIT);
+  }, [firstPage.length]);
 
-      if (address) {
-        setWalletAddress(address);
-        const userData = await getUserByAddress(address);
-        if (userData) {
-          setUsername(userData.username);
-        }
-      }
-    };
-
-    setup();
-  }, [authenticated, user, connected, account]);
-
-  // Fetch transactions
+  // Fetch additional pages on demand.
   useEffect(() => {
-    if (!walletAddress) return;
+    if (!walletAddress || page === 0) return;
 
     const fetchData = async () => {
-      setIsLoading(true);
+      setIsLoadingMore(true);
       try {
         const result = await getTransactions(walletAddress, LIMIT, page * LIMIT);
-        setTransactions(prev => page === 0 ? result.transactions : [...prev, ...result.transactions]);
-        setTotal(result.total);
+        setExtraPages(prev => [...prev, ...result.transactions]);
+        setServerTotal(result.total);
         setHasMore(result.transactions.length === LIMIT);
       } catch (error) {
         console.error('Error fetching transactions:', error);
       } finally {
-        setIsLoading(false);
+        setIsLoadingMore(false);
       }
     };
 
     fetchData();
   }, [walletAddress, page]);
 
+  // Redirect if not registered
+  useEffect(() => {
+    if (userData === null) router.replace('/onboarding');
+  }, [userData, router]);
+
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -196,12 +192,12 @@ export default function HistoryPage() {
                 Transaction History
               </h2>
               <p className="text-slate-500 dark:text-[#ad92c9] text-lg font-normal">
-                View and manage your crypto activity on Movement Network.
+                View and manage your crypto activity on Stellar Network.
               </p>
             </div>
             <div className="flex gap-2">
               <button className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-[#362348] rounded-xl text-slate-600 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-[#362348]/80 transition-colors">
-                <span>📥</span>
+                <ArrowDownLeft className="w-4 h-4" />
                 <span className="text-sm font-medium">Export CSV</span>
               </button>
             </div>
@@ -229,7 +225,7 @@ export default function HistoryPage() {
             <div className="flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-[#362348]/50 backdrop-blur-sm border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-colors shadow-sm dark:shadow-none">
               <div className="flex justify-between items-start">
                 <div className="p-2 bg-red-500/10 rounded-lg text-red-400">
-                  <span className="text-2xl">↗</span>
+                  <ArrowUpRight className="w-6 h-6" />
                 </div>
                 <span className="text-red-400 text-sm font-medium bg-red-500/10 px-2 py-1 rounded-lg">
                   Sent
@@ -238,7 +234,7 @@ export default function HistoryPage() {
               <div>
                 <p className="text-slate-500 dark:text-[#ad92c9] text-sm font-medium mb-1">Monthly Sent</p>
                 <p className="text-slate-900 dark:text-white tracking-tight text-3xl font-bold">
-                  {stats.monthlySent.toFixed(4)} <span className="text-lg text-slate-400 dark:text-[#ad92c9]">MOVE</span>
+                  {stats.monthlySent.toFixed(4)} <span className="text-lg text-slate-400 dark:text-[#ad92c9]">USDC</span>
                 </p>
               </div>
             </div>
@@ -247,7 +243,7 @@ export default function HistoryPage() {
             <div className="flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-[#362348]/50 backdrop-blur-sm border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-colors shadow-sm dark:shadow-none">
               <div className="flex justify-between items-start">
                 <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
-                  <span className="text-2xl">↙</span>
+                  <ArrowDownLeft className="w-6 h-6" />
                 </div>
                 <span className="text-emerald-500 text-sm font-medium bg-emerald-500/10 px-2 py-1 rounded-lg">
                   Received
@@ -256,7 +252,7 @@ export default function HistoryPage() {
               <div>
                 <p className="text-slate-500 dark:text-[#ad92c9] text-sm font-medium mb-1">Monthly Received</p>
                 <p className="text-slate-900 dark:text-white tracking-tight text-3xl font-bold">
-                  {stats.monthlyReceived.toFixed(4)} <span className="text-lg text-slate-400 dark:text-[#ad92c9]">MOVE</span>
+                  {stats.monthlyReceived.toFixed(4)} <span className="text-lg text-slate-400 dark:text-[#ad92c9]">USDC</span>
                 </p>
               </div>
             </div>
@@ -268,7 +264,7 @@ export default function HistoryPage() {
               {/* Search */}
               <div className="w-full md:w-96">
                 <label className="flex w-full items-center rounded-2xl bg-white dark:bg-[#362348] h-12 px-4 border border-slate-200 dark:border-transparent focus-within:border-[#7f13ec]/50 transition-colors shadow-sm dark:shadow-none">
-                  <span className="text-slate-400 dark:text-[#ad92c9]">🔍</span>
+                  <Search className="w-5 h-5 text-slate-400 dark:text-[#ad92c9]" />
                   <input
                     type="text"
                     value={searchQuery}
@@ -291,9 +287,7 @@ export default function HistoryPage() {
                         : 'bg-white dark:bg-[#362348] text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-[#362348]/80 border border-slate-200 dark:border-white/5'
                     }`}
                   >
-                    <span>
-                      {f === 'all' ? '📋' : f === 'sent' ? '↗' : '↙'}
-                    </span>
+                    {f === 'all' ? <Copy className="w-4 h-4" /> : f === 'sent' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownLeft className="w-4 h-4" />}
                     {f.charAt(0).toUpperCase() + f.slice(1)}
                   </button>
                 ))}
@@ -357,7 +351,7 @@ export default function HistoryPage() {
                                 ? 'bg-slate-500 dark:bg-[#ad92c9] text-white' 
                                 : 'bg-emerald-500 text-white'
                             }`}>
-                              <span className="text-[10px] font-bold">{isSent ? '↗' : '↙'}</span>
+                              {isSent ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
                             </div>
                           </div>
 
@@ -400,7 +394,7 @@ export default function HistoryPage() {
                                 ? 'text-amber-500' 
                                 : 'text-red-500'
                             }`}>
-                              <span>{tx.status === 'confirmed' ? '✓' : tx.status === 'pending' ? '⏳' : '✕'}</span>
+                              <span className="inline-flex items-center">{tx.status === 'confirmed' ? <Check className="w-3.5 h-3.5" /> : tx.status === 'pending' ? '⏳' : '✕'}</span>
                               <span className="capitalize">{tx.status}</span>
                             </div>
                           </div>
@@ -416,7 +410,7 @@ export default function HistoryPage() {
                               <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#7f13ec] to-[#a855f7] flex items-center justify-center">
                                 <span className="text-white text-[8px] font-bold">M</span>
                               </div>
-                              <p className="text-slate-500 dark:text-[#ad92c9] text-xs font-mono">MOVE</p>
+                              <p className="text-slate-500 dark:text-[#ad92c9] text-xs font-mono">USDC</p>
                             </div>
                           </div>
                         </div>
@@ -431,10 +425,10 @@ export default function HistoryPage() {
                 <div className="flex justify-center mt-6">
                   <button
                     onClick={() => setPage((p) => p + 1)}
-                    disabled={isLoading}
+                    disabled={isLoadingMore}
                     className="px-6 py-3 bg-transparent border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50"
                   >
-                    {isLoading ? (
+                    {isLoadingMore ? (
                       <>
                         <div className="spinner-sm" />
                         Loading...

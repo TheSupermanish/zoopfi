@@ -2,29 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet } from '../lib/chain';
 import { checkUsername, registerUser, getUserByAddress, AccountType, BusinessCategory, BusinessInfo } from '../lib/api';
+import { Hand, User, Building2, Check, X, PartyPopper, ShoppingBag, UtensilsCrossed, Wrench, Laptop, Stethoscope, Clapperboard, Package, LucideIcon } from 'lucide-react';
 
 type Step = 'welcome' | 'account-type' | 'profile-info' | 'username' | 'creating' | 'success';
 
-const BUSINESS_CATEGORIES: { value: BusinessCategory; label: string; icon: string }[] = [
-  { value: 'retail', label: 'Retail', icon: '🛍️' },
-  { value: 'food', label: 'Food & Beverage', icon: '🍕' },
-  { value: 'services', label: 'Services', icon: '🔧' },
-  { value: 'technology', label: 'Technology', icon: '💻' },
-  { value: 'healthcare', label: 'Healthcare', icon: '🏥' },
-  { value: 'entertainment', label: 'Entertainment', icon: '🎬' },
-  { value: 'other', label: 'Other', icon: '📦' },
+const BUSINESS_CATEGORIES: { value: BusinessCategory; label: string; Icon: LucideIcon }[] = [
+  { value: 'retail', label: 'Retail', Icon: ShoppingBag },
+  { value: 'food', label: 'Food & Beverage', Icon: UtensilsCrossed },
+  { value: 'services', label: 'Services', Icon: Wrench },
+  { value: 'technology', label: 'Technology', Icon: Laptop },
+  { value: 'healthcare', label: 'Healthcare', Icon: Stethoscope },
+  { value: 'entertainment', label: 'Entertainment', Icon: Clapperboard },
+  { value: 'other', label: 'Other', Icon: Package },
 ];
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, authenticated, ready } = usePrivy();
-  const { account, connected } = useWallet();
+  const { address: walletAddress, authenticated, ready, setupAccount } = useWallet();
 
   const [step, setStep] = useState<Step>('welcome');
-  const [walletAddress, setWalletAddress] = useState('');
   const [error, setError] = useState('');
 
   // Account type
@@ -43,20 +41,6 @@ export default function OnboardingPage() {
   const [username, setUsername] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
-
-  // Get wallet address
-  useEffect(() => {
-    if (authenticated && user) {
-      const moveWallet = user.linkedAccounts?.find(
-        (acc: any) => acc.chainType === 'aptos'
-      ) as any;
-      if (moveWallet?.address) {
-        setWalletAddress(moveWallet.address);
-      }
-    } else if (connected && account?.address) {
-      setWalletAddress(account.address.toString());
-    }
-  }, [authenticated, user, connected, account]);
 
   // Check if user already registered
   useEffect(() => {
@@ -81,12 +65,12 @@ export default function OnboardingPage() {
     if (!ready) return;
 
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated) {
         router.push('/');
       }
     }, 100);
     return () => clearTimeout(timer);
-  }, [ready, authenticated, connected, router]);
+  }, [ready, authenticated, router]);
 
   // Check username availability with debounce
   useEffect(() => {
@@ -132,6 +116,10 @@ export default function OnboardingPage() {
 
     setStep('creating');
     try {
+      // Testnet: fund the embedded wallet (friendbot) + add USDC trustline.
+      // No-op in mock mode.
+      await setupAccount();
+
       const businessInfo: BusinessInfo | undefined = accountType === 'business' ? {
         ownerFirstName: ownerFirstName.trim(),
         ownerLastName: ownerLastName.trim(),
@@ -197,12 +185,12 @@ export default function OnboardingPage() {
         {/* Step 1: Welcome */}
         {step === 'welcome' && (
           <div className="card p-8 text-center animate-fade-in-up">
-            <div className="mb-6">
-              <span className="text-6xl">👋</span>
+            <div className="mb-6 flex justify-center">
+              <Hand className="w-16 h-16 mx-auto text-[#7f13ec] dark:text-white" />
             </div>
-            <h1 className="text-3xl font-black text-white mb-3">Welcome to SuperPay!</h1>
-            <p className="text-gray-400 mb-8">
-              The fastest way to send and receive payments on Movement Network.
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-3">Welcome to Zoopfi!</h1>
+            <p className="text-slate-500 dark:text-gray-400 mb-8">
+              Private payments by username, powered by Stellar.
             </p>
             <button
               onClick={() => setStep('account-type')}
@@ -218,13 +206,13 @@ export default function OnboardingPage() {
           <div className="card p-8 animate-fade-in-up">
             <button
               onClick={goBack}
-              className="mb-6 p-2 -ml-2 rounded-lg hover:bg-white/5 transition-colors"
+              className="mb-6 p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
             >
-              <span className="text-gray-400">← Back</span>
+              <span className="text-slate-500 dark:text-gray-400">← Back</span>
             </button>
 
-            <h1 className="text-2xl font-bold text-white mb-2">How will you use SuperPay?</h1>
-            <p className="text-gray-400 mb-6">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">How will you use Zoopfi?</h1>
+            <p className="text-slate-500 dark:text-gray-400 mb-6">
               Choose the account type that fits you best
             </p>
 
@@ -235,21 +223,21 @@ export default function OnboardingPage() {
                 className={`w-full p-5 rounded-2xl border-2 transition-all text-left ${
                   accountType === 'personal'
                     ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-white/10 bg-white/5 hover:border-white/20'
+                    : 'border-slate-200 bg-slate-50 hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20'
                 }`}
               >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">👤</span>
+                    <User className="w-6 h-6 text-slate-700 dark:text-white" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-white">Personal</h3>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">Personal</h3>
                       {accountType === 'personal' && (
-                        <span className="text-emerald-400 text-lg">✓</span>
+                        <Check className="w-5 h-5 text-emerald-400" />
                       )}
                     </div>
-                    <p className="text-gray-400 text-sm mt-1">
+                    <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">
                       Send money to friends, split bills, and manage personal payments
                     </p>
                   </div>
@@ -262,21 +250,21 @@ export default function OnboardingPage() {
                 className={`w-full p-5 rounded-2xl border-2 transition-all text-left ${
                   accountType === 'business'
                     ? 'border-purple-500 bg-purple-500/10'
-                    : 'border-white/10 bg-white/5 hover:border-white/20'
+                    : 'border-slate-200 bg-slate-50 hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20'
                 }`}
               >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">🏢</span>
+                    <Building2 className="w-6 h-6 text-slate-700 dark:text-white" />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold text-white">Business</h3>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">Business</h3>
                       {accountType === 'business' && (
-                        <span className="text-purple-400 text-lg">✓</span>
+                        <Check className="w-5 h-5 text-purple-400" />
                       )}
                     </div>
-                    <p className="text-gray-400 text-sm mt-1">
+                    <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">
                       Accept payments from customers, generate invoices, and track revenue
                     </p>
                   </div>
@@ -298,20 +286,20 @@ export default function OnboardingPage() {
           <div className="card p-8 animate-fade-in-up">
             <button
               onClick={goBack}
-              className="mb-6 p-2 -ml-2 rounded-lg hover:bg-white/5 transition-colors"
+              className="mb-6 p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
             >
-              <span className="text-gray-400">← Back</span>
+              <span className="text-slate-500 dark:text-gray-400">← Back</span>
             </button>
 
             {accountType === 'personal' ? (
               <>
-                <h1 className="text-2xl font-bold text-white mb-2">What's your name?</h1>
-                <p className="text-gray-400 mb-6">
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">What's your name?</h1>
+                <p className="text-slate-500 dark:text-gray-400 mb-6">
                   This is how you'll appear to others
                 </p>
 
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <label className="block text-sm font-medium text-slate-500 dark:text-gray-400 mb-2">
                     Full Name
                   </label>
                   <input
@@ -329,17 +317,17 @@ export default function OnboardingPage() {
               <>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                    <span className="text-2xl">🏢</span>
+                    <Building2 className="w-6 h-6 text-slate-700 dark:text-white" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-white">Business Details</h1>
-                    <p className="text-gray-400 text-sm">Tell us about your business</p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Business Details</h1>
+                    <p className="text-slate-500 dark:text-gray-400 text-sm">Tell us about your business</p>
                   </div>
                 </div>
 
                 {/* Business Name */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <label className="block text-sm font-medium text-slate-500 dark:text-gray-400 mb-2">
                     Business Name *
                   </label>
                   <input
@@ -356,7 +344,7 @@ export default function OnboardingPage() {
                 {/* Owner Name */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-sm font-medium text-slate-500 dark:text-gray-400 mb-2">
                       Owner First Name *
                     </label>
                     <input
@@ -369,7 +357,7 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                    <label className="block text-sm font-medium text-slate-500 dark:text-gray-400 mb-2">
                       Owner Last Name *
                     </label>
                     <input
@@ -385,7 +373,7 @@ export default function OnboardingPage() {
 
                 {/* Business Category */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                  <label className="block text-sm font-medium text-slate-500 dark:text-gray-400 mb-2">
                     Business Category *
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -396,12 +384,12 @@ export default function OnboardingPage() {
                         className={`p-3 rounded-xl border transition-all text-left ${
                           businessCategory === cat.value
                             ? 'border-purple-500 bg-purple-500/10'
-                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                            : 'border-slate-200 bg-slate-50 hover:border-slate-300 dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20'
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <span>{cat.icon}</span>
-                          <span className="text-sm font-medium text-white">{cat.label}</span>
+                          <cat.Icon className="w-5 h-5" />
+                          <span className="text-sm font-medium text-slate-700 dark:text-white">{cat.label}</span>
                         </div>
                       </button>
                     ))}
@@ -410,8 +398,8 @@ export default function OnboardingPage() {
 
                 {/* Description (optional) */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Description <span className="text-gray-500">(optional)</span>
+                  <label className="block text-sm font-medium text-slate-500 dark:text-gray-400 mb-2">
+                    Description <span className="text-slate-400 dark:text-gray-500">(optional)</span>
                   </label>
                   <textarea
                     value={businessDescription}
@@ -439,13 +427,13 @@ export default function OnboardingPage() {
           <div className="card p-8 animate-fade-in-up">
             <button
               onClick={goBack}
-              className="mb-6 p-2 -ml-2 rounded-lg hover:bg-white/5 transition-colors"
+              className="mb-6 p-2 -ml-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
             >
-              <span className="text-gray-400">← Back</span>
+              <span className="text-slate-500 dark:text-gray-400">← Back</span>
             </button>
 
-            <h1 className="text-2xl font-bold text-white mb-2">Choose your username</h1>
-            <p className="text-gray-400 mb-6">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Choose your username</h1>
+            <p className="text-slate-500 dark:text-gray-400 mb-6">
               {accountType === 'business' 
                 ? 'This is how customers will find and pay your business'
                 : 'This is how others will find and pay you'}
@@ -473,9 +461,9 @@ export default function OnboardingPage() {
               {!isChecking && username.length >= 3 && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
                   {isAvailable ? (
-                    <span className="text-emerald-400 text-xl">✓</span>
+                    <Check className="w-5 h-5 text-emerald-400" />
                   ) : (
-                    <span className="text-red-400 text-xl">✗</span>
+                    <X className="w-5 h-5 text-red-400" />
                   )}
                 </div>
               )}
@@ -484,7 +472,7 @@ export default function OnboardingPage() {
             {/* Username feedback */}
             <div className="mb-6">
               {username.length > 0 && username.length < 3 && (
-                <p className="text-gray-500 text-sm">Username must be at least 3 characters</p>
+                <p className="text-slate-400 dark:text-gray-500 text-sm">Username must be at least 3 characters</p>
               )}
               {username.length >= 3 && !isChecking && isAvailable === false && (
                 <p className="text-red-400 text-sm">This username is already taken</p>
@@ -498,14 +486,14 @@ export default function OnboardingPage() {
             </div>
 
             {/* Requirements */}
-            <div className="p-4 rounded-xl bg-white/5 mb-6">
-              <p className="text-gray-400 text-sm font-medium mb-2">Username requirements:</p>
+            <div className="p-4 rounded-xl bg-slate-100 dark:bg-white/5 mb-6">
+              <p className="text-slate-500 dark:text-gray-400 text-sm font-medium mb-2">Username requirements:</p>
               <ul className="space-y-1 text-sm">
-                <li className={`flex items-center gap-2 ${username.length >= 3 ? 'text-emerald-400' : 'text-gray-500'}`}>
+                <li className={`flex items-center gap-2 ${username.length >= 3 ? 'text-emerald-400' : 'text-slate-400 dark:text-gray-500'}`}>
                   <span>{username.length >= 3 ? '✓' : '○'}</span>
                   <span>3-20 characters</span>
                 </li>
-                <li className={`flex items-center gap-2 ${/^[a-z0-9_]*$/.test(username) && username.length > 0 ? 'text-emerald-400' : 'text-gray-500'}`}>
+                <li className={`flex items-center gap-2 ${/^[a-z0-9_]*$/.test(username) && username.length > 0 ? 'text-emerald-400' : 'text-slate-400 dark:text-gray-500'}`}>
                   <span>{/^[a-z0-9_]*$/.test(username) && username.length > 0 ? '✓' : '○'}</span>
                   <span>Lowercase letters, numbers, underscores only</span>
                 </li>
@@ -526,10 +514,10 @@ export default function OnboardingPage() {
         {step === 'creating' && (
           <div className="card p-8 text-center animate-fade-in">
             <div className="spinner mx-auto mb-6" />
-            <h1 className="text-2xl font-bold text-white mb-2">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
               Creating your {accountType === 'business' ? 'business ' : ''}account...
             </h1>
-            <p className="text-gray-400">Please wait while we set things up</p>
+            <p className="text-slate-500 dark:text-gray-400">Please wait while we set things up</p>
           </div>
         )}
 
@@ -540,13 +528,15 @@ export default function OnboardingPage() {
               <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center ${
                 accountType === 'business' ? 'bg-purple-500/20' : 'bg-emerald-500/20'
               }`}>
-                <span className="text-5xl">{accountType === 'business' ? '🏢' : '🎉'}</span>
+                {accountType === 'business'
+                  ? <Building2 className="w-12 h-12 text-purple-400" />
+                  : <PartyPopper className="w-12 h-12 text-emerald-400" />}
               </div>
             </div>
-            <h1 className="text-3xl font-black text-white mb-2">
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-2">
               {accountType === 'business' ? 'Your business is ready!' : "You're all set!"}
             </h1>
-            <p className="text-gray-400 mb-2">
+            <p className="text-slate-500 dark:text-gray-400 mb-2">
               {accountType === 'business' 
                 ? `Welcome, ${displayName}!`
                 : 'Your username is'}
@@ -557,7 +547,7 @@ export default function OnboardingPage() {
               @{username}
             </p>
             {accountType === 'business' && (
-              <p className="text-gray-500 text-sm mb-6">
+              <p className="text-slate-400 dark:text-gray-500 text-sm mb-6">
                 Start accepting payments from your customers right away
               </p>
             )}

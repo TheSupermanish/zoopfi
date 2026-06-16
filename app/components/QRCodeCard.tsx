@@ -2,6 +2,7 @@
 
 import { useRef, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Copy, Share2 } from 'lucide-react';
 
 interface QRCodeCardProps {
   username: string;
@@ -29,8 +30,8 @@ export default function QRCodeCard({ username, amount, walletAddress, onShare }:
   // Share functionality
   const handleShare = useCallback(async () => {
     const shareData = {
-      title: 'Pay with SuperPay',
-      text: `Send ${amount ? `${amount} MOVE` : 'payment'} to @${username} on SuperPay`,
+      title: 'Pay with Zoopfi',
+      text: `Send ${amount ? `${amount} USDC` : 'payment'} to @${username} on Zoopfi`,
       url: `https://superpay.app/send?to=${username}${amount ? `&amount=${amount}` : ''}`,
     };
 
@@ -122,7 +123,7 @@ export default function QRCodeCard({ username, amount, walletAddress, onShare }:
                   border: '1px solid rgba(127, 19, 236, 0.3)',
                 }}
               >
-                <span className="text-[#a855f7] font-bold">{amount} MOVE</span>
+                <span className="text-[#a855f7] font-bold">{amount} USDC</span>
               </div>
             </div>
           )}
@@ -144,7 +145,7 @@ export default function QRCodeCard({ username, amount, walletAddress, onShare }:
                 <line x1="0" y1="70" x2="0" y2="110" stroke="white" strokeWidth="20" strokeLinecap="round"/>
               </g>
             </svg>
-            <span className="text-xs text-slate-500 dark:text-[#ad92c9] font-medium">SuperPay</span>
+            <span className="text-xs text-slate-500 dark:text-[#ad92c9] font-medium">Zoopfi</span>
           </div>
         </div>
       </div>
@@ -155,30 +156,21 @@ export default function QRCodeCard({ username, amount, walletAddress, onShare }:
           onClick={copyLink}
           className="flex-1 btn btn-secondary flex items-center justify-center gap-2 py-3 h-12"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-          </svg>
+          <Copy size={18} />
           Copy Link
         </button>
         <button
           onClick={handleShare}
           className="flex-1 btn btn-primary flex items-center justify-center gap-2 py-3 h-12"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="18" cy="5" r="3"/>
-            <circle cx="6" cy="12" r="3"/>
-            <circle cx="18" cy="19" r="3"/>
-            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-          </svg>
+          <Share2 size={18} />
           Share
         </button>
       </div>
 
       {/* Scan instructions */}
       <p className="mt-4 text-center text-sm text-slate-500 dark:text-[#ad92c9]">
-        Scan with SuperPay or any QR scanner
+        Scan with Zoopfi or any QR scanner
       </p>
     </div>
   );

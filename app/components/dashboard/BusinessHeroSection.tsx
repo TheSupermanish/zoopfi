@@ -1,8 +1,9 @@
 'use client';
 
 import NotificationBell from '../NotificationBell';
-import { formatBalance, formatUSD } from '../../lib/balance';
+import { formatBalance, formatUSD } from '@/app/lib/chain';
 import { UserData } from '../../lib/api';
+import { Wallet, ArrowDownLeft, BarChart3, Check } from 'lucide-react';
 
 interface BusinessHeroSectionProps {
   userData: UserData | null;
@@ -95,7 +96,7 @@ export default function BusinessHeroSection({
               )}
               {/* Verified Badge */}
               <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center border-2 border-[#1a1030]">
-                <span className="text-sm">✓</span>
+                <Check className="w-4 h-4 text-white" />
               </div>
             </div>
 
@@ -140,18 +141,18 @@ export default function BusinessHeroSection({
         <div className="flex flex-wrap gap-3 mt-6">
           <div className="px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-md border border-purple-500/20 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-400 flex items-center justify-center">
-              <span className="text-white text-lg">💰</span>
+              <Wallet className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-purple-300/60 text-xs">Balance</p>
-              <p className="text-white font-bold">{formatBalance(balance)} MOVE</p>
+              <p className="text-white font-bold">{formatBalance(balance)} USDC</p>
               <p className="text-purple-300/40 text-[10px]">{formatUSD(balance)}</p>
             </div>
           </div>
           
           <div className="px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-md border border-purple-500/20 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-              <span className="text-white text-lg">📥</span>
+              <ArrowDownLeft className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-purple-300/60 text-xs">Payments Received</p>
@@ -161,11 +162,11 @@ export default function BusinessHeroSection({
           
           <div className="px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-md border border-purple-500/20 flex items-center gap-3 hover:bg-white/10 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-              <span className="text-white text-lg">📊</span>
+              <BarChart3 className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-purple-300/60 text-xs">Total Received</p>
-              <p className="text-white font-bold">{formatBalance(userData?.totalReceived || 0)} MOVE</p>
+              <p className="text-white font-bold">{formatBalance(userData?.totalReceived || 0)} USDC</p>
             </div>
           </div>
         </div>

@@ -1,15 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useWallet, formatBalance, formatUSD } from '@/app/lib/chain';
+import { useUser, useBalance, useTransactions, useStreak } from '../lib/hooks';
 import Link from 'next/link';
 import DashboardLayout from '../components/DashboardLayout';
 import PersonalHeroSection from '../components/dashboard/PersonalHeroSection';
 import BusinessHeroSection from '../components/dashboard/BusinessHeroSection';
-import { fetchBalance, formatBalance, formatUSD } from '../lib/balance';
-import { getUserByAddress, getTransactions, getStreakInfo, UserData } from '../lib/api';
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  Shield,
+  Users,
+  CreditCard,
+  BarChart3,
+  Wallet,
+  Briefcase,
+  TrendingUp,
+  Rocket,
+} from 'lucide-react';
 
 interface Transaction {
   _id: string;
@@ -23,71 +33,27 @@ interface Transaction {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, authenticated, logout: privyLogout } = usePrivy();
-  const { account, connected, disconnect } = useWallet();
-  
-  const [walletAddress, setWalletAddress] = useState('');
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [balance, setBalance] = useState(0);
-  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
-  const [streakInfo, setStreakInfo] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { address: walletAddress, authenticated, isConnected } = useWallet();
+
+  // Cached app-wide (TanStack Query): shared across pages, polled for balance/tx
+  // so navigating back is instant (no refetch spinner) and balances stay live.
+  const { data: userData } = useUser();
+  const { data: balance = 0 } = useBalance('USDC');
+  const { data: recentTransactions = [] } = useTransactions(5);
+  const { data: streakInfo } = useStreak();
 
   const isBusiness = userData?.accountType === 'business';
+  const isLoading = userData === undefined; // only blocks on first load; cached after
 
-  // Get wallet address
+  // Not registered yet -> onboarding.
   useEffect(() => {
-    if (authenticated && user) {
-      const moveWallet = user.linkedAccounts?.find(
-        (acc: any) => acc.chainType === 'aptos'
-      ) as any;
-      if (moveWallet?.address) {
-        setWalletAddress(moveWallet.address);
-      }
-    } else if (connected && account?.address) {
-      setWalletAddress(account.address.toString());
-    }
-  }, [authenticated, user, connected, account]);
+    if (userData === null) router.replace('/onboarding');
+  }, [userData, router]);
 
-  // Fetch all data
-  useEffect(() => {
-    if (!walletAddress) return;
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch user data
-        const userResult = await getUserByAddress(walletAddress);
-        if (!userResult) {
-          router.replace('/onboarding');
-          return;
-        }
-        setUserData(userResult);
-
-        // Fetch balance, transactions, streak in parallel
-        const [bal, txResult, streak] = await Promise.all([
-          fetchBalance(walletAddress),
-          getTransactions(walletAddress, 5, 0),
-          getStreakInfo(walletAddress),
-        ]);
-        
-        setBalance(bal);
-        setRecentTransactions(txResult.transactions || []);
-        setStreakInfo(streak);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [walletAddress]);
-
-  // Redirect if not connected (only once on mount)
+  // Not connected -> home.
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !connected) {
+      if (!authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -106,7 +72,7 @@ export default function DashboardPage() {
   const personalQuickActions = [
     {
       href: '/transact',
-      icon: '📤',
+      Icon: ArrowUpRight,
       title: 'Send',
       subtitle: 'Transfer crypto',
       gradient: 'from-[#7f13ec] to-[#5b0ba8]',
@@ -114,23 +80,23 @@ export default function DashboardPage() {
     },
     {
       href: '/transact?mode=receive',
-      icon: '📥',
+      Icon: ArrowDownLeft,
       title: 'Receive',
       subtitle: 'Get paid easily',
       gradient: 'from-blue-600 to-indigo-700',
       shadow: 'shadow-blue-500/20',
     },
     {
-      href: '/transact?mode=receive',
-      icon: '💸',
-      title: 'Request',
-      subtitle: 'Ask for payment',
-      gradient: 'from-emerald-600 to-teal-700',
-      shadow: 'shadow-emerald-500/20',
+      href: '/private',
+      Icon: Shield,
+      title: 'Private',
+      subtitle: 'Shielded payments',
+      gradient: 'from-violet-600 to-fuchsia-700',
+      shadow: 'shadow-violet-500/20',
     },
     {
       href: '/contacts',
-      icon: '👥',
+      Icon: Users,
       title: 'Friends',
       subtitle: 'Manage contacts',
       gradient: 'from-pink-600 to-rose-700',
@@ -142,23 +108,23 @@ export default function DashboardPage() {
   const businessQuickActions = [
     {
       href: '/transact?mode=receive',
-      icon: '💳',
+      Icon: CreditCard,
       title: 'Accept Payment',
       subtitle: 'From customers',
       gradient: 'from-purple-600 to-purple-800',
       shadow: 'shadow-purple-500/20',
     },
     {
-      href: '/transact?mode=receive',
-      icon: '📱',
-      title: 'QR Code',
-      subtitle: 'Generate payment QR',
-      gradient: 'from-violet-600 to-indigo-700',
+      href: '/private',
+      Icon: Shield,
+      title: 'Private',
+      subtitle: 'Shielded payments',
+      gradient: 'from-violet-600 to-fuchsia-700',
       shadow: 'shadow-violet-500/20',
     },
     {
       href: '/history',
-      icon: '📊',
+      Icon: BarChart3,
       title: 'Analytics',
       subtitle: 'View reports',
       gradient: 'from-fuchsia-600 to-pink-700',
@@ -166,7 +132,7 @@ export default function DashboardPage() {
     },
     {
       href: '/contacts',
-      icon: '👥',
+      Icon: Users,
       title: 'Customers',
       subtitle: 'Manage clients',
       gradient: 'from-rose-600 to-red-700',
@@ -214,7 +180,7 @@ export default function DashboardPage() {
             <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl translate-x-5 -translate-y-5" />
             <div className="relative flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                  <span className="text-2xl">{action.icon}</span>
+                  <action.Icon className="w-6 h-6 text-white" />
               </div>
               <div>
                   <h3 className="font-bold text-white text-lg">{action.title}</h3>
@@ -249,7 +215,11 @@ export default function DashboardPage() {
                         ? 'bg-gradient-to-br from-purple-600 to-purple-400 shadow-purple-600/30' 
                         : 'bg-gradient-to-br from-[#7f13ec] to-[#a855f7] shadow-[#7f13ec]/30'
                     }`}>
-                      <span className="text-2xl">{isBusiness ? '💼' : '💎'}</span>
+                      {isBusiness ? (
+                        <Briefcase className="w-6 h-6 text-white" />
+                      ) : (
+                        <Wallet className="w-6 h-6 text-white" />
+                      )}
                     </div>
                     <div>
                       <p className="text-slate-500 dark:text-[#ad92c9] text-sm">
@@ -266,7 +236,7 @@ export default function DashboardPage() {
                 </div>
                 
                 <h2 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white mb-6">
-                  {formatBalance(balance)} <span className="text-2xl text-slate-400 dark:text-[#ad92c9]">MOVE</span>
+                  {formatBalance(balance)} <span className="text-2xl text-slate-400 dark:text-[#ad92c9]">USDC</span>
                 </h2>
                 
                 <div className="flex gap-3">
@@ -310,7 +280,7 @@ export default function DashboardPage() {
               <div className="bg-white dark:bg-[#251a30] rounded-2xl p-6 border border-purple-500/20 dark:border-purple-500/10 shadow-sm dark:shadow-none">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="text-3xl">📈</div>
+                    <TrendingUp className="w-7 h-7 text-purple-600 dark:text-purple-400" />
                     <div>
                       <h3 className="font-bold text-slate-900 dark:text-white">Business Summary</h3>
                       <p className="text-slate-500 dark:text-[#ad92c9] text-sm">
@@ -406,7 +376,11 @@ export default function DashboardPage() {
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
                       isBusiness ? 'bg-purple-500/10' : 'bg-[#7f13ec]/10'
                     }`}>
-                      <span className="text-3xl">{isBusiness ? '💳' : '🚀'}</span>
+                      {isBusiness ? (
+                        <CreditCard className="w-7 h-7 text-purple-500" />
+                      ) : (
+                        <Rocket className="w-7 h-7 text-[#7f13ec]" />
+                      )}
                     </div>
                     <p className="text-slate-900 dark:text-white font-bold">
                       {isBusiness ? 'No payments yet' : 'No activity yet'}
@@ -429,7 +403,7 @@ export default function DashboardPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {recentTransactions.map((tx, index) => {
+                    {recentTransactions.map((tx: Transaction, index: number) => {
                       const isSent = tx.senderAddress === walletAddress;
                       return (
                         <div 
@@ -443,7 +417,11 @@ export default function DashboardPage() {
                                 ? 'bg-red-500/10 text-red-400' 
                                 : 'bg-emerald-500/10 text-emerald-400'
                             }`}>
-                              <span>{isSent ? '↗' : '↙'}</span>
+                              {isSent ? (
+                                <ArrowUpRight className="w-5 h-5" />
+                              ) : (
+                                <ArrowDownLeft className="w-5 h-5" />
+                              )}
                             </div>
                             <div>
                               <p className="text-slate-900 dark:text-white font-medium text-sm">

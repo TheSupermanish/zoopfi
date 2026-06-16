@@ -9,6 +9,10 @@ const spaceGrotesk = Space_Grotesk({
   weight: ['300', '400', '500', '600', '700'],
 });
 
+// This is a client-side wallet dApp (Privy initializes in the browser), so opt
+// out of static prerendering — pages render dynamically at request time.
+export const dynamic = 'force-dynamic';
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -19,12 +23,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "SuperPay - Send Crypto by Username",
-  description: "Send crypto to anyone using just their username. Built on Movement Network.",
+  title: "Zoopfi - Private Payments on Stellar",
+  description: "Send money by username with private, ZK-powered payments on Stellar.",
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'SuperPay',
+    title: 'Zoopfi',
   },
   formatDetection: {
     telephone: false,

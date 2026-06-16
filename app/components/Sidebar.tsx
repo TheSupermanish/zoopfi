@@ -2,8 +2,22 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import {
+  LayoutDashboard,
+  ArrowLeftRight,
+  Shield,
+  Receipt,
+  History,
+  Users,
+  Trophy,
+  Settings,
+  CreditCard,
+  FileText,
+  Wallet,
+  Building2,
+  LogOut,
+} from 'lucide-react';
+import { useWallet } from '@/app/lib/chain';
 import ThemeToggle from './ThemeToggle';
 import { AccountType } from '../lib/api';
 
@@ -16,21 +30,24 @@ interface SidebarProps {
 }
 
 const personalNavItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/transact', label: 'Transact', icon: '💸' },
-  { href: '/groups', label: 'Groups', icon: '🧾' },
-  { href: '/history', label: 'History', icon: '📜' },
-  { href: '/contacts', label: 'Friends', icon: '👥' },
-  { href: '/rewards', label: 'Rewards', icon: '🏆' },
-  { href: '/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { href: '/transact', label: 'Transact', Icon: ArrowLeftRight },
+  { href: '/private', label: 'Private', Icon: Shield },
+  { href: '/groups', label: 'Groups', Icon: Receipt },
+  { href: '/history', label: 'History', Icon: History },
+  { href: '/contacts', label: 'Friends', Icon: Users },
+  { href: '/rewards', label: 'Rewards', Icon: Trophy },
+  { href: '/settings', label: 'Settings', Icon: Settings },
 ];
 
 const businessNavItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-  { href: '/transact', label: 'Payments', icon: '💳' },
-  { href: '/history', label: 'History', icon: '📜' },
-  { href: '/contacts', label: 'Customers', icon: '👥' },
-  { href: '/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { href: '/transact', label: 'Payments', Icon: CreditCard },
+  { href: '/invoices', label: 'Invoices', Icon: FileText },
+  { href: '/private', label: 'Private', Icon: Shield },
+  { href: '/history', label: 'History', Icon: History },
+  { href: '/contacts', label: 'Customers', Icon: Users },
+  { href: '/settings', label: 'Settings', Icon: Settings },
 ];
 
 export default function Sidebar({ 
@@ -42,19 +59,15 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout: privyLogout, authenticated } = usePrivy();
-  const { disconnect, connected } = useWallet();
+  const { authenticated, isConnected, logout } = useWallet();
 
   const isBusiness = accountType === 'business';
   const navItems = isBusiness ? businessNavItems : personalNavItems;
 
   const handleLogout = async () => {
     try {
-      if (authenticated) {
-        await privyLogout();
-      }
-      if (connected) {
-        await disconnect();
+      if (authenticated || isConnected) {
+        await logout();
       }
       router.replace('/');
     } catch (error) {
@@ -82,11 +95,11 @@ export default function Sidebar({
           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xl ${
             isBusiness ? 'bg-purple-600' : 'bg-[#7f13ec]'
           }`}>
-            {isBusiness ? '🏢' : '💸'}
+            {isBusiness ? <Building2 className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
           </div>
           <div className="flex flex-col">
             <h1 className="text-xl font-bold leading-none tracking-tight text-slate-900 dark:text-white">
-              SuperPay
+              Zoopfi
             </h1>
             <div className="flex items-center gap-1.5">
               {isBusiness && (
@@ -94,7 +107,7 @@ export default function Sidebar({
                   BUSINESS
                 </span>
               )}
-            <p className="text-slate-500 dark:text-[#ad92c9] text-xs font-medium">Movement Network</p>
+            <p className="text-slate-500 dark:text-[#ad92c9] text-xs font-medium">Stellar Network</p>
             </div>
           </div>
         </div>
@@ -121,7 +134,7 @@ export default function Sidebar({
                   boxShadow: isActive ? shadowColor : 'none'
                 }}
               >
-                <span className="text-xl">{item.icon}</span>
+                <item.Icon className="w-5 h-5" />
                 <span className="text-sm font-bold">{item.label}</span>
               </Link>
             );
@@ -130,7 +143,7 @@ export default function Sidebar({
       </div>
 
       {/* Bottom Section */}
-      <div className="flex flex-col gap-4">
+      <div className="mt-8 flex flex-col gap-4">
         {/* Theme Toggle */}
         <div className="flex items-center justify-between px-2 py-2 rounded-xl bg-slate-100 dark:bg-[#251a30]">
           <span className="text-sm font-medium text-slate-600 dark:text-[#ad92c9]">Theme</span>
@@ -186,7 +199,7 @@ export default function Sidebar({
           onClick={handleLogout}
           className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl h-12 px-4 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors text-sm font-bold"
         >
-          <span>🚪</span>
+          <LogOut className="w-5 h-5" />
           <span>Log Out</span>
         </button>
       </div>

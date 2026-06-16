@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { Camera, X } from 'lucide-react';
 import { Html5Qrcode, Html5QrcodeScannerState } from 'html5-qrcode';
 
 interface QRScannerProps {
@@ -121,7 +122,7 @@ export default function QRScanner({ isOpen, onClose, onScan }: QRScannerProps) {
         onScan({ username, amount });
         onClose();
       } else {
-        setError('Invalid QR code. Please scan a SuperPay QR.');
+        setError('Invalid QR code. Please scan a Zoopfi QR.');
       }
     } catch (err) {
       setError('Invalid QR code format.');
@@ -149,7 +150,7 @@ export default function QRScanner({ isOpen, onClose, onScan }: QRScannerProps) {
           onClick={handleClose}
           className="p-2 rounded-xl glass touch-target"
         >
-          <span className="text-xl text-white">✕</span>
+          <X size={20} className="text-white" />
         </button>
         <h2 className="text-lg font-bold text-white">Scan QR Code</h2>
         <div className="w-10" /> {/* Spacer */}
@@ -200,7 +201,7 @@ export default function QRScanner({ isOpen, onClose, onScan }: QRScannerProps) {
         {error && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/80 rounded-2xl p-6">
             <div className="text-center">
-              <span className="text-4xl mb-4 block">📷</span>
+              <Camera size={36} className="mb-4 mx-auto text-white" />
               <p className="text-red-400 mb-4">{error}</p>
               <button
                 onClick={startScanner}
@@ -219,7 +220,7 @@ export default function QRScanner({ isOpen, onClose, onScan }: QRScannerProps) {
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-gray-400 text-sm">
-          Point your camera at a SuperPay QR code
+          Point your camera at a Zoopfi QR code
         </p>
       </div>
 

@@ -1,4 +1,4 @@
-// SuperPay Design System
+// Zoopfi Design System
 // Consistent design tokens used across the application
 
 export const theme = {

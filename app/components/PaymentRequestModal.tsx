@@ -1,12 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { usePrivy } from '@privy-io/react-auth';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
-import { useSignRawHash } from '@privy-io/react-auth/extended-chains';
+import { CheckCircle2, X } from 'lucide-react';
 import { updatePaymentRequest, recordTransaction, updateStreak, getUserByUsername } from '../lib/api';
-import { transferWithPrivy, transferWithNativeWallet } from '../lib/transfer';
-import { fetchBalance, formatBalance } from '../lib/balance';
+import { useWallet, formatBalance } from '@/app/lib/chain';
 
 interface PaymentRequest {
   _id: string;
@@ -35,9 +32,7 @@ export default function PaymentRequestModal({
   onClose,
   onComplete,
 }: PaymentRequestModalProps) {
-  const { user, authenticated } = usePrivy();
-  const { connected, signAndSubmitTransaction } = useWallet();
-  const { signRawHash } = useSignRawHash();
+  const { ops } = useWallet();
 
   const [isPaying, setIsPaying] = useState(false);
   const [isDeclining, setIsDeclining] = useState(false);
@@ -48,7 +43,7 @@ export default function PaymentRequestModal({
   // Fetch balance when modal opens
   useState(() => {
     if (isOpen && walletAddress) {
-      fetchBalance(walletAddress).then(setBalance);
+      ops.getBalance(walletAddress, 'USDC').then((bal) => setBalance(Number(bal)));
     }
   });
 
@@ -58,7 +53,7 @@ export default function PaymentRequestModal({
 
     try {
       // Check balance
-      const currentBalance = await fetchBalance(walletAddress);
+      const currentBalance = Number(await ops.getBalance(walletAddress, 'USDC'));
       if (currentBalance < request.amount) {
         setError('Insufficient balance');
         setIsPaying(false);
@@ -67,32 +62,9 @@ export default function PaymentRequestModal({
 
       let txHash: string;
 
-      const isPrivyWallet = authenticated && user?.linkedAccounts?.find(
-        (acc: any) => acc.chainType === 'aptos'
-      );
-
-      if (isPrivyWallet && signRawHash) {
-        const moveWallet = user!.linkedAccounts!.find(
-          (acc: any) => acc.chainType === 'aptos'
-        ) as any;
-
-        txHash = await transferWithPrivy(
-          walletAddress,
-          request.requesterAddress,
-          request.amount,
-          moveWallet.publicKey,
-          signRawHash
-        );
-      } else if (connected && signAndSubmitTransaction) {
-        txHash = await transferWithNativeWallet(
-          walletAddress,
-          request.requesterAddress,
-          request.amount,
-          signAndSubmitTransaction
-        );
-      } else {
-        throw new Error('No wallet available for signing');
-      }
+      const result = await ops.sendPayment(request.requesterAddress, String(request.amount), 'USDC', request.message || undefined);
+      if (!result.success) throw new Error(result.error || 'Transaction failed. Please try again.');
+      txHash = result.hash;
 
       // Record the transaction
       await recordTransaction({
@@ -149,11 +121,11 @@ export default function PaymentRequestModal({
         {success ? (
           <div className="text-center py-6">
             <div className="w-20 h-20 mx-auto rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
-              <span className="text-4xl">✅</span>
+              <CheckCircle2 size={40} className="text-emerald-400" />
             </div>
             <h3 className="text-xl font-bold text-white mb-2">Payment Sent!</h3>
             <p className="text-gray-400">
-              {request.amount} MOVE sent to @{request.requesterUsername}
+              {request.amount} USDC sent to @{request.requesterUsername}
             </p>
           </div>
         ) : (
@@ -165,7 +137,7 @@ export default function PaymentRequestModal({
                 onClick={onClose}
                 className="p-2 rounded-lg hover:bg-white/10 transition-colors"
               >
-                <span className="text-gray-400">✕</span>
+                <X size={20} className="text-gray-400" />
               </button>
             </div>
 
@@ -185,7 +157,7 @@ export default function PaymentRequestModal({
 
               <div className="text-center py-4 border-t border-b border-white/5">
                 <p className="text-4xl font-bold text-white">{request.amount}</p>
-                <p className="text-gray-400">MOVE</p>
+                <p className="text-gray-400">USDC</p>
               </div>
 
               {request.message && (
@@ -204,7 +176,7 @@ export default function PaymentRequestModal({
             {balance !== null && (
               <p className="text-gray-400 text-sm text-center mb-4">
                 Your balance: <span className={balance >= request.amount ? 'text-emerald-400' : 'text-red-400'}>
-                  {formatBalance(balance)} MOVE
+                  {formatBalance(balance)} USDC
                 </span>
               </p>
             )}
@@ -236,7 +208,7 @@ export default function PaymentRequestModal({
                     Paying...
                   </span>
                 ) : (
-                  `Pay ${request.amount} MOVE`
+                  `Pay ${request.amount} USDC`
                 )}
               </button>
             </div>

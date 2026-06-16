@@ -1,5 +1,6 @@
 'use client';
 
+import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 interface ThemeToggleProps {
@@ -17,7 +18,7 @@ export default function ThemeToggle({ className = '', showLabel = false }: Theme
         className={`relative flex items-center gap-2 p-2 rounded-xl ${className}`}
         aria-label="Toggle theme"
       >
-        <span className="text-lg opacity-50">🌙</span>
+        <Moon className="w-4 h-4 opacity-50" />
         {showLabel && (
           <span className="text-sm font-medium text-slate-600 dark:text-[#ad92c9] opacity-50">
             Theme
@@ -34,10 +35,8 @@ export default function ThemeToggle({ className = '', showLabel = false }: Theme
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
       {/* Icon - show current theme's icon */}
-      <span className="text-lg">
-        {theme === 'dark' ? '🌙' : '☀️'}
-      </span>
-      
+      {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+
       {showLabel && (
         <span className="text-sm font-medium text-slate-600 dark:text-[#ad92c9]">
           {theme === 'dark' ? 'Dark' : 'Light'}
@@ -55,8 +54,8 @@ export function ThemeTogglePill() {
   if (!mounted) {
     return (
       <div className="flex items-center gap-2 p-1 rounded-xl bg-slate-100 dark:bg-[#362348] opacity-50">
-        <div className="px-4 py-2 rounded-lg text-sm font-bold">☀️ Light</div>
-        <div className="px-4 py-2 rounded-lg text-sm font-bold">🌙 Dark</div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold"><Sun className="w-4 h-4" /> Light</div>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold"><Moon className="w-4 h-4" /> Dark</div>
       </div>
     );
   }
@@ -71,7 +70,7 @@ export function ThemeTogglePill() {
             : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-700 dark:hover:text-white'
         }`}
       >
-        <span>☀️</span>
+        <Sun className="w-4 h-4" />
         Light
       </button>
       <button
@@ -82,10 +81,9 @@ export function ThemeTogglePill() {
             : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-700 dark:hover:text-white'
         }`}
       >
-        <span>🌙</span>
+        <Moon className="w-4 h-4" />
         Dark
       </button>
     </div>
   );
 }
-

@@ -2,10 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import {
+  Home,
+  ArrowLeftRight,
+  Shield,
+  Users,
+  History,
+  CreditCard,
+  FileText,
+  Settings,
+  Wallet,
+  Building2,
+} from 'lucide-react';
 import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
 import ThemeToggle from './ThemeToggle';
 import { AccountType } from '../lib/api';
+import { useWallet } from '../lib/chain';
+import { useUser } from '../lib/hooks';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -17,30 +31,41 @@ interface DashboardLayoutProps {
 }
 
 const personalMobileNavItems = [
-  { href: '/dashboard', label: 'Home', icon: '🏠' },
-  { href: '/transact', label: 'Transact', icon: '💸' },
-  { href: '/groups', label: 'Groups', icon: '👥' },
-  { href: '/contacts', label: 'Friends', icon: '👥' },
-  { href: '/history', label: 'History', icon: '📜' },
+  { href: '/dashboard', label: 'Home', Icon: Home },
+  { href: '/transact', label: 'Transact', Icon: ArrowLeftRight },
+  { href: '/private', label: 'Private', Icon: Shield },
+  { href: '/groups', label: 'Groups', Icon: Users },
+  { href: '/history', label: 'History', Icon: History },
 ];
 
 const businessMobileNavItems = [
-  { href: '/dashboard', label: 'Home', icon: '🏠' },
-  { href: '/transact', label: 'Payments', icon: '💳' },
-  { href: '/history', label: 'History', icon: '📜' },
-  { href: '/contacts', label: 'Customers', icon: '👥' },
-  { href: '/settings', label: 'Settings', icon: '⚙️' },
+  { href: '/dashboard', label: 'Home', Icon: Home },
+  { href: '/transact', label: 'Payments', Icon: CreditCard },
+  { href: '/invoices', label: 'Invoices', Icon: FileText },
+  { href: '/history', label: 'History', Icon: History },
+  { href: '/contacts', label: 'Customers', Icon: Users },
 ];
 
-export default function DashboardLayout({ 
-  children, 
-  username, 
-  walletAddress,
-  accountType = 'personal',
-  displayName,
-  avatarUrl 
+export default function DashboardLayout({
+  children,
+  username: usernameProp,
+  walletAddress: walletAddressProp,
+  accountType: accountTypeProp,
+  displayName: displayNameProp,
+  avatarUrl: avatarUrlProp,
 }: DashboardLayoutProps) {
   const pathname = usePathname();
+  const { address } = useWallet();
+  // Cached app-wide (TanStack Query) so the shell resolves business vs personal
+  // instantly on navigation instead of refetching + flickering on each page.
+  const { data: resolved } = useUser();
+
+  const accountType: AccountType = accountTypeProp ?? resolved?.accountType ?? 'personal';
+  const username = usernameProp ?? resolved?.username;
+  const displayName = displayNameProp ?? resolved?.displayName;
+  const avatarUrl = avatarUrlProp ?? resolved?.avatarUrl;
+  const walletAddress = walletAddressProp ?? address ?? undefined;
+
   const isBusiness = accountType === 'business';
   const mobileNavItems = isBusiness ? businessMobileNavItems : personalMobileNavItems;
 
@@ -71,11 +96,11 @@ export default function DashboardLayout({
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${
                 isBusiness ? 'bg-purple-600' : 'bg-[#7f13ec]'
               }`}>
-                {isBusiness ? '🏢' : '💸'}
+                {isBusiness ? <Building2 className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-lg text-slate-900 dark:text-white leading-tight">
-                  {isBusiness ? (displayName || 'Business') : 'SuperPay'}
+                  {isBusiness ? (displayName || 'Business') : 'Zoopfi'}
                 </span>
                 {isBusiness && (
                   <span className="text-[10px] font-bold text-purple-400">BUSINESS</span>
@@ -127,8 +152,8 @@ export default function DashboardLayout({
                     isActive ? activeColor : 'text-slate-400 dark:text-[#ad92c9]'
                   }`}
                 >
-                  <span className={`text-2xl mb-1 transition-transform ${isActive ? 'scale-110' : ''}`}>
-                    {item.icon}
+                  <span className={`mb-1 transition-transform ${isActive ? 'scale-110' : ''}`}>
+                    <item.Icon className="w-6 h-6" />
                   </span>
                   <span className="text-xs font-medium">{item.label}</span>
                 </Link>
