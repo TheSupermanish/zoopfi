@@ -47,3 +47,10 @@ backend/.env
 backend/.env.local
 backend/node_modules
 .gstack/
+
+# Privacy engine build artifacts (regenerate via scripts/build-privacy-engine.sh)
+/public/js/*_bg.wasm
+/public/js/web_bg.wasm
+/public/circuits/*.r1cs
+/public/circuits/*.wasm
+/public/circuits/source-bundle.tar.gz
