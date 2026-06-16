@@ -122,5 +122,7 @@ export const getAddressExplorerUrl = (address: string): string => {
 // feature falls back to mock behavior.
 export const CONTRACTS = {
   counter: process.env.NEXT_PUBLIC_COUNTER_CONTRACT_ID || '',
+  // Zoopfi balance vault (deposit / transfer / withdraw + events). Deployed to testnet.
+  vault: process.env.NEXT_PUBLIC_VAULT_CONTRACT_ID || '',
   privacyPool: process.env.NEXT_PUBLIC_PRIVACY_POOL_CONTRACT_ID || '',
 } as const;

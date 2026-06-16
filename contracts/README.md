@@ -1,6 +1,33 @@
 # Zoopfi Soroban contracts
 
-Rust smart contracts for Zoopfi on Stellar/Soroban. Replaces the old Move `modules/`.
+Rust smart contracts for Zoopfi on Stellar/Soroban.
+
+## vault (live on testnet)
+
+On-chain balance ledger powering Zoopfi's deposit / transfer / withdraw flow. Every
+state change publishes a Soroban event so the frontend streams a real-time activity
+feed and keeps balances in sync. Methods:
+- `deposit(from: Address, amount: i128) -> i128` (caller-authorized) — emits `deposit`
+- `transfer(from: Address, to: Address, amount: i128) -> i128` (caller-authorized) — emits `transfer`
+- `withdraw(from: Address, amount: i128) -> i128` (caller-authorized) — emits `withdraw`
+- `balance(user: Address) -> i128`, `holders() -> u32`, `total_deposited() -> i128` (read-only)
+
+Errors: `InvalidAmount (#1)`, `InsufficientBalance (#2)`, `SelfTransfer (#3)`.
+
+**Deployed:** `CDZ22BGKBR4LH7NPO7BLZ2O6BWLQP6GNZTCR2PJWUOXMQUX4FVJP2UQR` ([testnet explorer](https://stellar.expert/explorer/testnet/contract/CDZ22BGKBR4LH7NPO7BLZ2O6BWLQP6GNZTCR2PJWUOXMQUX4FVJP2UQR))
+
+```bash
+rustup target add wasm32v1-none
+cd contracts/vault
+cargo test                       # 7 unit tests
+stellar contract build           # -> target/wasm32v1-none/release/vault.wasm
+stellar keys generate zoopfi --network testnet --fund
+stellar contract deploy \
+  --wasm target/wasm32v1-none/release/vault.wasm \
+  --source zoopfi --network testnet
+# put the returned C... id in the frontend env:
+#   NEXT_PUBLIC_VAULT_CONTRACT_ID=C...
+```
 
 ## counter
 
