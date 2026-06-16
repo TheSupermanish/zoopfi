@@ -134,6 +134,25 @@ deployments/scripts/deploy.sh testnet --deployer <key> \
 
 ---
 
+## ▲ Deploy to Vercel
+
+It's a standard Next.js app, so Vercel works out of the box. The one caveat: the
+ZK proving engine (WASM + circuit artifacts) can't be compiled by Vercel, so the
+prebuilt artifacts are **committed** under `public/js` and `public/circuits` and
+served as static assets.
+
+1. Import the repo in Vercel (framework auto-detected as Next.js).
+2. Set environment variables (Project → Settings → Environment Variables):
+   - `NEXT_PUBLIC_PRIVY_APP_ID` — your Privy app id (for social login)
+   - `NEXT_PUBLIC_CHAIN_ADAPTER=stellar`
+   - `NEXT_PUBLIC_STELLAR_NETWORK=testnet`
+   - the contract IDs from `.env.example` (pool / verifier / ASP / vault) — non-secret
+3. Deploy. No COOP/COEP headers needed (the engine's workers use message passing,
+   not SharedArrayBuffer).
+
+The Express/MongoDB backend is optional — without `NEXT_PUBLIC_API_URL` the app
+uses its in-app mock store, so the chain + ZK features work standalone.
+
 ## ✅ Status — what's real vs in progress
 
 Honest breakdown (the hackathon explicitly welcomes WIP, so here it is):
