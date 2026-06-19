@@ -51,3 +51,4 @@ backend/node_modules
 # Privacy engine WASM + circuit artifacts (in public/js, public/circuits) are
 # COMMITTED so Vercel can serve them — it can't build the Rust/WASM engine.
 # Regenerate with scripts/build-privacy-engine.sh when the engine changes.
+backend/dist
