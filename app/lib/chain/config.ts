@@ -120,24 +120,38 @@ export const getAddressExplorerUrl = (address: string): string => {
 
 // Deployed contract IDs (filled in as we deploy to testnet). Empty => the
 // feature falls back to mock behavior.
+// Defaults are our public Stellar testnet deployments, so the app works on a
+// fresh clone / Vercel deploy with no contract env vars to set. Env vars still
+// override (e.g. to point at a different deployment).
+const DEFAULT_TESTNET = {
+  yieldVault: 'CBD637UVMIYLTPCVWEOLTV26OCL77NVPZOLDYUEHXTBC7RDEJKN7JOBE',
+  privacyPool: 'CAO6RPMITSCQTUOFUMFCNELXLNURXMQMRBDZLSIKZX36VH7MBA4LD3UA',
+  verifier: 'CCIRAIRRTZN4QMUE7XVPLBO2II7UQPCPK7GGVSMFJW5HO44LL37SQDCN',
+  aspMembership: 'CANLVYWPTVIBPG2L2PS4GT6BXRXDAWGGZ7PL62WNDXSLWRNGDJYUILHG',
+  aspNonMembership: 'CB3ECD5HYWQDCB34ZYQWLN3PCVMYUBE3WLLH7IVHG5YJSSN7B3IU4IYE',
+  token: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
+} as const;
+// Only apply the baked testnet defaults on testnet (never silently on mainnet).
+const T = CURRENT_NETWORK === 'testnet';
+
 export const CONTRACTS = {
   counter: process.env.NEXT_PUBLIC_COUNTER_CONTRACT_ID || '',
   // Zoopfi balance vault (deposit / transfer / withdraw + events). Deployed to testnet.
   vault: process.env.NEXT_PUBLIC_VAULT_CONTRACT_ID || '',
   // Yield vault (ERC-4626-style shares + time-accruing index). Deployed to testnet.
-  yieldVault: process.env.NEXT_PUBLIC_YIELD_VAULT_CONTRACT_ID || '',
-  privacyPool: process.env.NEXT_PUBLIC_PRIVACY_POOL_CONTRACT_ID || '',
+  yieldVault: process.env.NEXT_PUBLIC_YIELD_VAULT_CONTRACT_ID || (T ? DEFAULT_TESTNET.yieldVault : ''),
+  privacyPool: process.env.NEXT_PUBLIC_PRIVACY_POOL_CONTRACT_ID || (T ? DEFAULT_TESTNET.privacyPool : ''),
 } as const;
 
 // Compliant shielded-payments stack (Groth16 over BN254, Poseidon2), deployed to
 // Stellar testnet. Forked from NethermindEth/stellar-private-payments; the proof
-// is verified on-chain by the Groth16 verifier contract. Empty => UI runs the mock.
+// is verified on-chain by the Groth16 verifier contract.
 export const PRIVACY = {
-  pool: process.env.NEXT_PUBLIC_PRIVACY_POOL_CONTRACT_ID || '',
-  verifier: process.env.NEXT_PUBLIC_PRIVACY_VERIFIER_CONTRACT_ID || '',
-  aspMembership: process.env.NEXT_PUBLIC_ASP_MEMBERSHIP_CONTRACT_ID || '',
-  aspNonMembership: process.env.NEXT_PUBLIC_ASP_NON_MEMBERSHIP_CONTRACT_ID || '',
-  token: process.env.NEXT_PUBLIC_PRIVACY_TOKEN_CONTRACT_ID || '',
+  pool: process.env.NEXT_PUBLIC_PRIVACY_POOL_CONTRACT_ID || (T ? DEFAULT_TESTNET.privacyPool : ''),
+  verifier: process.env.NEXT_PUBLIC_PRIVACY_VERIFIER_CONTRACT_ID || (T ? DEFAULT_TESTNET.verifier : ''),
+  aspMembership: process.env.NEXT_PUBLIC_ASP_MEMBERSHIP_CONTRACT_ID || (T ? DEFAULT_TESTNET.aspMembership : ''),
+  aspNonMembership: process.env.NEXT_PUBLIC_ASP_NON_MEMBERSHIP_CONTRACT_ID || (T ? DEFAULT_TESTNET.aspNonMembership : ''),
+  token: process.env.NEXT_PUBLIC_PRIVACY_TOKEN_CONTRACT_ID || (T ? DEFAULT_TESTNET.token : ''),
 } as const;
 
 /** True when the real on-chain shielded pool is configured (vs the mock). */
