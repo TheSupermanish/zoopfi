@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from '@/app/lib/chain';
 import Link from 'next/link';
-import DashboardLayout from '../components/DashboardLayout';
+import AppShell from '../components/shell/AppShell';
 import InvoiceStatusBadge from '../components/invoices/InvoiceStatusBadge';
 import { getInvoices } from '../lib/api';
 import { useUser } from '@/app/lib/hooks';
@@ -73,13 +73,7 @@ export default function InvoicesPage() {
   }, [authenticated, isConnected, router]);
 
   return (
-    <DashboardLayout
-      username={username}
-      walletAddress={walletAddress}
-      accountType={accountType}
-      displayName={displayName}
-      avatarUrl={avatarUrl}
-    >
+    <AppShell>
       <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -111,7 +105,7 @@ export default function InvoicesPage() {
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 viewMode === 'business'
                   ? 'bg-[#7f13ec] text-white'
-                  : 'bg-slate-100 dark:bg-[#251a30] text-slate-700 dark:text-[#ad92c9]'
+                  : 'bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-[#ad92c9]'
               }`}
             >
               Sent by Me
@@ -121,7 +115,7 @@ export default function InvoicesPage() {
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 viewMode === 'customer'
                   ? 'bg-[#7f13ec] text-white'
-                  : 'bg-slate-100 dark:bg-[#251a30] text-slate-700 dark:text-[#ad92c9]'
+                  : 'bg-slate-100 dark:bg-white/[0.04] text-slate-700 dark:text-[#ad92c9]'
               }`}
             >
               Sent to Me
@@ -138,7 +132,7 @@ export default function InvoicesPage() {
               className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
                 statusFilter === status
                   ? 'bg-[#7f13ec] text-white'
-                  : 'bg-white dark:bg-[#251a30] text-slate-700 dark:text-[#ad92c9] border border-slate-200 dark:border-[#362348]'
+                  : 'bg-white dark:bg-white/[0.04] text-slate-700 dark:text-[#ad92c9] border border-slate-200 dark:border-white/10'
               }`}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -148,7 +142,7 @@ export default function InvoicesPage() {
 
         {/* Invoice List */}
         {invoices.length === 0 ? (
-          <div className="bg-white dark:bg-[#251a30] rounded-2xl p-12 text-center border border-slate-200 dark:border-white/5">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-12 text-center border border-slate-200 dark:border-white/5">
             <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-4">
               <span className="text-4xl">📄</span>
             </div>
@@ -176,7 +170,7 @@ export default function InvoicesPage() {
               <Link
                 key={invoice._id}
                 href={`/invoices/${invoice._id}`}
-                className="bg-white dark:bg-[#251a30] rounded-2xl p-6 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all shadow-sm dark:shadow-none"
+                className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all shadow-sm dark:shadow-none"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -211,6 +205,6 @@ export default function InvoicesPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </AppShell>
   );
 }

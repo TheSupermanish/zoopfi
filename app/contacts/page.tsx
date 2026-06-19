@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useWallet } from '@/app/lib/chain';
 import { useUser } from '@/app/lib/hooks';
 import Link from 'next/link';
-import DashboardLayout from '../components/DashboardLayout';
+import AppShell from '../components/shell/AppShell';
 import {
   getContacts,
   deleteContact,
@@ -229,7 +229,7 @@ export default function ContactsPage() {
   const pendingCount = receivedRequests.length;
 
   return (
-    <DashboardLayout username={username} walletAddress={walletAddress}>
+    <AppShell>
       <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12">
         {/* Background Gradient */}
         <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#7f13ec]/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
@@ -255,8 +255,8 @@ export default function ContactsPage() {
           </header>
 
           {/* Tabs */}
-          <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#191022]/95 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-slate-200 dark:border-white/5">
-            <div className="flex gap-2 p-1.5 rounded-2xl bg-white dark:bg-[#362348] border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
+          <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#0a0512]/90 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-slate-200 dark:border-white/5">
+            <div className="flex gap-2 p-1.5 rounded-2xl bg-white dark:bg-white/[0.08] border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
               <button
                 onClick={() => setActiveTab('friends')}
                 className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
@@ -303,7 +303,7 @@ export default function ContactsPage() {
             <div className="flex flex-col gap-4">
               {/* Search */}
               <div className="w-full">
-                <label className="flex w-full items-center rounded-2xl bg-white dark:bg-[#362348] h-14 px-4 border border-slate-200 dark:border-transparent focus-within:border-[#7f13ec]/50 transition-colors shadow-sm dark:shadow-none">
+                <label className="flex w-full items-center rounded-2xl bg-white dark:bg-white/[0.08] h-14 px-4 border border-slate-200 dark:border-transparent focus-within:border-[#7f13ec]/50 transition-colors shadow-sm dark:shadow-none">
                   <Search className="w-5 h-5 text-slate-400 dark:text-[#ad92c9]" />
                   <input
                     type="text"
@@ -321,7 +321,7 @@ export default function ContactsPage() {
                   <div className="spinner" />
                 </div>
               ) : filteredContacts.length === 0 ? (
-                <div className="bg-white dark:bg-[#362348]/50 rounded-3xl p-12 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
+                <div className="bg-white dark:bg-white/[0.05] rounded-3xl p-12 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                   <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-6">
                     <Users className="w-12 h-12 text-[#7f13ec]" />
                   </div>
@@ -348,7 +348,7 @@ export default function ContactsPage() {
                   {filteredContacts.map((contact, index) => (
                     <div
                       key={contact._id}
-                      className="group bg-white dark:bg-[#362348] rounded-2xl p-5 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 hover:shadow-lg hover:shadow-[#7f13ec]/5 transition-all animate-fade-in-up shadow-sm dark:shadow-none"
+                      className="group bg-white dark:bg-white/[0.08] rounded-2xl p-5 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 hover:shadow-lg hover:shadow-[#7f13ec]/5 transition-all animate-fade-in-up shadow-sm dark:shadow-none"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div className="flex items-center gap-4">
@@ -401,7 +401,7 @@ export default function ContactsPage() {
           {activeTab === 'requests' && (
             <div className="flex flex-col gap-4">
               {receivedRequests.length === 0 ? (
-                <div className="bg-white dark:bg-[#362348]/50 rounded-3xl p-12 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
+                <div className="bg-white dark:bg-white/[0.05] rounded-3xl p-12 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                   <div className="w-20 h-20 mx-auto rounded-2xl bg-amber-500/10 flex items-center justify-center mb-6">
                     <MailOpen className="w-12 h-12 text-amber-500" />
                   </div>
@@ -415,7 +415,7 @@ export default function ContactsPage() {
                   {receivedRequests.map((request, index) => (
                     <div
                       key={request._id}
-                      className="bg-white dark:bg-[#362348] rounded-2xl p-5 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all animate-fade-in-up shadow-sm dark:shadow-none"
+                      className="bg-white dark:bg-white/[0.08] rounded-2xl p-5 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all animate-fade-in-up shadow-sm dark:shadow-none"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div className="flex items-start gap-4">
@@ -465,7 +465,7 @@ export default function ContactsPage() {
           {activeTab === 'sent' && (
             <div className="flex flex-col gap-4">
               {sentRequests.length === 0 ? (
-                <div className="bg-white dark:bg-[#362348]/50 rounded-3xl p-12 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
+                <div className="bg-white dark:bg-white/[0.05] rounded-3xl p-12 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                   <div className="w-20 h-20 mx-auto rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6">
                     <Send className="w-12 h-12 text-blue-500" />
                   </div>
@@ -479,7 +479,7 @@ export default function ContactsPage() {
                   {sentRequests.map((request, index) => (
                     <div
                       key={request._id}
-                      className="bg-white dark:bg-[#362348] rounded-2xl p-5 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all animate-fade-in-up shadow-sm dark:shadow-none"
+                      className="bg-white dark:bg-white/[0.08] rounded-2xl p-5 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all animate-fade-in-up shadow-sm dark:shadow-none"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
                       <div className="flex items-center justify-between">
@@ -523,7 +523,7 @@ export default function ContactsPage() {
       {/* Add Friend Modal */}
       {showAddForm && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#251a30] rounded-3xl p-6 w-full max-w-md border border-slate-200 dark:border-white/10 shadow-xl animate-scale-in">
+          <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 w-full max-w-md border border-slate-200 dark:border-white/10 shadow-xl animate-scale-in">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center">
@@ -557,7 +557,7 @@ export default function ContactsPage() {
                     value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                     placeholder="username"
-                    className="w-full h-14 rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] pl-10 pr-4 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400"
+                    className="w-full h-14 rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 pl-10 pr-4 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400"
                     autoFocus
                   />
                 </div>
@@ -570,7 +570,7 @@ export default function ContactsPage() {
                   value={requestMessage}
                   onChange={(e) => setRequestMessage(e.target.value)}
                   placeholder="Hey! Let's be friends on Zoopfi 👋"
-                  className="w-full h-14 rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] px-4 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400"
+                  className="w-full h-14 rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400"
                   maxLength={200}
                 />
               </div>
@@ -615,6 +615,6 @@ export default function ContactsPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </AppShell>
   );
 }

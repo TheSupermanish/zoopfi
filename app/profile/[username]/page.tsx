@@ -127,7 +127,7 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#191022]">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
         <div className="spinner" />
       </div>
     );
@@ -135,9 +135,9 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-[#191022] p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-transparent p-4">
         <div className="text-center">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-slate-200 dark:bg-[#362348] flex items-center justify-center">
+          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-slate-200 dark:bg-white/[0.08] flex items-center justify-center">
             <Ghost className="w-12 h-12 text-slate-500 dark:text-[#ad92c9]" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">User Not Found</h1>
@@ -157,9 +157,9 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#191022]">
+    <div className="min-h-screen bg-slate-50 dark:bg-transparent">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-white/80 dark:bg-[#1a1122]/80 backdrop-blur-xl border-b border-slate-200 dark:border-[#362348]">
+      <header className="sticky top-0 z-20 bg-white/80 dark:bg-black/40 backdrop-blur-xl border-b border-slate-200 dark:border-white/10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => router.back()}
@@ -199,7 +199,7 @@ export default function ProfilePage() {
           {/* Avatar */}
           <div className="absolute -bottom-16 left-8">
             <div 
-              className="w-32 h-32 rounded-3xl border-4 border-white dark:border-[#191022] shadow-2xl flex items-center justify-center text-5xl font-bold text-white"
+              className="w-32 h-32 rounded-3xl border-4 border-white dark:border-white/10 shadow-2xl flex items-center justify-center text-5xl font-bold text-white"
               style={{ background: 'linear-gradient(135deg, #7f13ec 0%, #a855f7 100%)' }}
             >
               {getInitials(profile.username)}
@@ -211,7 +211,7 @@ export default function ProfilePage() {
             {isOwnProfile ? (
               <Link
                 href="/settings"
-                className="px-5 py-2.5 bg-white dark:bg-[#261933] text-slate-900 dark:text-white font-bold rounded-xl text-sm shadow-lg hover:scale-105 transition-all border border-slate-200 dark:border-[#4d3267] flex items-center gap-2"
+                className="px-5 py-2.5 bg-white dark:bg-white/[0.04] text-slate-900 dark:text-white font-bold rounded-xl text-sm shadow-lg hover:scale-105 transition-all border border-slate-200 dark:border-white/10 flex items-center gap-2"
               >
                 <Pencil className="w-4 h-4" />
                 Edit Profile
@@ -227,7 +227,7 @@ export default function ProfilePage() {
                 </Link>
                 <button
                   onClick={() => copyToClipboard(profile.walletAddress)}
-                  className="px-5 py-2.5 bg-white dark:bg-[#261933] text-slate-900 dark:text-white font-bold rounded-xl text-sm shadow-lg hover:scale-105 transition-all border border-slate-200 dark:border-[#4d3267] flex items-center gap-2"
+                  className="px-5 py-2.5 bg-white dark:bg-white/[0.04] text-slate-900 dark:text-white font-bold rounded-xl text-sm shadow-lg hover:scale-105 transition-all border border-slate-200 dark:border-white/10 flex items-center gap-2"
                 >
                   <Copy className="w-4 h-4" />
                   Copy Address
@@ -262,7 +262,7 @@ export default function ProfilePage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-[#261933] rounded-2xl p-5 border border-slate-200 dark:border-[#4d3267] shadow-sm">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <ArrowLeftRight className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
               <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Transactions</span>
@@ -270,7 +270,7 @@ export default function ProfilePage() {
             <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.transactionCount}</p>
           </div>
           
-          <div className="bg-white dark:bg-[#261933] rounded-2xl p-5 border border-slate-200 dark:border-[#4d3267] shadow-sm">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <ArrowUp className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
               <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Total Sent</span>
@@ -279,7 +279,7 @@ export default function ProfilePage() {
             <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60">USDC</p>
           </div>
           
-          <div className="bg-white dark:bg-[#261933] rounded-2xl p-5 border border-slate-200 dark:border-[#4d3267] shadow-sm">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <ArrowDown className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
               <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Total Received</span>
@@ -288,7 +288,7 @@ export default function ProfilePage() {
             <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60">USDC</p>
           </div>
           
-          <div className="bg-white dark:bg-[#261933] rounded-2xl p-5 border border-slate-200 dark:border-[#4d3267] shadow-sm">
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Flame className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
               <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Activity</span>
@@ -299,13 +299,13 @@ export default function ProfilePage() {
         </div>
 
         {/* Wallet Info Card */}
-        <div className="bg-white dark:bg-[#261933] rounded-3xl p-6 border border-slate-200 dark:border-[#4d3267] shadow-sm mb-8">
+        <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 border border-slate-200 dark:border-white/10 shadow-sm mb-8">
           <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
             <Wallet className="w-5 h-5 text-[#7f13ec]" />
             Wallet Information
           </h3>
           
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267]">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7f13ec] to-[#a855f7] flex items-center justify-center shadow-lg shadow-[#7f13ec]/20">
                 <span className="text-white text-xl font-bold">M</span>
@@ -320,7 +320,7 @@ export default function ProfilePage() {
             <div className="flex gap-2">
               <button
                 onClick={() => copyToClipboard(profile.walletAddress)}
-                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-[#362348] text-slate-700 dark:text-white font-medium text-sm hover:bg-slate-300 dark:hover:bg-[#4d3267] transition-colors flex items-center gap-2"
+                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-white/[0.08] text-slate-700 dark:text-white font-medium text-sm hover:bg-slate-300 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
               >
                 <Copy className="w-4 h-4" />
                 Copy
@@ -349,7 +349,7 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Link
                 href={`/send?to=${profile.username}`}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-[#261933] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
+                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
               >
                 <div className="w-14 h-14 rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <ArrowUpRight className="w-8 h-8 text-[#7f13ec]" />
@@ -362,7 +362,7 @@ export default function ProfilePage() {
 
               <Link
                 href={`/send?to=${profile.username}&request=true`}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-[#261933] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
+                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
               >
                 <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <HandCoins className="w-8 h-8 text-emerald-500" />
@@ -378,7 +378,7 @@ export default function ProfilePage() {
                   const url = `${window.location.origin}/profile/${profile.username}`;
                   copyToClipboard(url);
                 }}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-[#261933] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
+                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
               >
                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Share2 className="w-8 h-8 text-blue-500" />
@@ -394,7 +394,7 @@ export default function ProfilePage() {
 
         {/* Recent Activity */}
         {transactions.length > 0 && (
-          <div className="bg-white dark:bg-[#261933] rounded-3xl p-6 border border-slate-200 dark:border-[#4d3267] shadow-sm">
+          <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 border border-slate-200 dark:border-white/10 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <History className="w-5 h-5 text-[#7f13ec]" />
@@ -416,7 +416,7 @@ export default function ProfilePage() {
                 return (
                   <div
                     key={tx._id}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267]"
+                    className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10"
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${

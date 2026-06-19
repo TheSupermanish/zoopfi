@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Shield, Lock, LockOpen, ShieldCheck, EyeOff, CheckCircle2, ArrowDownLeft } from 'lucide-react';
 import { useWallet, formatBalance, formatUSD } from '@/app/lib/chain';
 import type { PrivateNote, PrivacyOpKind } from '@/app/lib/chain';
-import DashboardLayout from '../components/DashboardLayout';
+import AppShell from '../components/shell/AppShell';
 import { useUser, useChainInvalidate } from '@/app/lib/hooks';
 
 type Mode = 'none' | 'shield' | 'transfer' | 'unshield';
@@ -115,20 +115,14 @@ export default function PrivatePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#191022]">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
         <div className="spinner" />
       </div>
     );
   }
 
   return (
-    <DashboardLayout
-      username={userData?.username}
-      walletAddress={walletAddress}
-      accountType={userData?.accountType}
-      displayName={userData?.displayName}
-      avatarUrl={userData?.avatarUrl}
-    >
+    <AppShell>
       <div className="p-4 md:p-8 flex flex-col gap-6 max-w-[1100px] mx-auto w-full">
         {/* Heading */}
         <div className="flex flex-col gap-2">
@@ -145,7 +139,7 @@ export default function PrivatePage() {
 
         {!enabled ? (
           /* Enable card */
-          <div className="bg-white dark:bg-[#251a30] rounded-3xl p-10 border border-slate-200 dark:border-white/5 text-center shadow-sm dark:shadow-none">
+          <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-10 border border-slate-200 dark:border-white/5 text-center shadow-sm dark:shadow-none">
             <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-6">
               <ShieldCheck className="w-10 h-10 text-[#7f13ec]" />
             </div>
@@ -166,7 +160,7 @@ export default function PrivatePage() {
             {/* Balance + actions */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-5">
-                <div className="relative overflow-hidden bg-white dark:bg-[#251a30] rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none h-full">
+                <div className="relative overflow-hidden bg-white dark:bg-white/[0.04] rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none h-full">
                   <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] bg-[#7f13ec]/10" />
                   <div className="relative">
                     <p className="text-slate-500 dark:text-[#ad92c9] text-sm mb-1 flex items-center gap-2">
@@ -191,7 +185,7 @@ export default function PrivatePage() {
                     className={`text-left rounded-2xl p-5 border transition-all ${
                       mode === a.mode
                         ? 'border-[#7f13ec] bg-[#7f13ec]/10'
-                        : 'border-slate-200 dark:border-white/5 bg-white dark:bg-[#251a30] hover:border-[#7f13ec]/40'
+                        : 'border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.04] hover:border-[#7f13ec]/40'
                     }`}
                   >
                     <div className="mb-3 text-slate-900 dark:text-white"><a.Icon className="w-7 h-7" /></div>
@@ -204,7 +198,7 @@ export default function PrivatePage() {
 
             {/* Action form */}
             {mode !== 'none' && (
-              <div className="bg-white dark:bg-[#251a30] rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none animate-fade-in-up">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none animate-fade-in-up">
                 {success ? (
                   <div className="text-center py-6">
                     <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/15 flex items-center justify-center mb-4">
@@ -282,7 +276,7 @@ export default function PrivatePage() {
             )}
 
             {/* Private activity */}
-            <div className="bg-white dark:bg-[#251a30] rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
+            <div className="bg-white dark:bg-white/[0.04] rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
               <div className="p-6 border-b border-slate-200 dark:border-white/5">
                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">Private activity</h3>
                 <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Only visible to you, decrypted on this device</p>
@@ -321,6 +315,6 @@ export default function PrivatePage() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </AppShell>
   );
 }

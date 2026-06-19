@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useWallet } from '@/app/lib/chain';
 import { useUser } from '@/app/lib/hooks';
-import DashboardLayout from '../components/DashboardLayout';
+import AppShell from '../components/shell/AppShell';
 import QRCodeCard from '../components/QRCodeCard';
 import { getPaymentRequests, createPaymentRequest } from '../lib/api';
 import { QrCode, Copy } from 'lucide-react';
@@ -107,7 +107,7 @@ export default function ReceivePageContent() {
   };
 
   return (
-    <DashboardLayout username={username} walletAddress={walletAddress}>
+    <AppShell>
       <div className="p-4 md:p-8 max-w-2xl mx-auto w-full">
         {/* Header */}
         <div className="mb-6">
@@ -117,7 +117,7 @@ export default function ReceivePageContent() {
 
         {/* Tabs */}
         <div className="mb-6">
-          <div className="flex gap-2 p-1 rounded-xl bg-slate-200 dark:bg-[#251a30] border border-slate-200 dark:border-white/5">
+          <div className="flex gap-2 p-1 rounded-xl bg-slate-200 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5">
             <button
               onClick={() => setTab('qr')}
               className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${
@@ -155,7 +155,7 @@ export default function ReceivePageContent() {
             />
 
             {/* Amount Input */}
-            <div className="bg-white dark:bg-[#251a30] rounded-2xl p-5 border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
+            <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
               <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-3">
                 Request specific amount (optional)
               </label>
@@ -194,7 +194,7 @@ export default function ReceivePageContent() {
 
             {/* Request Form */}
             {showRequestForm && (
-              <div className="bg-white dark:bg-[#251a30] rounded-2xl p-6 space-y-4 animate-scale-in border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 space-y-4 animate-scale-in border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">New Payment Request</h3>
                 
                 <div>
@@ -279,7 +279,7 @@ export default function ReceivePageContent() {
                   <div className="spinner" />
                 </div>
               ) : requests.length === 0 ? (
-                <div className="bg-white dark:bg-[#251a30] rounded-2xl p-8 text-center border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
+                <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-8 text-center border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
                   <Copy className="w-10 h-10 mb-3 mx-auto text-slate-400 dark:text-[#ad92c9]" />
                   <p className="text-slate-900 dark:text-white font-bold">No payment requests yet</p>
                   <p className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1">
@@ -291,7 +291,7 @@ export default function ReceivePageContent() {
                   {requests.map((req) => (
                     <div
                       key={req._id}
-                      className="bg-white dark:bg-[#251a30] rounded-2xl p-4 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all shadow-lg dark:shadow-none"
+                      className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all shadow-lg dark:shadow-none"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -333,6 +333,6 @@ export default function ReceivePageContent() {
           {toastMessage}
         </div>
       )}
-    </DashboardLayout>
+    </AppShell>
   );
 }

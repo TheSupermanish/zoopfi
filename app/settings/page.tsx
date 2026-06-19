@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useWallet } from '@/app/lib/chain';
 import { useUser } from '@/app/lib/hooks';
-import DashboardLayout from '../components/DashboardLayout';
-import { ThemeTogglePill } from '../components/ThemeToggle';
+import AppShell from '../components/shell/AppShell';
 import { convertToBusiness, BusinessCategory, BusinessInfo } from '../lib/api';
 import { toast } from 'sonner';
 import {
@@ -16,7 +15,6 @@ import {
   Copy,
   Rocket,
   Check,
-  Palette,
   Settings,
   Share2,
   HelpCircle,
@@ -152,20 +150,14 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#191022]">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
         <div className="spinner" />
       </div>
     );
   }
 
   return (
-    <DashboardLayout 
-      username={userData?.username} 
-      walletAddress={walletAddress}
-      accountType={userData?.accountType}
-      displayName={userData?.displayName}
-      avatarUrl={userData?.avatarUrl}
-    >
+    <AppShell>
       <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-black/20 p-4 md:p-8 lg:p-12">
         <div className="max-w-4xl mx-auto flex flex-col gap-8">
           {/* Page Heading */}
@@ -189,7 +181,7 @@ export default function SettingsPage() {
           <section className={`rounded-3xl p-6 md:p-8 shadow-sm border ${
             isBusiness 
               ? 'bg-purple-50 dark:bg-purple-500/5 border-purple-200 dark:border-purple-500/20' 
-              : 'bg-white dark:bg-[#261933] border-slate-100 dark:border-[#4d3267]'
+              : 'bg-white dark:bg-white/[0.04] border-slate-100 dark:border-white/10'
           }`}>
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
               <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}>
@@ -199,17 +191,17 @@ export default function SettingsPage() {
             </h3>
 
             {/* Avatar Row */}
-            <div className="flex items-center gap-6 mb-8 pb-8 border-b border-slate-200 dark:border-[#4d3267]">
+            <div className="flex items-center gap-6 mb-8 pb-8 border-b border-slate-200 dark:border-white/10">
               <div className="relative">
                 {userData?.avatarUrl ? (
                   <img 
                     src={userData.avatarUrl} 
                     alt={userData.displayName || 'Profile'} 
-                    className="size-24 rounded-2xl border-4 border-slate-100 dark:border-[#191022] shadow-lg object-cover"
+                    className="size-24 rounded-2xl border-4 border-slate-100 dark:border-white/10 shadow-lg object-cover"
                   />
                 ) : (
                 <div 
-                  className="size-24 rounded-2xl border-4 border-slate-100 dark:border-[#191022] shadow-lg flex items-center justify-center text-4xl font-bold text-white"
+                  className="size-24 rounded-2xl border-4 border-slate-100 dark:border-white/10 shadow-lg flex items-center justify-center text-4xl font-bold text-white"
                     style={{ background: isBusiness 
                       ? 'linear-gradient(135deg, #9333ea 0%, #c084fc 100%)' 
                       : 'linear-gradient(135deg, #7f13ec 0%, #a855f7 100%)' 
@@ -248,7 +240,7 @@ export default function SettingsPage() {
                   }`}>
                     {isBusiness ? 'Upload Logo' : 'Upload Photo'}
                   </button>
-                  <button className="px-4 py-2 bg-transparent border border-slate-300 dark:border-[#4d3267] text-slate-700 dark:text-white font-medium rounded-xl text-sm hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
+                  <button className="px-4 py-2 bg-transparent border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white font-medium rounded-xl text-sm hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
                     Remove
                   </button>
                 </div>
@@ -268,7 +260,7 @@ export default function SettingsPage() {
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder={isBusiness ? 'Your Business Name' : 'username'}
-                    className={`w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] pr-4 py-3 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400 ${
+                    className={`w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 pr-4 py-3 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400 ${
                       isBusiness ? 'pl-4' : 'pl-8'
                     }`}
                   />
@@ -285,7 +277,7 @@ export default function SettingsPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] px-4 py-3 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400"
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400"
                 />
               </label>
             </div>
@@ -299,7 +291,7 @@ export default function SettingsPage() {
                     type="text"
                     value={userData.businessInfo.ownerFirstName}
                     readOnly
-                    className="w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-100 dark:bg-[#1a1122]/50 px-4 py-3 text-slate-600 dark:text-slate-400"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-slate-600 dark:text-slate-400"
                   />
                 </label>
                 <label className="flex flex-col gap-2">
@@ -308,7 +300,7 @@ export default function SettingsPage() {
                     type="text"
                     value={userData.businessInfo.ownerLastName}
                     readOnly
-                    className="w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-100 dark:bg-[#1a1122]/50 px-4 py-3 text-slate-600 dark:text-slate-400"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-slate-600 dark:text-slate-400"
                   />
                 </label>
                 {userData.businessInfo.description && (
@@ -317,7 +309,7 @@ export default function SettingsPage() {
                     <textarea
                       value={userData.businessInfo.description}
                       readOnly
-                      className="w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-100 dark:bg-[#1a1122]/50 px-4 py-3 text-slate-600 dark:text-slate-400 min-h-[80px] resize-none"
+                      className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-slate-600 dark:text-slate-400 min-h-[80px] resize-none"
                     />
                   </label>
                 )}
@@ -327,7 +319,7 @@ export default function SettingsPage() {
             {/* Connected Wallet */}
             <div className="flex flex-col gap-2">
               <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Connected Wallet</span>
-              <div className="flex items-center gap-2 w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] px-4 py-3">
+              <div className="flex items-center gap-2 w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3">
                 <div className={`size-6 rounded-full flex items-center justify-center ${
                   isBusiness 
                     ? 'bg-gradient-to-r from-purple-600 to-purple-400' 
@@ -399,24 +391,8 @@ export default function SettingsPage() {
             </section>
           )}
 
-          {/* Appearance Section */}
-          <section className="bg-white dark:bg-[#261933] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-[#4d3267]">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
-              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}><Palette className="w-5 h-5" /></span>
-              Appearance
-            </h3>
-
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-base font-bold text-slate-900 dark:text-white">Theme</span>
-                <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Choose your preferred appearance.</span>
-              </div>
-              <ThemeTogglePill />
-            </div>
-          </section>
-
           {/* Preferences Section */}
-          <section className="bg-white dark:bg-[#261933] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-[#4d3267]">
+          <section className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-white/10">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
               <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}><Settings className="w-5 h-5" /></span>
               Quick Preferences
@@ -516,7 +492,7 @@ export default function SettingsPage() {
           </section>
 
           {/* Support & Links Section */}
-          <section className="bg-white dark:bg-[#261933] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-[#4d3267]">
+          <section className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-white/10">
             <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
               <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}><Share2 className="w-5 h-5" /></span>
               Links & Support
@@ -527,7 +503,7 @@ export default function SettingsPage() {
                 href="https://stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/30 transition-colors group"
+                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/30 transition-colors group"
               >
                 <HelpCircle className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
                 <div className="flex-1">
@@ -543,7 +519,7 @@ export default function SettingsPage() {
                 href="https://twitter.com/StellarOrg"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/30 transition-colors group"
+                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/30 transition-colors group"
               >
                 <Twitter className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
                 <div className="flex-1">
@@ -559,7 +535,7 @@ export default function SettingsPage() {
                 href="https://discord.gg/stellardev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/30 transition-colors group"
+                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/30 transition-colors group"
               >
                 <MessageCircle className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
                 <div className="flex-1">
@@ -575,7 +551,7 @@ export default function SettingsPage() {
                 href="https://developers.stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267] hover:border-[#7f13ec]/30 transition-colors group"
+                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/30 transition-colors group"
               >
                 <BookOpen className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
                 <div className="flex-1">
@@ -617,7 +593,7 @@ export default function SettingsPage() {
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pb-12">
             <button
               onClick={() => router.back()}
-              className="px-8 py-3 bg-transparent border border-slate-300 dark:border-[#4d3267] text-slate-700 dark:text-white font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              className="px-8 py-3 bg-transparent border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
             >
               Cancel
             </button>
@@ -643,7 +619,7 @@ export default function SettingsPage() {
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#261933] rounded-3xl p-6 max-w-sm w-full animate-scale-in border border-slate-200 dark:border-[#4d3267] shadow-xl">
+          <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 max-w-sm w-full animate-scale-in border border-slate-200 dark:border-white/10 shadow-xl">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
                 <LogOut className="w-7 h-7 text-red-500" />
@@ -656,7 +632,7 @@ export default function SettingsPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-[#4d3267] text-slate-700 dark:text-white font-bold hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white font-bold hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
               >
                 Cancel
               </button>
@@ -674,7 +650,7 @@ export default function SettingsPage() {
       {/* Convert to Business Modal */}
       {showConvertModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#261933] rounded-3xl p-6 max-w-lg w-full animate-scale-in border border-purple-200 dark:border-purple-500/20 shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 max-w-lg w-full animate-scale-in border border-purple-200 dark:border-purple-500/20 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-purple-600" />
@@ -696,7 +672,7 @@ export default function SettingsPage() {
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="Starbucks"
-                  className="w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400"
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400"
                 />
               </div>
 
@@ -711,7 +687,7 @@ export default function SettingsPage() {
                     value={ownerFirstName}
                     onChange={(e) => setOwnerFirstName(e.target.value)}
                     placeholder="John"
-                    className="w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400"
                   />
                 </div>
                 <div>
@@ -723,7 +699,7 @@ export default function SettingsPage() {
                     value={ownerLastName}
                     onChange={(e) => setOwnerLastName(e.target.value)}
                     placeholder="Doe"
-                    className="w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400"
                   />
                 </div>
               </div>
@@ -741,7 +717,7 @@ export default function SettingsPage() {
                       className={`p-3 rounded-xl border transition-all text-left ${
                         businessCategory === cat.value
                           ? 'border-purple-500 bg-purple-500/10'
-                          : 'border-slate-200 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] hover:border-purple-500/50'
+                          : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 hover:border-purple-500/50'
                       }`}
                     >
                       <div className="flex items-center gap-2">
@@ -762,7 +738,7 @@ export default function SettingsPage() {
                   value={businessDescription}
                   onChange={(e) => setBusinessDescription(e.target.value)}
                   placeholder="Tell customers what you do..."
-                  className="w-full rounded-xl border border-slate-300 dark:border-[#4d3267] bg-slate-50 dark:bg-[#1a1122] px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400 min-h-[80px] resize-none"
+                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400 min-h-[80px] resize-none"
                   maxLength={500}
                 />
               </div>
@@ -772,7 +748,7 @@ export default function SettingsPage() {
               <button
                 onClick={() => setShowConvertModal(false)}
                 disabled={isConverting}
-                className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-[#4d3267] text-slate-700 dark:text-white font-bold hover:bg-slate-100 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white font-bold hover:bg-slate-100 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -794,6 +770,6 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </AppShell>
   );
 }

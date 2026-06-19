@@ -140,7 +140,7 @@ export default function NotificationBell({ walletAddress }: NotificationBellProp
         {/* Dropdown */}
         {isOpen && (
           <div 
-            className="absolute right-0 top-12 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#251a30] rounded-2xl overflow-hidden animate-scale-in z-50 border border-slate-200 dark:border-white/5 shadow-2xl"
+            className="absolute right-0 top-12 w-96 max-w-[calc(100vw-2rem)] bg-white dark:bg-white/[0.04] rounded-2xl overflow-hidden animate-scale-in z-50 border border-slate-200 dark:border-white/5 shadow-2xl"
             style={{ transformOrigin: 'top right' }}
           >
             <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">

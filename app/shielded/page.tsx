@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { usePrivacyPool, stroopsToXlm } from '@/app/lib/privacy/usePrivacyPool';
 import { getExplorerUrl, getAddressExplorerUrl, PRIVACY } from '@/app/lib/chain';
+import AppShell from '../components/shell/AppShell';
 
 type Tab = 'shield' | 'send' | 'unshield';
 
@@ -50,14 +51,7 @@ export default function ShieldedPage() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0c0613] text-white">
-      {/* Ambient glow background */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/25 blur-[140px]" />
-        <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute bottom-0 -left-24 h-80 w-80 rounded-full bg-fuchsia-600/10 blur-[120px]" />
-      </div>
-
+    <AppShell>
       <div className="relative mx-auto max-w-2xl px-4 py-10 sm:py-16">
         {/* Hero */}
         <div className="flex flex-col items-center text-center">
@@ -263,6 +257,6 @@ export default function ShieldedPage() {
           )}
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

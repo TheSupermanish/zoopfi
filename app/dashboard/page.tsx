@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useWallet, formatBalance, formatUSD } from '@/app/lib/chain';
 import { useUser, useBalance, useTransactions, useStreak } from '../lib/hooks';
 import Link from 'next/link';
-import DashboardLayout from '../components/DashboardLayout';
+import AppShell from '../components/shell/AppShell';
 import PersonalHeroSection from '../components/dashboard/PersonalHeroSection';
 import BusinessHeroSection from '../components/dashboard/BusinessHeroSection';
 import {
@@ -62,7 +62,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#191022]">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
         <div className="spinner" />
       </div>
     );
@@ -143,13 +143,7 @@ export default function DashboardPage() {
   const quickActions = isBusiness ? businessQuickActions : personalQuickActions;
 
   return (
-    <DashboardLayout 
-      username={userData?.username} 
-      walletAddress={walletAddress}
-      accountType={userData?.accountType}
-      displayName={userData?.displayName}
-      avatarUrl={userData?.avatarUrl}
-    >
+    <AppShell>
       <div className="p-4 md:p-8 flex flex-col gap-6 md:gap-8 max-w-[1400px] mx-auto w-full">
         
         {/* Hero Section - Conditional based on account type */}
@@ -196,7 +190,7 @@ export default function DashboardPage() {
           {/* Left: Balance Card + Progress */}
           <div className="lg:col-span-7 flex flex-col gap-6">
             {/* Big Balance Card */}
-            <div className={`relative overflow-hidden bg-white dark:bg-[#251a30] rounded-3xl p-8 border shadow-sm dark:shadow-none ${
+            <div className={`relative overflow-hidden bg-white dark:bg-white/[0.04] rounded-3xl p-8 border shadow-sm dark:shadow-none ${
               isBusiness 
                 ? 'border-purple-500/20 dark:border-purple-500/10' 
                 : 'border-slate-200 dark:border-white/5'
@@ -277,7 +271,7 @@ export default function DashboardPage() {
 
             {/* Progress/Rewards Card (Personal only) OR Business Stats (Business only) */}
             {isBusiness ? (
-              <div className="bg-white dark:bg-[#251a30] rounded-2xl p-6 border border-purple-500/20 dark:border-purple-500/10 shadow-sm dark:shadow-none">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 border border-purple-500/20 dark:border-purple-500/10 shadow-sm dark:shadow-none">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <TrendingUp className="w-7 h-7 text-purple-600 dark:text-purple-400" />
@@ -314,7 +308,7 @@ export default function DashboardPage() {
             ) : streakInfo && (
               <Link 
                 href="/rewards"
-                className="bg-white dark:bg-[#251a30] rounded-2xl p-6 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all group shadow-sm dark:shadow-none"
+                className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all group shadow-sm dark:shadow-none"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
@@ -347,7 +341,7 @@ export default function DashboardPage() {
 
           {/* Right: Activity Feed */}
           <div className="lg:col-span-5">
-            <div className={`bg-white dark:bg-[#251a30] rounded-2xl border h-full flex flex-col shadow-sm dark:shadow-none ${
+            <div className={`bg-white dark:bg-white/[0.04] rounded-2xl border h-full flex flex-col shadow-sm dark:shadow-none ${
               isBusiness 
                 ? 'border-purple-500/20 dark:border-purple-500/10' 
                 : 'border-slate-200 dark:border-white/5'
@@ -452,6 +446,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </AppShell>
   );
 }

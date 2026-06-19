@@ -6,7 +6,7 @@
  * Real on testnet (CHAIN_ADAPTER=stellar); simulated in mock mode.
  */
 import { useEffect, useRef, useState } from 'react';
-import DashboardLayout from '../components/DashboardLayout';
+import AppShell from '../components/shell/AppShell';
 import { ArrowDownUp, Loader2, AlertCircle, Check, ArrowUpRight, RefreshCw } from 'lucide-react';
 import { useWallet, getExplorerUrl } from '@/app/lib/chain';
 import type { AssetCode, SwapQuote } from '@/app/lib/chain/types';
@@ -66,16 +66,16 @@ export default function SwapPage() {
   };
 
   return (
-    <DashboardLayout>
+    <AppShell>
       <div className="mx-auto max-w-md px-4 py-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Swap</h1>
           <p className="text-sm text-slate-500 dark:text-[#ad92c9]">Trade over the Stellar DEX orderbook</p>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 dark:border-[#4d3267] bg-white dark:bg-[#261933] p-5 space-y-2">
+        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-5 space-y-2">
           {/* From */}
-          <div className="rounded-2xl bg-slate-50 dark:bg-[#1a1122] p-4">
+          <div className="rounded-2xl bg-slate-50 dark:bg-black/20 p-4">
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#ad92c9]">
               <span>You pay</span>
             </div>
@@ -90,13 +90,13 @@ export default function SwapPage() {
 
           {/* Flip */}
           <div className="flex justify-center">
-            <button onClick={flip} className="rounded-xl border border-slate-200 dark:border-[#4d3267] bg-white dark:bg-[#261933] p-2 text-[#7f13ec] hover:bg-[#7f13ec]/10 transition">
+            <button onClick={flip} className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-2 text-[#7f13ec] hover:bg-[#7f13ec]/10 transition">
               <ArrowDownUp className="h-4 w-4" />
             </button>
           </div>
 
           {/* To */}
-          <div className="rounded-2xl bg-slate-50 dark:bg-[#1a1122] p-4">
+          <div className="rounded-2xl bg-slate-50 dark:bg-black/20 p-4">
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-[#ad92c9]">
               <span>You receive (est.)</span>
             </div>
@@ -149,7 +149,7 @@ export default function SwapPage() {
           Private swaps (shield → swap → re-shield) are on the roadmap.
         </p>
       </div>
-    </DashboardLayout>
+    </AppShell>
   );
 }
 
@@ -159,7 +159,7 @@ function AssetPill({ code, onChange, other }: { code: AssetCode; onChange: (c: A
     <select
       value={code}
       onChange={(e) => onChange(e.target.value as AssetCode)}
-      className="shrink-0 rounded-full border border-slate-200 dark:border-[#4d3267] bg-white dark:bg-[#261933] px-3 py-2 text-sm font-semibold text-slate-900 dark:text-white outline-none"
+      className="shrink-0 rounded-full border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] px-3 py-2 text-sm font-semibold text-slate-900 dark:text-white outline-none"
     >
       {opts.map((o) => <option key={o} value={o} disabled={o === other}>{o}</option>)}
     </select>

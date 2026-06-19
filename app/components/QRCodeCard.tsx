@@ -60,7 +60,7 @@ export default function QRCodeCard({ username, amount, walletAddress, onShare }:
       >
         {/* Inner card */}
         <div 
-          className="relative rounded-[22px] p-6 overflow-hidden bg-white dark:bg-[#251a30]"
+          className="relative rounded-[22px] p-6 overflow-hidden bg-white dark:bg-white/[0.04]"
         >
           {/* Background pattern */}
           <div 

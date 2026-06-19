@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Lock, Globe, Loader2, Check, ArrowUpRight, AlertCircle, ShieldCheck, Zap } from 'lucide-react';
-import AppNav from './components/AppNav';
+import AppShell from './components/shell/AppShell';
 import { WalletSelectionModal } from './components/wallet-selection-modal';
 import { useWallet, getExplorerUrl } from './lib/chain';
 import { getUserByUsername } from './lib/api';
@@ -56,16 +56,8 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0c0613] text-white">
-      {/* Ambient animated glows */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className={`absolute -top-32 left-1/2 h-[32rem] w-[32rem] -translate-x-1/2 rounded-full blur-[140px] transition-colors duration-700 animate-float-slow ${priv ? 'bg-[#7f13ec]/30' : 'bg-indigo-600/20'}`} />
-        <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-fuchsia-600/10 blur-[120px] animate-float" />
-      </div>
-
-      <AppNav />
-
-      <main className="relative mx-auto flex max-w-md flex-col items-center px-4 pt-12 pb-20 sm:pt-20">
+    <AppShell>
+      <div className="relative mx-auto flex max-w-md flex-col items-center px-4 pt-10 pb-8 sm:pt-16">
         {/* Heading */}
         <div className="mb-6 text-center animate-fade-in-up">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -164,7 +156,7 @@ export default function Home() {
           <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-[#b07bff]" /> Stellar testnet</span>
           <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-[#b07bff]" /> Private by choice</span>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
