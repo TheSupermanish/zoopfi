@@ -6,6 +6,7 @@ import { useWallet } from '@/app/lib/chain';
 import { useUser } from '@/app/lib/hooks';
 import AppShell from '../components/shell/AppShell';
 import QRCodeCard from '../components/QRCodeCard';
+import { PageShell, PageHeader, Card } from '../components/ui/primitives';
 import { getPaymentRequests, createPaymentRequest } from '../lib/api';
 import { QrCode, Copy } from 'lucide-react';
 
@@ -108,46 +109,43 @@ export default function ReceivePageContent() {
 
   return (
     <AppShell>
-      <div className="p-4 md:p-8 max-w-2xl mx-auto w-full">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Receive</h1>
-          <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Share your QR or create a request</p>
-        </div>
+      <PageShell variant="focused">
+        <PageHeader
+          title="Receive"
+          subtitle="Share your QR or create a request"
+          icon={QrCode}
+          center
+        />
 
         {/* Tabs */}
-        <div className="mb-6">
-          <div className="flex gap-2 p-1 rounded-xl bg-slate-200 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5">
-            <button
-              onClick={() => setTab('qr')}
-              className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${
-                tab === 'qr'
-                  ? 'bg-[#7f13ec] text-white shadow-lg'
-                  : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
-              }`}
-              style={{ boxShadow: tab === 'qr' ? '0 10px 40px -10px rgba(127, 19, 236, 0.5)' : 'none' }}
-            >
-              <span className="inline-flex items-center justify-center gap-2"><QrCode className="w-4 h-4" /> QR Code</span>
-            </button>
-            <button
-              onClick={() => setTab('request')}
-              className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${
-                tab === 'request'
-                  ? 'bg-[#7f13ec] text-white shadow-lg'
-                  : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
-              }`}
-              style={{ boxShadow: tab === 'request' ? '0 10px 40px -10px rgba(127, 19, 236, 0.5)' : 'none' }}
-            >
-              <span className="inline-flex items-center justify-center gap-2"><Copy className="w-4 h-4" /> Requests</span>
-            </button>
-          </div>
+        <div className="mb-6 flex gap-1 rounded-full border border-white/10 bg-black/30 p-1">
+          <button
+            onClick={() => setTab('qr')}
+            className={`flex-1 rounded-full py-2.5 text-sm font-semibold transition-all ${
+              tab === 'qr'
+                ? 'bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30'
+                : 'text-purple-200/60 hover:text-white'
+            }`}
+          >
+            <span className="inline-flex items-center justify-center gap-2"><QrCode className="h-4 w-4" /> QR Code</span>
+          </button>
+          <button
+            onClick={() => setTab('request')}
+            className={`flex-1 rounded-full py-2.5 text-sm font-semibold transition-all ${
+              tab === 'request'
+                ? 'bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30'
+                : 'text-purple-200/60 hover:text-white'
+            }`}
+          >
+            <span className="inline-flex items-center justify-center gap-2"><Copy className="h-4 w-4" /> Requests</span>
+          </button>
         </div>
 
         {/* QR Tab */}
         {tab === 'qr' && username && walletAddress && (
-          <div className="space-y-6 animate-fade-in-up">
+          <div className="animate-fade-in-up space-y-6">
             {/* Beautiful QR Code */}
-            <QRCodeCard 
+            <QRCodeCard
               username={username}
               amount={amount || undefined}
               walletAddress={walletAddress}
@@ -155,8 +153,8 @@ export default function ReceivePageContent() {
             />
 
             {/* Amount Input */}
-            <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
-              <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-3">
+            <Card>
+              <label className="mb-3 block text-sm text-purple-200/60">
                 Request specific amount (optional)
               </label>
               <div className="relative">
@@ -167,25 +165,25 @@ export default function ReceivePageContent() {
                   placeholder="0.00"
                   className="input h-14 pr-20"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#ad92c9] font-bold">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-purple-200/60">
                   USDC
                 </span>
               </div>
-              <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60 mt-2">
+              <p className="mt-2 text-xs text-purple-200/55">
                 Adding an amount will update the QR code
               </p>
-            </div>
+            </Card>
           </div>
         )}
 
         {/* Request Tab */}
         {tab === 'request' && (
-          <div className="space-y-6 animate-fade-in-up">
+          <div className="animate-fade-in-up space-y-6">
             {/* Create Request Button */}
             {!showRequestForm && (
               <button
                 onClick={() => setShowRequestForm(true)}
-                className="w-full btn btn-primary py-4 text-lg h-14"
+                className="btn btn-primary h-14 w-full py-4 text-lg"
               >
                 <span className="mr-2">➕</span>
                 Create Payment Request
@@ -194,11 +192,11 @@ export default function ReceivePageContent() {
 
             {/* Request Form */}
             {showRequestForm && (
-              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 space-y-4 animate-scale-in border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">New Payment Request</h3>
-                
+              <Card className="animate-scale-in space-y-4">
+                <h3 className="text-base font-semibold text-white">New Payment Request</h3>
+
                 <div>
-                  <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-2">Amount *</label>
+                  <label className="mb-2 block text-sm text-purple-200/60">Amount *</label>
                   <div className="relative">
                     <input
                       type="text"
@@ -208,18 +206,18 @@ export default function ReceivePageContent() {
                       className="input h-14 pr-20"
                       autoFocus
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 dark:text-[#ad92c9] font-bold">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-purple-200/60">
                       USDC
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-2">
+                  <label className="mb-2 block text-sm text-purple-200/60">
                     From (optional)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7f13ec] font-bold z-10">@</span>
+                    <span className="absolute left-4 top-1/2 z-10 -translate-y-1/2 font-bold text-[#c89bff]">@</span>
                     <input
                       type="text"
                       value={requestPayer}
@@ -232,7 +230,7 @@ export default function ReceivePageContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-2">
+                  <label className="mb-2 block text-sm text-purple-200/60">
                     Message (optional)
                   </label>
                   <input
@@ -248,14 +246,14 @@ export default function ReceivePageContent() {
                 <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setShowRequestForm(false)}
-                    className="flex-1 btn btn-secondary h-12"
+                    className="btn btn-secondary h-12 flex-1"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleCreateRequest}
                     disabled={isCreatingRequest || !requestAmount}
-                    className="flex-1 btn btn-primary h-12"
+                    className="btn btn-primary h-12 flex-1"
                   >
                     {isCreatingRequest ? (
                       <span className="flex items-center gap-2">
@@ -267,34 +265,34 @@ export default function ReceivePageContent() {
                     )}
                   </button>
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Pending Requests */}
             <div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Your Requests</h3>
-              
+              <h3 className="mb-4 text-base font-semibold text-white">Your Requests</h3>
+
               {isLoading ? (
                 <div className="flex justify-center py-12">
                   <div className="spinner" />
                 </div>
               ) : requests.length === 0 ? (
-                <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-8 text-center border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
-                  <Copy className="w-10 h-10 mb-3 mx-auto text-slate-400 dark:text-[#ad92c9]" />
-                  <p className="text-slate-900 dark:text-white font-bold">No payment requests yet</p>
-                  <p className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1">
+                <Card className="text-center">
+                  <Copy className="mx-auto mb-3 h-10 w-10 text-purple-200/60" />
+                  <p className="font-semibold text-white">No payment requests yet</p>
+                  <p className="mt-1 text-sm text-purple-200/60">
                     Create a request to ask someone to pay you
                   </p>
-                </div>
+                </Card>
               ) : (
                 <div className="space-y-3">
                   {requests.map((req) => (
-                    <div
+                    <Card
                       key={req._id}
-                      className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all shadow-lg dark:shadow-none"
+                      className="p-4 transition-colors hover:border-[#9b3bff]/30"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-2xl font-bold text-slate-900 dark:text-white">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-2xl font-bold text-white">
                           {req.amount} USDC
                         </span>
                         <span className={`badge ${
@@ -302,34 +300,34 @@ export default function ReceivePageContent() {
                             ? 'badge-warning'
                             : req.status === 'paid'
                             ? 'badge-success'
-                            : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-[#ad92c9]'
+                            : 'bg-white/10 text-purple-200/60'
                         }`}>
                           {req.status}
                         </span>
                       </div>
                       {req.payerUsername && (
-                        <p className="text-slate-500 dark:text-[#ad92c9] text-sm">
-                          From: <span className="text-[#7f13ec]">@{req.payerUsername}</span>
+                        <p className="text-sm text-purple-200/60">
+                          From: <span className="text-[#c89bff]">@{req.payerUsername}</span>
                         </p>
                       )}
                       {req.message && (
-                        <p className="text-slate-400 dark:text-[#ad92c9]/60 text-sm mt-1 italic">"{req.message}"</p>
+                        <p className="mt-1 text-sm italic text-purple-200/55">"{req.message}"</p>
                       )}
-                      <p className="text-slate-400 dark:text-[#ad92c9]/40 text-xs mt-2">
+                      <p className="mt-2 text-xs text-purple-200/45">
                         Expires: {new Date(req.expiresAt).toLocaleDateString()}
                       </p>
-                    </div>
+                    </Card>
                   ))}
                 </div>
               )}
             </div>
           </div>
         )}
-      </div>
+      </PageShell>
 
       {/* Toast */}
       {toastMessage && (
-        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-[#7f13ec] text-white text-sm font-bold shadow-lg animate-fade-in-up z-50">
+        <div className="fixed bottom-28 left-1/2 z-50 -translate-x-1/2 animate-fade-in-up rounded-full bg-[#7f13ec] px-4 py-2 text-sm font-bold text-white shadow-lg">
           {toastMessage}
         </div>
       )}

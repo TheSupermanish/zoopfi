@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useWallet } from '@/app/lib/chain';
 import { useUser, useTransactions } from '@/app/lib/hooks';
 import AppShell from '../components/shell/AppShell';
+import { PageShell, PageHeader, Card, StatTile } from '../components/ui/primitives';
 import { getTransactions } from '../lib/api';
-import { ArrowUpRight, ArrowDownLeft, Search, Check, Copy } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, Search, Check, Copy, Receipt } from 'lucide-react';
 
 interface Transaction {
   _id: string;
@@ -179,118 +180,60 @@ export default function HistoryPage() {
 
   return (
     <AppShell>
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12">
-        {/* Background Gradient */}
-        <div className="fixed top-0 right-0 w-[500px] h-[500px] bg-[#7f13ec]/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
-        
-        <div className="max-w-[1200px] mx-auto flex flex-col gap-8 pb-10 relative">
+      <PageShell variant="wide">
+        <div className="flex flex-col gap-8">
           {/* Page Heading */}
-          <header className="flex flex-wrap justify-between items-end gap-4 mt-4">
-            <div className="flex flex-col gap-2">
-              <h2 className="text-slate-900 dark:text-white text-4xl md:text-5xl font-black leading-tight tracking-[-0.033em]">
-                Transaction History
-              </h2>
-              <p className="text-slate-500 dark:text-[#ad92c9] text-lg font-normal">
-                View and manage your crypto activity on Stellar Network.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-white/[0.08] rounded-xl text-slate-600 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/[0.08] transition-colors">
-                <ArrowDownLeft className="w-4 h-4" />
-                <span className="text-sm font-medium">Export CSV</span>
+          <PageHeader
+            title="Transaction history"
+            subtitle="View and manage your crypto activity on Stellar Network."
+            icon={Receipt}
+            action={
+              <button className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-purple-200/80 transition-colors hover:bg-white/[0.08] hover:text-white">
+                <ArrowDownLeft className="h-4 w-4" />
+                <span>Export CSV</span>
               </button>
-            </div>
-          </header>
+            }
+          />
 
           {/* Stats Overview */}
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Total Transactions */}
-            <div className="flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-white/[0.05] backdrop-blur-sm border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-colors shadow-sm dark:shadow-none">
-              <div className="flex justify-between items-start">
-                <div className="p-2 bg-[#7f13ec]/20 rounded-lg text-[#7f13ec]">
-                  <span className="text-2xl">📊</span>
-                </div>
-                <span className="text-emerald-500 text-sm font-medium bg-emerald-500/10 px-2 py-1 rounded-lg">
-                  {total} total
-                </span>
-              </div>
-              <div>
-                <p className="text-slate-500 dark:text-[#ad92c9] text-sm font-medium mb-1">Total Transactions</p>
-                <p className="text-slate-900 dark:text-white tracking-tight text-3xl font-bold">{total}</p>
-              </div>
-            </div>
-
-            {/* Monthly Sent */}
-            <div className="flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-white/[0.05] backdrop-blur-sm border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-colors shadow-sm dark:shadow-none">
-              <div className="flex justify-between items-start">
-                <div className="p-2 bg-red-500/10 rounded-lg text-red-400">
-                  <ArrowUpRight className="w-6 h-6" />
-                </div>
-                <span className="text-red-400 text-sm font-medium bg-red-500/10 px-2 py-1 rounded-lg">
-                  Sent
-                </span>
-              </div>
-              <div>
-                <p className="text-slate-500 dark:text-[#ad92c9] text-sm font-medium mb-1">Monthly Sent</p>
-                <p className="text-slate-900 dark:text-white tracking-tight text-3xl font-bold">
-                  {stats.monthlySent.toFixed(4)} <span className="text-lg text-slate-400 dark:text-[#ad92c9]">USDC</span>
-                </p>
-              </div>
-            </div>
-
-            {/* Monthly Received */}
-            <div className="flex flex-col gap-3 rounded-2xl p-6 bg-white dark:bg-white/[0.05] backdrop-blur-sm border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-colors shadow-sm dark:shadow-none">
-              <div className="flex justify-between items-start">
-                <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-400">
-                  <ArrowDownLeft className="w-6 h-6" />
-                </div>
-                <span className="text-emerald-500 text-sm font-medium bg-emerald-500/10 px-2 py-1 rounded-lg">
-                  Received
-                </span>
-              </div>
-              <div>
-                <p className="text-slate-500 dark:text-[#ad92c9] text-sm font-medium mb-1">Monthly Received</p>
-                <p className="text-slate-900 dark:text-white tracking-tight text-3xl font-bold">
-                  {stats.monthlyReceived.toFixed(4)} <span className="text-lg text-slate-400 dark:text-[#ad92c9]">USDC</span>
-                </p>
-              </div>
-            </div>
+          <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <StatTile label="Total Transactions" value={total} icon={Receipt} accent="purple" />
+            <StatTile label="Monthly Sent" value={`${stats.monthlySent.toFixed(4)} USDC`} icon={ArrowUpRight} accent="rose" />
+            <StatTile label="Monthly Received" value={`${stats.monthlyReceived.toFixed(4)} USDC`} icon={ArrowDownLeft} accent="emerald" />
           </section>
 
           {/* Filters & Search Toolbar */}
-          <div className="bg-slate-50/95 dark:bg-[#0a0512]/90 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-slate-200 dark:border-white/5">
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-              {/* Search */}
-              <div className="w-full md:w-96">
-                <label className="flex w-full items-center rounded-2xl bg-white dark:bg-white/[0.08] h-12 px-4 border border-slate-200 dark:border-transparent focus-within:border-[#7f13ec]/50 transition-colors shadow-sm dark:shadow-none">
-                  <Search className="w-5 h-5 text-slate-400 dark:text-[#ad92c9]" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-transparent border-none text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#ad92c9] focus:ring-0 ml-2 focus:outline-none"
-                    placeholder="Search by username, hash, or note..."
-                  />
-                </label>
-              </div>
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            {/* Search */}
+            <div className="w-full md:w-96">
+              <label className="flex h-12 w-full items-center rounded-xl border border-white/10 bg-black/30 px-4 transition-colors focus-within:border-[#9b3bff]/60">
+                <Search className="h-5 w-5 text-purple-200/60" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="ml-2 w-full border-none bg-transparent text-white placeholder-purple-200/50 focus:outline-none focus:ring-0"
+                  placeholder="Search by username, hash, or note..."
+                />
+              </label>
+            </div>
 
-              {/* Filter Chips */}
-              <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-                {(['all', 'sent', 'received'] as FilterType[]).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-xl transition-colors text-sm font-medium ${
-                      filter === f
-                        ? 'bg-[#7f13ec] text-white shadow-lg shadow-[#7f13ec]/20'
-                        : 'bg-white dark:bg-white/[0.08] text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/5'
-                    }`}
-                  >
-                    {f === 'all' ? <Copy className="w-4 h-4" /> : f === 'sent' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownLeft className="w-4 h-4" />}
-                    {f.charAt(0).toUpperCase() + f.slice(1)}
-                  </button>
-                ))}
-              </div>
+            {/* Filter Chips */}
+            <div className="flex w-full gap-2 overflow-x-auto pb-1 md:w-auto md:pb-0">
+              {(['all', 'sent', 'received'] as FilterType[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`flex shrink-0 items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
+                    filter === f
+                      ? 'bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30'
+                      : 'border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]'
+                  }`}
+                >
+                  {f === 'all' ? <Copy className="h-4 w-4" /> : f === 'sent' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -300,11 +243,11 @@ export default function HistoryPage() {
               <div className="spinner" />
             </div>
           ) : filteredTransactions.length === 0 ? (
-            <div className="bg-white dark:bg-white/[0.05] rounded-2xl p-8 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
-              <span className="text-5xl mb-4 block">📭</span>
-              <p className="text-slate-900 dark:text-white font-bold text-lg">No transactions found</p>
-              <p className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1">
-                {searchQuery 
+            <Card className="text-center">
+              <span className="mb-4 block text-5xl">📭</span>
+              <p className="text-lg font-bold text-white">No transactions found</p>
+              <p className="mt-1 text-sm text-purple-200/60">
+                {searchQuery
                   ? 'Try a different search term'
                   : filter === 'all'
                   ? 'Your transaction history will appear here'
@@ -312,120 +255,120 @@ export default function HistoryPage() {
                   ? "You haven't sent any payments yet"
                   : "You haven't received any payments yet"}
               </p>
-            </div>
+            </Card>
           ) : (
             <div className="flex flex-col gap-6">
               {Object.entries(groupedTransactions).map(([date, txs]) => (
                 <div key={date} className="flex flex-col gap-3">
                   {/* Date Header */}
-                  <h3 className="text-slate-500 dark:text-[#ad92c9] text-sm font-semibold uppercase tracking-wider pl-2">
+                  <h3 className="pl-1 text-sm font-semibold uppercase tracking-wider text-purple-200/60">
                     {date}
                   </h3>
 
                   {/* Transaction Items */}
-                  {txs.map((tx) => {
-                    const isSent = tx.senderAddress === walletAddress;
-                    const emoji = getTxEmoji(tx);
+                  <Card className="p-2 sm:p-2">
+                    <div className="flex flex-col">
+                      {txs.map((tx) => {
+                        const isSent = tx.senderAddress === walletAddress;
+                        const emoji = getTxEmoji(tx);
 
-                    return (
-                      <a
-                        key={tx._id}
-                        href={getExplorerUrl(tx.txHash)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group flex items-center justify-between p-4 bg-white dark:bg-white/[0.08] hover:bg-slate-50 dark:hover:bg-white/10 rounded-2xl transition-all duration-300 cursor-pointer border border-slate-200 dark:border-transparent hover:border-[#7f13ec]/30 shadow-sm dark:shadow-none hover:shadow-md hover:shadow-[#7f13ec]/5"
-                      >
-                        <div className="flex items-center gap-4">
-                          {/* Icon */}
-                          <div className="relative flex-shrink-0">
-                            <div className={`h-14 w-14 rounded-2xl flex items-center justify-center text-3xl shadow-inner ${
-                              isSent 
-                                ? 'bg-red-500/10 dark:bg-[#5C4B6B]' 
-                                : 'bg-emerald-500/10 dark:bg-[#2a3a2a]'
-                            }`}>
-                              {emoji}
-                            </div>
-                            <div className={`absolute -bottom-1 -right-1 rounded-full p-1 border-2 border-white dark:border-white/10 flex items-center justify-center ${
-                              isSent 
-                                ? 'bg-slate-500 dark:bg-[#ad92c9] text-white' 
-                                : 'bg-emerald-500 text-white'
-                            }`}>
-                              {isSent ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
-                            </div>
-                          </div>
-
-                          {/* Details */}
-                          <div className="flex flex-col">
-                            <h4 className="text-slate-900 dark:text-white font-bold text-lg group-hover:text-[#7f13ec] dark:group-hover:text-[#9d4bf2] transition-colors">
-                              {isSent ? `To @${tx.receiverUsername}` : `From @${tx.senderUsername}`}
-                            </h4>
-                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
-                                isSent 
-                                  ? 'bg-red-500/10 text-red-500 border-red-500/20' 
-                                  : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                              }`}>
-                                {isSent ? 'Sent' : 'Received'}
-                              </span>
-                              {tx.note && (
-                                <p className="text-slate-500 dark:text-[#ad92c9] text-sm truncate max-w-[200px]">
-                                  "{tx.note}"
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Right side */}
-                        <div className="flex items-center gap-6 md:gap-12 text-right">
-                          {/* Time & Status - Hidden on mobile */}
-                          <div className="hidden sm:block">
-                            <p className="text-slate-700 dark:text-white text-sm font-medium">
-                              {new Date(tx.timestamp).toLocaleTimeString('en-US', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </p>
-                            <div className={`flex items-center justify-end gap-1 text-xs ${
-                              tx.status === 'confirmed' 
-                                ? 'text-emerald-500' 
-                                : tx.status === 'pending' 
-                                ? 'text-amber-500' 
-                                : 'text-red-500'
-                            }`}>
-                              <span className="inline-flex items-center">{tx.status === 'confirmed' ? <Check className="w-3.5 h-3.5" /> : tx.status === 'pending' ? '⏳' : '✕'}</span>
-                              <span className="capitalize">{tx.status}</span>
-                            </div>
-                          </div>
-
-                          {/* Amount */}
-                          <div className="flex flex-col items-end">
-                            <p className={`font-bold text-xl group-hover:scale-105 transition-transform ${
-                              isSent ? 'text-red-400' : 'text-emerald-400'
-                            }`}>
-                              {isSent ? '-' : '+'}{tx.amount.toFixed(4)}
-                            </p>
-                            <div className="flex items-center gap-1">
-                              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-[#7f13ec] to-[#a855f7] flex items-center justify-center">
-                                <span className="text-white text-[8px] font-bold">M</span>
+                        return (
+                          <a
+                            key={tx._id}
+                            href={getExplorerUrl(tx.txHash)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex cursor-pointer items-center justify-between rounded-xl p-3 transition-colors hover:bg-white/5"
+                          >
+                            <div className="flex items-center gap-4">
+                              {/* Icon */}
+                              <div className="relative flex-shrink-0">
+                                <div className={`flex h-12 w-12 items-center justify-center rounded-xl text-2xl ${
+                                  isSent ? 'bg-rose-500/10' : 'bg-emerald-500/10'
+                                }`}>
+                                  {emoji}
+                                </div>
+                                <div className={`absolute -bottom-1 -right-1 flex items-center justify-center rounded-full border-2 border-[#0a0512] p-1 text-white ${
+                                  isSent ? 'bg-rose-500' : 'bg-emerald-500'
+                                }`}>
+                                  {isSent ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+                                </div>
                               </div>
-                              <p className="text-slate-500 dark:text-[#ad92c9] text-xs font-mono">USDC</p>
+
+                              {/* Details */}
+                              <div className="flex flex-col">
+                                <h4 className="text-base font-semibold text-white transition-colors group-hover:text-[#c89bff]">
+                                  {isSent ? `To @${tx.receiverUsername}` : `From @${tx.senderUsername}`}
+                                </h4>
+                                <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                    isSent
+                                      ? 'bg-rose-500/10 text-rose-300'
+                                      : 'bg-emerald-500/10 text-emerald-300'
+                                  }`}>
+                                    {isSent ? 'Sent' : 'Received'}
+                                  </span>
+                                  {tx.note && (
+                                    <p className="max-w-[200px] truncate text-sm text-purple-200/60">
+                                      "{tx.note}"
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      </a>
-                    );
-                  })}
+
+                            {/* Right side */}
+                            <div className="flex items-center gap-6 text-right md:gap-12">
+                              {/* Time & Status - Hidden on mobile */}
+                              <div className="hidden sm:block">
+                                <p className="text-sm font-medium text-white">
+                                  {new Date(tx.timestamp).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </p>
+                                <div className={`flex items-center justify-end gap-1 text-xs ${
+                                  tx.status === 'confirmed'
+                                    ? 'text-emerald-300'
+                                    : tx.status === 'pending'
+                                    ? 'text-amber-300'
+                                    : 'text-rose-300'
+                                }`}>
+                                  <span className="inline-flex items-center">{tx.status === 'confirmed' ? <Check className="h-3.5 w-3.5" /> : tx.status === 'pending' ? '⏳' : '✕'}</span>
+                                  <span className="capitalize">{tx.status}</span>
+                                </div>
+                              </div>
+
+                              {/* Amount */}
+                              <div className="flex flex-col items-end">
+                                <p className={`text-lg font-bold tabular-nums ${
+                                  isSent ? 'text-rose-300' : 'text-emerald-300'
+                                }`}>
+                                  {isSent ? '-' : '+'}{tx.amount.toFixed(4)}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                  <div className="flex h-4 w-4 items-center justify-center rounded-full bg-gradient-to-br from-[#9b3bff] to-[#6a10c7]">
+                                    <span className="text-[8px] font-bold text-white">M</span>
+                                  </div>
+                                  <p className="font-mono text-xs text-purple-200/60">USDC</p>
+                                </div>
+                              </div>
+                            </div>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </Card>
                 </div>
               ))}
 
               {/* Load More */}
               {hasMore && (
-                <div className="flex justify-center mt-6">
+                <div className="mt-2 flex justify-center">
                   <button
                     onClick={() => setPage((p) => p + 1)}
                     disabled={isLoadingMore}
-                    className="px-6 py-3 bg-transparent border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-sm font-medium flex items-center gap-2 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-white/[0.08] disabled:opacity-50"
                   >
                     {isLoadingMore ? (
                       <>
@@ -444,7 +387,7 @@ export default function HistoryPage() {
             </div>
           )}
         </div>
-      </div>
+      </PageShell>
     </AppShell>
   );
 }

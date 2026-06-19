@@ -85,8 +85,8 @@ export default function ShieldedPage() {
         </div>
 
         {/* Main card */}
-        <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-1 backdrop-blur-xl shadow-2xl shadow-black/40">
-          <div className="rounded-[1.35rem] bg-gradient-to-b from-white/[0.03] to-transparent p-6 sm:p-8">
+        <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.04] p-1 backdrop-blur-xl shadow-2xl shadow-black/40">
+          <div className="rounded-2xl bg-gradient-to-b from-white/[0.03] to-transparent p-6 sm:p-8">
             {!state.ready ? (
               <div className="flex items-center justify-center gap-2 py-10 text-purple-200/70">
                 <Loader2 className="h-4 w-4 animate-spin" /> Booting the ZK engine…
@@ -99,7 +99,7 @@ export default function ShieldedPage() {
                   className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-6 py-4 text-base font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50 disabled:opacity-60"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
-                    {busy ? <><Loader2 className="h-4 w-4 animate-spin" />{state.statusText || 'Connecting…'}</> : 'Connect wallet'}
+                    {busy ? <><Loader2 className="h-4 w-4 animate-spin" />{state.statusText || 'Connecting…'}</> : 'Connect a Stellar wallet'}
                   </span>
                 </button>
                 <p className="mt-3 text-center text-xs text-purple-200/60">

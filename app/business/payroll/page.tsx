@@ -18,6 +18,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import AppShell from '../../components/shell/AppShell';
+import { PageShell, PageHeader, Card } from '@/app/components/ui/primitives';
 import { useWallet, getExplorerUrl, formatBalance } from '@/app/lib/chain';
 import { getUserByUsername } from '@/app/lib/api';
 import type { AssetCode } from '@/app/lib/chain/types';
@@ -108,26 +109,22 @@ export default function PayrollPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:py-10">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#a855f7] to-[#7e22ce] shadow-lg shadow-[#9333ea]/30">
-            <Users className="h-6 w-6 text-white" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Payroll</h1>
-            <p className="text-sm text-purple-200/55">Pay your whole team in one batch.</p>
-          </div>
-        </div>
+      <PageShell variant="wide">
+        <PageHeader
+          title="Payroll"
+          subtitle="Pay your whole team in one batch."
+          icon={Users}
+          accent="purple"
+        />
 
         {/* Summary */}
-        <div className="surface mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-5">
+        <Card className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-wide text-purple-200/60">Total payout</p>
-            <p className="mt-1 text-3xl font-bold tabular-nums">
-              {formatBalance(total)} <span className="text-base font-medium text-purple-200/60">{asset}</span>
+            <p className="text-xs uppercase tracking-wide text-purple-200/55">Total payout</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-white">
+              {formatBalance(total)} <span className="text-base font-medium text-purple-200/55">{asset}</span>
             </p>
-            <p className="mt-0.5 text-xs text-purple-200/65">
+            <p className="mt-0.5 text-xs text-purple-200/55">
               {payees.length} {payees.length === 1 ? 'recipient' : 'recipients'}
               {paidCount > 0 && ` · ${paidCount} paid`}
             </p>
@@ -135,7 +132,7 @@ export default function PayrollPage() {
           <button
             onClick={run}
             disabled={!isConnected || running || payees.length === 0}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#a855f7] to-[#7e22ce] px-5 py-3 font-semibold text-white shadow-lg shadow-[#9333ea]/30 transition hover:shadow-[#9333ea]/50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-5 py-3 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {running ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Running…</>
@@ -145,10 +142,10 @@ export default function PayrollPage() {
               <><Play className="h-4 w-4" /> Run payroll</>
             )}
           </button>
-        </div>
+        </Card>
 
         {/* Add recipient */}
-        <div className="surface mt-4 rounded-2xl p-4">
+        <Card className="mt-4">
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
               value={handle}
@@ -184,12 +181,12 @@ export default function PayrollPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Roster */}
         <div className="mt-4 space-y-2">
           {payees.length === 0 ? (
-            <div className="surface flex flex-col items-center rounded-2xl py-14 text-center">
+            <Card className="flex flex-col items-center py-14 text-center">
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#9b3bff]/10 text-[#b07bff]">
                 <Users className="h-7 w-7" />
               </span>
@@ -197,14 +194,14 @@ export default function PayrollPage() {
               <p className="mt-1 max-w-xs text-sm text-purple-200/60">
                 Add your team above by @username or wallet address, then run the batch.
               </p>
-            </div>
+            </Card>
           ) : (
             payees.map((p) => {
               const row = rows[p.id] ?? { status: 'idle' as const };
               return (
-                <div
+                <Card
                   key={p.id}
-                  className="surface flex items-center justify-between gap-3 rounded-2xl p-4"
+                  className="flex items-center justify-between gap-3 p-4 sm:p-4"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] font-bold text-white">
@@ -220,8 +217,8 @@ export default function PayrollPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold tabular-nums">
-                      {formatBalance(Number(p.amount) || 0)} <span className="text-xs text-purple-200/65">{asset}</span>
+                    <span className="font-semibold tabular-nums text-white">
+                      {formatBalance(Number(p.amount) || 0)} <span className="text-xs text-purple-200/55">{asset}</span>
                     </span>
                     {!running && (
                       <button
@@ -233,12 +230,12 @@ export default function PayrollPage() {
                       </button>
                     )}
                   </div>
-                </div>
+                </Card>
               );
             })
           )}
         </div>
-      </div>
+      </PageShell>
     </AppShell>
   );
 }
@@ -267,5 +264,5 @@ function RowStatus({ row }: { row: RowState }) {
         <AlertCircle className="h-3 w-3" /> {row.error || 'Failed'}
       </p>
     );
-  return <p className="text-xs text-purple-200/65">Ready</p>;
+  return <p className="text-xs text-purple-200/55">Ready</p>;
 }

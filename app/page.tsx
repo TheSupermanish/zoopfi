@@ -72,8 +72,8 @@ export default function Home() {
         </div>
 
         {/* Pay card */}
-        <div className={`w-full rounded-3xl border bg-white/[0.04] p-1 backdrop-blur-xl transition-all duration-500 ${priv ? 'border-[#9b3bff]/50 shadow-[0_0_40px_-8px_rgba(127,19,236,0.5)]' : 'border-white/10 shadow-2xl shadow-black/40'}`}>
-          <div className="rounded-[1.35rem] bg-gradient-to-b from-white/[0.03] to-transparent p-5 sm:p-6">
+        <div className={`w-full rounded-2xl border bg-white/[0.04] p-1 backdrop-blur-xl transition-all duration-500 ${priv ? 'border-[#9b3bff]/50 shadow-[0_0_40px_-8px_rgba(127,19,236,0.5)]' : 'border-white/10 shadow-2xl shadow-black/40'}`}>
+          <div className="rounded-2xl bg-gradient-to-b from-white/[0.03] to-transparent p-5 sm:p-6">
             {/* Private toggle */}
             <button
               onClick={() => setPriv((p) => !p)}

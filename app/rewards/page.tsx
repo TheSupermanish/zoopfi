@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useWallet } from '@/app/lib/chain';
 import { useUser, useStreak } from '@/app/lib/hooks';
 import AppShell from '../components/shell/AppShell';
+import { PageShell, PageHeader, Card, StatTile } from '../components/ui/primitives';
 import {
   Sprout,
   Rocket,
@@ -16,6 +17,8 @@ import {
   Flame,
   Zap,
   CheckCircle2,
+  ArrowUpRight,
+  ArrowDownLeft,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -73,88 +76,85 @@ export default function RewardsPage() {
 
   return (
     <AppShell>
-      <div className="p-4 md:p-8 max-w-3xl mx-auto w-full">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Rewards</h1>
-          <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Track your progress and earn rewards</p>
-        </div>
+      <PageShell variant="wide">
+        <PageHeader
+          title="Rewards"
+          subtitle="Track your progress and earn rewards"
+          icon={Trophy}
+          accent="amber"
+        />
 
         <div className="space-y-6">
-          {/* Current Status Card */}
-          <div 
-            className="rounded-2xl p-6 animate-fade-in-up overflow-hidden relative"
-            style={{
-              background: 'linear-gradient(135deg, #7f13ec 0%, #a855f7 50%, #6366f1 100%)',
-              boxShadow: '0 20px 40px -15px rgba(127, 19, 236, 0.4)'
-            }}
-          >
-            {/* Background decoration */}
-            <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-            <div className="absolute -left-8 -bottom-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-            
+          {/* Current Status */}
+          <Card className="relative overflow-hidden animate-fade-in-up">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#7f13ec]/10 blur-3xl"
+            />
             <div className="relative">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-white/70 text-sm">Current Level</p>
-                  <p className="text-3xl font-black text-white flex items-center gap-2">
-                    <currentMilestone.Icon className="w-7 h-7" />
+                  <p className="text-sm text-purple-200/60">Current Level</p>
+                  <p className="mt-1 flex items-center gap-2 text-2xl font-bold text-white sm:text-3xl">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#9b3bff]/15 text-[#c89bff]">
+                      <currentMilestone.Icon className="h-5 w-5" />
+                    </span>
                     <span>{currentMilestone.name}</span>
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-white/70 text-sm">Transfers</p>
-                  <p className="text-3xl font-black text-white">{transferCount}</p>
+                  <p className="text-sm text-purple-200/60">Transfers</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-white sm:text-3xl">{transferCount}</p>
                 </div>
               </div>
 
               {nextMilestone && (
-                <div className="mt-4">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-white/70">Progress to {nextMilestone.name}</span>
-                    <span className="text-white font-bold">
+                <div className="mt-5">
+                  <div className="mb-2 flex justify-between text-sm">
+                    <span className="text-purple-200/60">Progress to {nextMilestone.name}</span>
+                    <span className="font-semibold text-white">
                       {nextMilestone.count - transferCount} more
                     </span>
                   </div>
-                  <div className="h-3 bg-white/20 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-white rounded-full transition-all duration-1000"
+                  <div className="h-3 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#9b3bff] to-[#c89bff] transition-all duration-1000"
                       style={{ width: `${progressToNext}%` }}
                     />
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          </Card>
 
-          {/* Streak Card */}
-          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+          {/* Streak */}
+          <Card className="animate-fade-in-up">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Daily Streak</p>
-                <p className="text-4xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <Flame className="w-10 h-10 text-amber-500" /> {streakInfo?.streak || 0}
-                  <span className="text-lg font-normal text-slate-500 dark:text-[#ad92c9]">days</span>
+                <p className="text-sm text-purple-200/60">Daily Streak</p>
+                <p className="mt-1 flex items-center gap-3 text-4xl font-bold tabular-nums text-white">
+                  <Flame className="h-10 w-10 text-amber-400" /> {streakInfo?.streak || 0}
+                  <span className="text-lg font-normal text-purple-200/60">days</span>
                 </p>
               </div>
-              <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-300">
                 {(() => {
                   const streak = streakInfo?.streak || 0;
                   const StreakIcon = streak >= 7 ? Star : streak >= 3 ? Zap : Flame;
-                  return <StreakIcon className="w-7 h-7 text-amber-500" />;
+                  return <StreakIcon className="h-7 w-7" />;
                 })()}
-              </div>
+              </span>
             </div>
-            <p className="text-slate-400 dark:text-[#ad92c9]/60 text-sm mt-4">
+            <p className="mt-4 text-sm text-purple-200/60">
               {streakInfo?.streak === 0
                 ? 'Make a transfer today to start your streak!'
                 : `Keep it up! Transfer daily to maintain your streak.`}
             </p>
-          </div>
+          </Card>
 
           {/* Milestones */}
-          <div className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Milestones</h3>
+          <div className="animate-fade-in-up">
+            <h2 className="mb-4 text-base font-semibold text-white">Milestones</h2>
             <div className="space-y-3">
               {MILESTONES.map((milestone, index) => {
                 const isCompleted = transferCount >= milestone.count;
@@ -162,75 +162,66 @@ export default function RewardsPage() {
                 const isLocked = !isCompleted && !isCurrent;
 
                 return (
-                  <div
+                  <Card
                     key={milestone.name}
-                    className={`bg-white dark:bg-white/[0.04] rounded-2xl p-4 flex items-center gap-4 border shadow-sm dark:shadow-none ${
-                      isCurrent ? 'border-[#7f13ec]' : 'border-slate-200 dark:border-white/5'
-                    } ${isLocked ? 'opacity-50' : ''}`}
-                    style={{ boxShadow: isCurrent ? '0 0 30px rgba(127, 19, 236, 0.2)' : undefined }}
+                    className={`flex items-center gap-4 ${isCurrent ? 'border-[#9b3bff]/60' : ''} ${isLocked ? 'opacity-50' : ''}`}
                   >
-                    <div
-                      className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl ${
+                    <span
+                      className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-xl ${
                         isCompleted
-                          ? 'bg-emerald-500/20'
+                          ? 'bg-emerald-500/15 text-emerald-300'
                           : isCurrent
-                            ? 'bg-[#7f13ec]/20'
-                            : 'bg-slate-100 dark:bg-white/5'
+                            ? 'bg-[#9b3bff]/15 text-[#c89bff]'
+                            : 'bg-white/5 text-purple-200/60'
                       }`}
                     >
                       {isCompleted ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                        <CheckCircle2 className="h-6 w-6" />
                       ) : (
-                        <milestone.Icon className={`w-6 h-6 ${isCurrent ? 'text-[#7f13ec]' : 'text-slate-400 dark:text-[#ad92c9]'}`} />
+                        <milestone.Icon className="h-6 w-6" />
                       )}
-                    </div>
+                    </span>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className={`font-bold ${isCompleted || isCurrent ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-[#ad92c9]'}`}>
+                        <p className={`font-semibold ${isCompleted || isCurrent ? 'text-white' : 'text-purple-200/60'}`}>
                           {milestone.name}
                         </p>
                         {isCurrent && (
                           <span className="badge badge-primary text-xs">Current</span>
                         )}
                       </div>
-                      <p className="text-slate-400 dark:text-[#ad92c9]/60 text-sm">
-                        {milestone.count === 0 
-                          ? 'Starting level' 
+                      <p className="text-sm text-purple-200/60">
+                        {milestone.count === 0
+                          ? 'Starting level'
                           : `${milestone.count} transfers`}
                       </p>
                     </div>
                     {milestone.reward > 0 && (
                       <div className="text-right">
-                        <p className={`font-bold ${isCompleted ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-500 dark:text-[#ad92c9]'}`}>
+                        <p className={`font-semibold ${isCompleted ? 'text-emerald-300' : 'text-purple-200/60'}`}>
                           +{milestone.reward} USDC
                         </p>
-                        <p className="text-slate-400 dark:text-[#ad92c9]/60 text-xs">
+                        <p className="text-xs text-purple-200/60">
                           {isCompleted ? 'Earned' : 'Reward'}
                         </p>
                       </div>
                     )}
-                  </div>
+                  </Card>
                 );
               })}
             </div>
           </div>
 
           {/* Stats Summary */}
-          <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Your Stats</h3>
+          <div className="animate-fade-in-up">
+            <h2 className="mb-4 text-base font-semibold text-white">Your Stats</h2>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">{userData?.totalSent || 0}</p>
-                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">USDC Sent</p>
-              </div>
-              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
-                <p className="text-3xl font-bold text-slate-900 dark:text-white">{userData?.totalReceived || 0}</p>
-                <p className="text-slate-500 dark:text-[#ad92c9] text-sm">USDC Received</p>
-              </div>
+              <StatTile label="USDC Sent" value={userData?.totalSent || 0} icon={ArrowUpRight} accent="rose" />
+              <StatTile label="USDC Received" value={userData?.totalReceived || 0} icon={ArrowDownLeft} accent="emerald" />
             </div>
           </div>
         </div>
-      </div>
+      </PageShell>
     </AppShell>
   );
 }

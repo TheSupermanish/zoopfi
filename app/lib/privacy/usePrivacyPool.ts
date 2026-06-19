@@ -108,7 +108,9 @@ export function usePrivacyPool() {
     if (!eng) return;
     patch({ busy: true, error: null, statusText: 'Connecting wallet…' });
     try {
-      const address = await connectWallet();
+      // Reuse an already-connected wallet (the main app shares this same kit for
+      // external wallets) so the user isn't asked to connect a second time.
+      const address = getConnectedAddress() || (await connectWallet());
       patch({ address, statusText: 'Deriving private keys…' });
 
       // Derive (or load) note + encryption keys from one wallet signature.
@@ -125,6 +127,13 @@ export function usePrivacyPool() {
       fail(e);
     }
   }, [patch, fail, refresh]);
+
+  // If a wallet is already connected app-wide (external wallet, shared with the
+  // main app via the same kit), connect the private layer automatically — no
+  // redundant "Connect wallet" step.
+  useEffect(() => {
+    if (state.ready && !state.address && getConnectedAddress()) void connect();
+  }, [state.ready, state.address, connect]);
 
   const poolId = useCallback(async (): Promise<string> => {
     const cfg: any = await engineRef.current!.webClient.contractConfig();

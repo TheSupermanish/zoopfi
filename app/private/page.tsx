@@ -6,6 +6,7 @@ import { Shield, Lock, LockOpen, ShieldCheck, EyeOff, CheckCircle2, ArrowDownLef
 import { useWallet, formatBalance, formatUSD } from '@/app/lib/chain';
 import type { PrivateNote, PrivacyOpKind } from '@/app/lib/chain';
 import AppShell from '../components/shell/AppShell';
+import { PageShell, PageHeader, Card } from '../components/ui/primitives';
 import { useUser, useChainInvalidate } from '@/app/lib/hooks';
 
 type Mode = 'none' | 'shield' | 'transfer' | 'unshield';
@@ -115,66 +116,65 @@ export default function PrivatePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
-        <div className="spinner" />
-      </div>
+      <AppShell>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="spinner" />
+        </div>
+      </AppShell>
     );
   }
 
   return (
     <AppShell>
-      <div className="p-4 md:p-8 flex flex-col gap-6 max-w-[1100px] mx-auto w-full">
-        {/* Heading */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#7f13ec] to-[#a855f7] flex items-center justify-center shadow-lg shadow-[#7f13ec]/30">
-              <Shield className="text-white w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">Private Payments</h1>
-              <p className="text-slate-500 dark:text-[#ad92c9]">Shielded USDC powered by zero-knowledge proofs on Stellar</p>
-            </div>
-          </div>
-        </div>
+      <PageShell variant="wide" className="flex flex-col gap-6">
+        <PageHeader
+          icon={Shield}
+          accent="violet"
+          title="Private"
+          subtitle="Shielded USDC powered by zero-knowledge proofs on Stellar"
+        />
 
         {!enabled ? (
           /* Enable card */
-          <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-10 border border-slate-200 dark:border-white/5 text-center shadow-sm dark:shadow-none">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center mb-6">
-              <ShieldCheck className="w-10 h-10 text-[#7f13ec]" />
+          <Card className="text-center">
+            <div className="w-20 h-20 mx-auto rounded-2xl bg-[#9b3bff]/15 text-[#c89bff] flex items-center justify-center mb-6">
+              <ShieldCheck className="w-10 h-10" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Enable your private balance</h2>
-            <p className="text-slate-500 dark:text-[#ad92c9] max-w-md mx-auto mb-8">
+            <h2 className="text-base font-semibold text-white mb-2">Enable your private balance</h2>
+            <p className="text-sm text-purple-200/60 max-w-md mx-auto mb-8">
               We&apos;ll derive your private spending keys from a one-time signature. They&apos;re generated and stored on your device only.
             </p>
             <button
               onClick={enablePrivacy}
               disabled={enabling}
-              className="px-8 py-4 rounded-xl bg-[#7f13ec] hover:bg-[#6a10c7] text-white font-bold text-lg transition-colors disabled:opacity-60"
+              className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] text-white font-semibold text-lg transition hover:shadow-lg hover:shadow-[#7f13ec]/40 disabled:opacity-60"
             >
               {enabling ? 'Setting up…' : 'Enable private balance'}
             </button>
-          </div>
+          </Card>
         ) : (
           <>
             {/* Balance + actions */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-5">
-                <div className="relative overflow-hidden bg-white dark:bg-white/[0.04] rounded-3xl p-8 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none h-full">
-                  <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] bg-[#7f13ec]/10" />
+                <Card className="relative overflow-hidden h-full">
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#7f13ec]/10 blur-3xl"
+                  />
                   <div className="relative">
-                    <p className="text-slate-500 dark:text-[#ad92c9] text-sm mb-1 flex items-center gap-2">
-                      <Shield className="w-4 h-4" /> Private balance
+                    <p className="flex items-center gap-2 text-sm text-purple-200/55 mb-1">
+                      <Shield className="w-4 h-4 text-[#b07bff]" /> Private balance
                     </p>
-                    <h2 className="text-5xl font-black text-slate-900 dark:text-white mb-1">
-                      {formatBalance(privateBalance)} <span className="text-2xl text-slate-400 dark:text-[#ad92c9]">USDC</span>
+                    <h2 className="text-4xl font-bold tabular-nums text-white mb-1 sm:text-5xl">
+                      {formatBalance(privateBalance)} <span className="text-xl font-medium text-purple-200/50">USDC</span>
                     </h2>
-                    <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60 mb-6">{formatUSD(privateBalance)}</p>
-                    <div className="text-sm text-slate-500 dark:text-[#ad92c9] border-t border-slate-200 dark:border-white/5 pt-4">
-                      Public balance: <span className="font-bold text-slate-700 dark:text-white">{formatBalance(publicBalance)} USDC</span>
+                    <p className="text-xs text-purple-200/45 mb-6">{formatUSD(privateBalance)}</p>
+                    <div className="border-t border-white/10 pt-4 text-sm text-purple-200/60">
+                      Public balance: <span className="font-semibold text-white">{formatBalance(publicBalance)} USDC</span>
                     </div>
                   </div>
-                </div>
+                </Card>
               </div>
 
               <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -182,15 +182,13 @@ export default function PrivatePage() {
                   <button
                     key={a.mode}
                     onClick={() => openAction(a.mode)}
-                    className={`text-left rounded-2xl p-5 border transition-all ${
-                      mode === a.mode
-                        ? 'border-[#7f13ec] bg-[#7f13ec]/10'
-                        : 'border-slate-200 dark:border-white/5 bg-white dark:bg-white/[0.04] hover:border-[#7f13ec]/40'
+                    className={`surface lift text-left rounded-2xl p-5 transition ${
+                      mode === a.mode ? 'border-[#9b3bff]/60 bg-[#9b3bff]/10' : ''
                     }`}
                   >
-                    <div className="mb-3 text-slate-900 dark:text-white"><a.Icon className="w-7 h-7" /></div>
-                    <h3 className="font-bold text-slate-900 dark:text-white">{a.title}</h3>
-                    <p className="text-xs text-slate-500 dark:text-[#ad92c9] mt-1">{a.subtitle}</p>
+                    <div className="mb-3 text-[#c89bff]"><a.Icon className="w-7 h-7" /></div>
+                    <h3 className="text-base font-semibold text-white">{a.title}</h3>
+                    <p className="mt-1 text-xs text-purple-200/60">{a.subtitle}</p>
                   </button>
                 ))}
               </div>
@@ -198,25 +196,25 @@ export default function PrivatePage() {
 
             {/* Action form */}
             {mode !== 'none' && (
-              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none animate-fade-in-up">
+              <Card className="animate-fade-in-up">
                 {success ? (
                   <div className="text-center py-6">
-                    <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/15 flex items-center justify-center mb-4">
-                      <CheckCircle2 className="text-emerald-500 w-8 h-8" />
+                    <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/15 text-emerald-300 flex items-center justify-center mb-4">
+                      <CheckCircle2 className="w-8 h-8" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
+                    <h3 className="text-base font-semibold text-white mb-1">
                       {success.kind === 'shield' && 'Added to your private balance'}
                       {success.kind === 'transfer' && 'Sent privately'}
                       {success.kind === 'unshield' && 'Withdrawn to public balance'}
                     </h3>
-                    <p className="text-sm text-slate-500 dark:text-[#ad92c9] font-mono break-all mb-6">{success.hash}</p>
-                    <button onClick={() => { setMode('none'); setSuccess(null); }} className="px-6 py-3 rounded-xl bg-[#7f13ec] hover:bg-[#6a10c7] text-white font-bold transition-colors">
+                    <p className="text-sm text-purple-200/60 font-mono break-all mb-6">{success.hash}</p>
+                    <button onClick={() => { setMode('none'); setSuccess(null); }} className="px-6 py-3 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] text-white font-semibold transition hover:shadow-lg hover:shadow-[#7f13ec]/40">
                       Done
                     </button>
                   </div>
                 ) : (
                   <>
-                    <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-4">
+                    <h3 className="text-base font-semibold text-white mb-4">
                       {mode === 'shield' && 'Shield USDC'}
                       {mode === 'transfer' && 'Send privately'}
                       {mode === 'unshield' && 'Unshield USDC'}
@@ -224,25 +222,25 @@ export default function PrivatePage() {
                     <div className="flex flex-col gap-4 max-w-md">
                       {mode === 'transfer' && (
                         <div>
-                          <label className="block text-sm font-medium text-slate-500 dark:text-[#ad92c9] mb-2">Recipient</label>
+                          <label className="block text-sm font-medium text-purple-200/60 mb-2">Recipient</label>
                           <input
                             value={recipient}
                             onChange={(e) => setRecipient(e.target.value)}
                             placeholder="@username"
-                            className="input"
+                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-purple-200/40 focus:border-[#9b3bff]/60 focus:outline-none transition-colors"
                           />
                         </div>
                       )}
                       <div>
-                        <label className="block text-sm font-medium text-slate-500 dark:text-[#ad92c9] mb-2">Amount (USDC)</label>
+                        <label className="block text-sm font-medium text-purple-200/60 mb-2">Amount (USDC)</label>
                         <input
                           type="number"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
                           placeholder="0.00"
-                          className="input text-2xl font-bold"
+                          className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-2xl font-bold text-white placeholder:text-purple-200/40 focus:border-[#9b3bff]/60 focus:outline-none transition-colors"
                         />
-                        <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60 mt-1">
+                        <p className="text-xs text-purple-200/45 mt-1">
                           {mode === 'shield'
                             ? `Public available: ${formatBalance(publicBalance)} USDC`
                             : `Private available: ${formatBalance(privateBalance)} USDC`}
@@ -250,8 +248,8 @@ export default function PrivatePage() {
                       </div>
                       {mode === 'transfer' && (
                         <div>
-                          <label className="block text-sm font-medium text-slate-500 dark:text-[#ad92c9] mb-2">Note (optional, private)</label>
-                          <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="What's it for?" className="input" />
+                          <label className="block text-sm font-medium text-purple-200/60 mb-2">Note (optional, private)</label>
+                          <input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="What's it for?" className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-purple-200/40 focus:border-[#9b3bff]/60 focus:outline-none transition-colors" />
                         </div>
                       )}
                       {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -259,62 +257,62 @@ export default function PrivatePage() {
                         <button
                           onClick={submit}
                           disabled={busy}
-                          className="flex-1 h-12 rounded-xl bg-[#7f13ec] hover:bg-[#6a10c7] text-white font-bold transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                          className="flex-1 h-12 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] text-white font-semibold transition hover:shadow-lg hover:shadow-[#7f13ec]/40 disabled:opacity-60 flex items-center justify-center gap-2"
                         >
                           {proving ? (<><div className="spinner-sm spinner" /> Generating proof…</>) : busy ? 'Submitting…' : (
                             mode === 'shield' ? 'Shield' : mode === 'transfer' ? 'Send privately' : 'Unshield'
                           )}
                         </button>
-                        <button onClick={() => setMode('none')} disabled={busy} className="px-5 h-12 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white font-bold hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">
+                        <button onClick={() => setMode('none')} disabled={busy} className="px-5 h-12 rounded-xl border border-white/10 bg-white/[0.04] text-white font-semibold hover:bg-white/[0.08] transition-colors">
                           Cancel
                         </button>
                       </div>
                     </div>
                   </>
                 )}
-              </div>
+              </Card>
             )}
 
             {/* Private activity */}
-            <div className="bg-white dark:bg-white/[0.04] rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
-              <div className="p-6 border-b border-slate-200 dark:border-white/5">
-                <h3 className="font-bold text-lg text-slate-900 dark:text-white">Private activity</h3>
-                <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Only visible to you, decrypted on this device</p>
+            <Card>
+              <div className="border-b border-white/10 pb-4">
+                <h3 className="text-base font-semibold text-white">Private activity</h3>
+                <p className="mt-0.5 text-xs text-purple-200/60">Only visible to you, decrypted on this device</p>
               </div>
-              <div className="p-4">
+              <div className="pt-2">
                 {notes.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 rounded-full bg-[#7f13ec]/10 flex items-center justify-center mb-4"><EyeOff className="w-7 h-7 text-[#7f13ec]" /></div>
-                    <p className="text-slate-900 dark:text-white font-bold">No private activity yet</p>
-                    <p className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1">Shield some USDC to get started.</p>
+                    <div className="w-16 h-16 rounded-2xl bg-[#9b3bff]/15 text-[#c89bff] flex items-center justify-center mb-4"><EyeOff className="w-7 h-7" /></div>
+                    <p className="font-semibold text-white">No private activity yet</p>
+                    <p className="mt-1 text-sm text-purple-200/60">Shield some USDC to get started.</p>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-1">
                     {notes.map((n) => {
                       const label = n.direction === 'shield' ? 'Shielded' : n.direction === 'out' ? `Sent${n.counterparty ? ` to @${n.counterparty}` : ''}` : 'Received';
                       const sign = n.direction === 'out' ? '-' : '+';
-                      const color = n.direction === 'out' ? 'text-red-400' : 'text-emerald-400';
+                      const color = n.direction === 'out' ? 'text-rose-300' : 'text-emerald-300';
                       const RowIcon = n.direction === 'shield' ? Shield : n.direction === 'out' ? Lock : ArrowDownLeft;
                       return (
-                        <div key={n.id} className="flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                        <div key={n.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-[#7f13ec]/10 flex items-center justify-center text-[#7f13ec]"><RowIcon className="w-5 h-5" /></div>
+                            <div className="w-10 h-10 rounded-full bg-[#9b3bff]/15 text-[#c89bff] flex items-center justify-center"><RowIcon className="w-5 h-5" /></div>
                             <div>
-                              <p className="text-slate-900 dark:text-white font-medium text-sm">{label}{n.note && n.note !== 'change' ? ` · ${n.note}` : ''}</p>
-                              <p className="text-slate-500 dark:text-[#ad92c9] text-xs">{new Date(n.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                              <p className="text-sm font-medium text-white">{label}{n.note && n.note !== 'change' ? ` · ${n.note}` : ''}</p>
+                              <p className="text-xs text-purple-200/45">{new Date(n.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                             </div>
                           </div>
-                          <p className={`font-bold ${color}`}>{sign}{formatBalance(n.amount)}</p>
+                          <p className={`font-semibold tabular-nums ${color}`}>{sign}{formatBalance(n.amount)}</p>
                         </div>
                       );
                     })}
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
           </>
         )}
-      </div>
+      </PageShell>
     </AppShell>
   );
 }
