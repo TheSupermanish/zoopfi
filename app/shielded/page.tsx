@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { usePrivacyPool, stroopsToXlm } from '@/app/lib/privacy/usePrivacyPool';
 import { getExplorerUrl, getAddressExplorerUrl, PRIVACY } from '@/app/lib/chain';
+import AppShell from '../components/shell/AppShell';
 
 type Tab = 'shield' | 'send' | 'unshield';
 
@@ -50,14 +51,7 @@ export default function ShieldedPage() {
   ];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#0c0613] text-white">
-      {/* Ambient glow background */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 h-[34rem] w-[34rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/25 blur-[140px]" />
-        <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute bottom-0 -left-24 h-80 w-80 rounded-full bg-fuchsia-600/10 blur-[120px]" />
-      </div>
-
+    <AppShell>
       <div className="relative mx-auto max-w-2xl px-4 py-10 sm:py-16">
         {/* Hero */}
         <div className="flex flex-col items-center text-center">
@@ -108,7 +102,7 @@ export default function ShieldedPage() {
                     {busy ? <><Loader2 className="h-4 w-4 animate-spin" />{state.statusText || 'Connecting…'}</> : 'Connect wallet'}
                   </span>
                 </button>
-                <p className="mt-3 text-center text-xs text-purple-200/50">
+                <p className="mt-3 text-center text-xs text-purple-200/60">
                   Freighter · xBull · Albedo · Lobstr — pick any Stellar wallet
                 </p>
               </div>
@@ -126,7 +120,7 @@ export default function ShieldedPage() {
                     <span className={`text-4xl font-bold tabular-nums transition ${reveal ? '' : 'blur-md select-none'}`}>
                       {stroopsToXlm(state.privateBalance)}
                     </span>
-                    <span className="text-lg font-medium text-purple-200/50">XLM</span>
+                    <span className="text-lg font-medium text-purple-200/60">XLM</span>
                   </div>
                   <p className="mt-2 truncate font-mono text-xs text-purple-200/40">{state.address}</p>
                   {!state.keysReady && (
@@ -154,7 +148,7 @@ export default function ShieldedPage() {
                 {/* Form */}
                 <div className="mt-5 space-y-4">
                   <div>
-                    <label className="text-xs font-medium uppercase tracking-wide text-purple-200/50">Amount</label>
+                    <label className="text-xs font-medium uppercase tracking-wide text-purple-200/60">Amount</label>
                     <div className="mt-1.5 flex items-center rounded-2xl border border-white/10 bg-black/30 px-4 focus-within:border-[#9b3bff]/60">
                       <input
                         type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
@@ -230,7 +224,7 @@ export default function ShieldedPage() {
           <div className="mt-8">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-purple-100/80"><Eye className="h-4 w-4" /> Pool activity</h2>
-              <button onClick={refresh} className="text-purple-200/50 transition hover:text-white"><RefreshCw className="h-4 w-4" /></button>
+              <button onClick={refresh} className="text-purple-200/60 transition hover:text-white"><RefreshCw className="h-4 w-4" /></button>
             </div>
             <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/5">
               {state.activity.length === 0 ? (
@@ -263,6 +257,6 @@ export default function ShieldedPage() {
           )}
         </div>
       </div>
-    </div>
+    </AppShell>
   );
 }

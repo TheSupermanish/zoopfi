@@ -59,7 +59,7 @@ export default function LoginPage() {
             <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center backdrop-blur">
               <div className="mb-1.5 flex justify-center text-[#b07bff]">{(() => { const I = Icon as typeof Lock; return <I className="h-5 w-5" />; })()}</div>
               <p className="text-sm font-semibold">{title as string}</p>
-              <p className="text-[11px] text-purple-200/50">{sub as string}</p>
+              <p className="text-[11px] text-purple-200/60">{sub as string}</p>
             </div>
           ))}
         </div>
@@ -71,7 +71,7 @@ export default function LoginPage() {
               Connect wallet
             </button>
           </WalletSelectionModal>
-          <p className="mt-3 text-center text-xs text-purple-200/50">
+          <p className="mt-3 text-center text-xs text-purple-200/60">
             Social login or any Stellar wallet — Freighter · xBull · Albedo · Lobstr
           </p>
         </div>
@@ -80,7 +80,7 @@ export default function LoginPage() {
         <div className="mt-8 border-t border-white/5 pt-5">
           <div className="flex flex-wrap justify-center gap-4">
             {['Non-custodial', 'On-chain ZK verification', 'Powered by Stellar'].map((t) => (
-              <span key={t} className="flex items-center gap-1.5 text-xs text-purple-200/50">
+              <span key={t} className="flex items-center gap-1.5 text-xs text-purple-200/60">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> {t}
               </span>
             ))}

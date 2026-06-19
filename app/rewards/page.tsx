@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from '@/app/lib/chain';
 import { useUser, useStreak } from '@/app/lib/hooks';
-import DashboardLayout from '../components/DashboardLayout';
+import AppShell from '../components/shell/AppShell';
 import {
   Sprout,
   Rocket,
@@ -31,11 +31,10 @@ const MILESTONES: { name: string; Icon: LucideIcon; count: number; reward: numbe
 
 export default function RewardsPage() {
   const router = useRouter();
-  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { authenticated, isConnected } = useWallet();
 
   const { data: userData } = useUser();
   const { data: streakInfo } = useStreak();
-  const username = userData?.username ?? '';
   const isLoading = userData === undefined;
 
   // Redirect if not registered
@@ -66,14 +65,14 @@ export default function RewardsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#191022]">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
         <div className="spinner" />
       </div>
     );
   }
 
   return (
-    <DashboardLayout username={username} walletAddress={walletAddress}>
+    <AppShell>
       <div className="p-4 md:p-8 max-w-3xl mx-auto w-full">
         {/* Header */}
         <div className="mb-6">
@@ -129,7 +128,7 @@ export default function RewardsPage() {
           </div>
 
           {/* Streak Card */}
-          <div className="bg-white dark:bg-[#251a30] rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none animate-fade-in-up" style={{ animationDelay: '100ms' }}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Daily Streak</p>
@@ -165,7 +164,7 @@ export default function RewardsPage() {
                 return (
                   <div
                     key={milestone.name}
-                    className={`bg-white dark:bg-[#251a30] rounded-2xl p-4 flex items-center gap-4 border shadow-sm dark:shadow-none ${
+                    className={`bg-white dark:bg-white/[0.04] rounded-2xl p-4 flex items-center gap-4 border shadow-sm dark:shadow-none ${
                       isCurrent ? 'border-[#7f13ec]' : 'border-slate-200 dark:border-white/5'
                     } ${isLocked ? 'opacity-50' : ''}`}
                     style={{ boxShadow: isCurrent ? '0 0 30px rgba(127, 19, 236, 0.2)' : undefined }}
@@ -220,11 +219,11 @@ export default function RewardsPage() {
           <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Your Stats</h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                 <p className="text-3xl font-bold text-slate-900 dark:text-white">{userData?.totalSent || 0}</p>
                 <p className="text-slate-500 dark:text-[#ad92c9] text-sm">USDC Sent</p>
               </div>
-              <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
+              <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 text-center border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
                 <p className="text-3xl font-bold text-slate-900 dark:text-white">{userData?.totalReceived || 0}</p>
                 <p className="text-slate-500 dark:text-[#ad92c9] text-sm">USDC Received</p>
               </div>
@@ -232,6 +231,6 @@ export default function RewardsPage() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </AppShell>
   );
 }

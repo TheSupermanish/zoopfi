@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -13,65 +13,33 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-// Helper function to apply theme to DOM
-const applyTheme = (theme: Theme) => {
-  if (typeof window === 'undefined') return;
-  
-  const root = document.documentElement;
-  
-  // Remove both classes first, then add the correct one
-  root.classList.remove('dark', 'light');
-  root.classList.add(theme);
-  
-  // Also set data attribute for additional CSS targeting
-  root.setAttribute('data-theme', theme);
-  
-  // Update meta theme-color
-  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-  if (metaThemeColor) {
-    metaThemeColor.setAttribute('content', theme === 'dark' ? '#191022' : '#f7f6f8');
-  }
-};
-
+/**
+ * Zoopfi is dark-only: one premium canvas across the whole app. We lock the
+ * document to the `dark` class so every `dark:` utility resolves consistently.
+ * Previously this read the system / saved preference and could apply `.light`,
+ * which rendered the inner pages (that rely on `dark:` variants) in light mode
+ * while the always-dark home/shell stayed dark — the visual mismatch we fixed.
+ */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark');
-  const [mounted, setMounted] = useState(false);
-
-  // Load theme from localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('superpay-theme') as Theme | null;
-    
-    let initialTheme: Theme = 'dark';
-    
-    if (savedTheme && (savedTheme === 'dark' || savedTheme === 'light')) {
-      initialTheme = savedTheme;
-    } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      initialTheme = prefersDark ? 'dark' : 'light';
+    const root = document.documentElement;
+    root.classList.remove('light');
+    root.classList.add('dark');
+    root.setAttribute('data-theme', 'dark');
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', '#0a0512');
+    try {
+      localStorage.setItem('superpay-theme', 'dark');
+    } catch {
+      /* storage unavailable */
     }
-    
-    setThemeState(initialTheme);
-    applyTheme(initialTheme);
-    setMounted(true);
   }, []);
 
-  // Update theme
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem('superpay-theme', newTheme);
-    applyTheme(newTheme);
-  };
+  // Theme is locked to dark; setters are no-ops kept for API compatibility.
+  const noop = () => {};
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-  };
-
-  // Always provide the context, even before mount
-  // This prevents "useTheme must be used within ThemeProvider" errors
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme, mounted }}>
+    <ThemeContext.Provider value={{ theme: 'dark', toggleTheme: noop, setTheme: noop, mounted: true }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -84,4 +52,3 @@ export function useTheme() {
   }
   return context;
 }
-

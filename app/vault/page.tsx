@@ -10,7 +10,7 @@
  * index is public, your share count (and balance/gains) stays hidden. Roadmap.
  */
 import { useCallback, useEffect, useState } from 'react';
-import DashboardLayout from '../components/DashboardLayout';
+import AppShell from '../components/shell/AppShell';
 import { TrendingUp, Loader2, AlertCircle, Check, ArrowUpRight, Lock } from 'lucide-react';
 import { useWallet, getExplorerUrl, CONTRACTS } from '@/app/lib/chain';
 
@@ -93,7 +93,7 @@ export default function VaultPage() {
   };
 
   return (
-    <DashboardLayout>
+    <AppShell>
       <div className="mx-auto max-w-md px-4 py-8">
         <div className="mb-6 flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
@@ -107,11 +107,11 @@ export default function VaultPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-slate-200 dark:border-[#4d3267] bg-white dark:bg-[#261933] p-4">
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-4">
             <p className="text-xs text-slate-500 dark:text-[#ad92c9]">APY</p>
             <p className="text-2xl font-bold text-emerald-500">{apy != null ? `${apy}%` : '—'}</p>
           </div>
-          <div className="rounded-2xl border border-slate-200 dark:border-[#4d3267] bg-white dark:bg-[#261933] p-4">
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-4">
             <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Price / share</p>
             <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{index != null ? index.toFixed(6) : '—'}</p>
           </div>
@@ -127,17 +127,17 @@ export default function VaultPage() {
         )}
 
         {/* Action */}
-        <div className="mt-4 rounded-3xl border border-slate-200 dark:border-[#4d3267] bg-white dark:bg-[#261933] p-5">
-          <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 dark:bg-[#1a1122] p-1">
+        <div className="mt-4 rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-5">
+          <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 dark:bg-black/20 p-1">
             {(['deposit', 'withdraw'] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)}
-                className={`rounded-lg py-2 text-sm font-medium capitalize transition ${tab === t ? 'bg-white dark:bg-[#362348] text-slate-900 dark:text-white shadow' : 'text-slate-500 dark:text-[#ad92c9]'}`}>
+                className={`rounded-lg py-2 text-sm font-medium capitalize transition ${tab === t ? 'bg-white dark:bg-white/[0.08] text-slate-900 dark:text-white shadow' : 'text-slate-500 dark:text-[#ad92c9]'}`}>
                 {t}
               </button>
             ))}
           </div>
           <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
-            className="w-full rounded-xl bg-slate-50 dark:bg-[#1a1122] border border-slate-200 dark:border-[#4d3267] px-4 py-3 text-xl font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500" />
+            className="w-full rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 px-4 py-3 text-xl font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500" />
 
           {!isConnected ? (
             <a href="/" className="mt-3 block w-full rounded-xl bg-emerald-500 py-3.5 text-center font-semibold text-white">Connect wallet</a>
@@ -167,6 +167,6 @@ export default function VaultPage() {
           <span><b className="text-[#7f13ec]">Private yield (roadmap):</b> hold your vault shares as shielded notes — the index stays public, your balance and gains stay private.</span>
         </div>
       </div>
-    </DashboardLayout>
+    </AppShell>
   );
 }

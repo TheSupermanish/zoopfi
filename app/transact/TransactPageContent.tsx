@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowUpRight, ArrowDownLeft, ScanLine, FileText, Fuel, Shield, CheckCircle2, Check, X, Plus, Copy, Share2 } from 'lucide-react';
-import DashboardLayout from '../components/DashboardLayout';
+import AppShell from '../components/shell/AppShell';
 import QRScanner from '../components/QRScanner';
 import QRCodeCard from '../components/QRCodeCard';
 import {
@@ -265,7 +265,7 @@ export default function TransactPageContent() {
   };
 
   return (
-    <DashboardLayout username={senderUsername} walletAddress={walletAddress}>
+    <AppShell>
       <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10">
         <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8">
           
@@ -279,12 +279,12 @@ export default function TransactPageContent() {
               </div>
               
               {/* Mode Toggle */}
-              <div className="bg-slate-200 dark:bg-[#362348] p-1.5 rounded-2xl inline-flex self-start sm:self-end">
+              <div className="bg-slate-200 dark:bg-white/[0.08] p-1.5 rounded-2xl inline-flex self-start sm:self-end">
                 <button
                   onClick={() => { setMode('send'); resetSendForm(); }}
                   className={`px-5 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
                     mode === 'send' 
-                      ? 'bg-white dark:bg-[#1a1122] text-[#7f13ec] shadow-sm' 
+                      ? 'bg-white dark:bg-black/20 text-[#7f13ec] shadow-sm' 
                       : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -295,7 +295,7 @@ export default function TransactPageContent() {
                   onClick={() => setMode('receive')}
                   className={`px-5 md:px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
                     mode === 'receive' 
-                      ? 'bg-white dark:bg-[#1a1122] text-[#7f13ec] shadow-sm' 
+                      ? 'bg-white dark:bg-black/20 text-[#7f13ec] shadow-sm' 
                       : 'text-slate-500 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
@@ -318,7 +318,7 @@ export default function TransactPageContent() {
                     <p className="text-slate-500 dark:text-[#ad92c9]">
                       {amount} USDC sent {isPrivate ? 'privately ' : ''}to @{recipientData?.username}
                     </p>
-                    <div className="bg-white dark:bg-[#251a30] rounded-2xl p-4 border border-slate-200 dark:border-white/5 max-w-md mx-auto shadow-lg dark:shadow-none">
+                    <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 border border-slate-200 dark:border-white/5 max-w-md mx-auto shadow-lg dark:shadow-none">
                       <p className="text-slate-500 dark:text-[#ad92c9] text-xs mb-1">Transaction Hash</p>
                       <a 
                         href={getExplorerUrl(txHash)}
@@ -358,7 +358,7 @@ export default function TransactPageContent() {
 
                     <div className="relative group">
                       <div className="absolute -inset-1 bg-gradient-to-r from-[#7f13ec] to-purple-600 rounded-3xl blur opacity-10 dark:opacity-20"></div>
-                      <div className="relative bg-white dark:bg-[#251a30] rounded-3xl overflow-hidden border border-slate-200 dark:border-white/5 shadow-xl dark:shadow-none">
+                      <div className="relative bg-white dark:bg-white/[0.04] rounded-3xl overflow-hidden border border-slate-200 dark:border-white/5 shadow-xl dark:shadow-none">
                         <div className="p-5 border-b border-slate-200 dark:border-white/5">
                           <p className="text-slate-500 dark:text-[#ad92c9] text-sm">Amount</p>
                           <p className="text-3xl font-bold text-slate-900 dark:text-white">{amount} USDC</p>
@@ -402,7 +402,7 @@ export default function TransactPageContent() {
                       className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${
                         isPrivate
                           ? 'border-[#7f13ec] bg-[#7f13ec]/10'
-                          : 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#251a30]'
+                          : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04]'
                       }`}
                     >
                       <span className="flex items-center gap-3 text-left">
@@ -453,12 +453,12 @@ export default function TransactPageContent() {
                   <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-[#7f13ec] to-purple-600 rounded-3xl blur opacity-10 dark:opacity-20 group-hover:opacity-20 dark:group-hover:opacity-30 transition duration-500"></div>
                     
-                    <div className="relative bg-white dark:bg-[#251a30] rounded-3xl p-5 md:p-8 border border-slate-200 dark:border-white/5 flex flex-col gap-6 shadow-xl dark:shadow-none">
+                    <div className="relative bg-white dark:bg-white/[0.04] rounded-3xl p-5 md:p-8 border border-slate-200 dark:border-white/5 flex flex-col gap-6 shadow-xl dark:shadow-none">
                       {/* Amount Section */}
                       <div className="flex flex-col gap-4">
                         <label className="text-sm font-bold text-slate-500 dark:text-[#ad92c9] uppercase tracking-wider">Amount to send</label>
                         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-                          <div className="flex items-center gap-3 bg-slate-100 dark:bg-[#130b1b] p-3 pr-4 rounded-2xl border border-slate-200 dark:border-white/10">
+                          <div className="flex items-center gap-3 bg-slate-100 dark:bg-black/30 p-3 pr-4 rounded-2xl border border-slate-200 dark:border-white/10">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7f13ec] to-[#a855f7] flex items-center justify-center text-white font-bold text-sm">
                               M
                             </div>
@@ -488,7 +488,7 @@ export default function TransactPageContent() {
                       {/* Recipient Section */}
                       <div className="flex flex-col gap-3">
                         <label className="text-sm font-bold text-slate-500 dark:text-[#ad92c9] uppercase tracking-wider">Recipient</label>
-                        <div className="flex items-center gap-2 bg-slate-100 dark:bg-[#130b1b] p-2 rounded-2xl border border-slate-200 dark:border-white/10 focus-within:border-[#7f13ec]/50 focus-within:ring-2 ring-[#7f13ec]/20 transition-all">
+                        <div className="flex items-center gap-2 bg-slate-100 dark:bg-black/30 p-2 rounded-2xl border border-slate-200 dark:border-white/10 focus-within:border-[#7f13ec]/50 focus-within:ring-2 ring-[#7f13ec]/20 transition-all">
                           <div className="p-2 text-slate-400 dark:text-[#ad92c9]">
                             <span className="text-xl font-bold">@</span>
                           </div>
@@ -506,13 +506,13 @@ export default function TransactPageContent() {
                               const text = await navigator.clipboard.readText();
                               setRecipientUsername(text);
                             }}
-                            className="p-2 hover:bg-slate-200 dark:hover:bg-[#362348] rounded-xl text-[#7f13ec] transition-colors flex items-center gap-2 text-sm font-bold px-3"
+                            className="p-2 hover:bg-slate-200 dark:hover:bg-white/[0.08] rounded-xl text-[#7f13ec] transition-colors flex items-center gap-2 text-sm font-bold px-3"
                           >
                             Paste
                           </button>
                           <button 
                             onClick={() => setShowScanner(true)}
-                            className="w-10 h-10 flex items-center justify-center bg-slate-200 dark:bg-[#362348] hover:bg-[#7f13ec] rounded-xl text-slate-700 dark:text-white transition-colors"
+                            className="w-10 h-10 flex items-center justify-center bg-slate-200 dark:bg-white/[0.08] hover:bg-[#7f13ec] rounded-xl text-slate-700 dark:text-white transition-colors"
                           >
                             <ScanLine className="w-5 h-5" />
                           </button>
@@ -597,7 +597,7 @@ export default function TransactPageContent() {
             {mode === 'receive' && (
               <div className="space-y-6">
                 {/* Sub-tabs for Receive */}
-                <div className="flex gap-2 p-1 rounded-xl bg-slate-100 dark:bg-[#251a30] border border-slate-200 dark:border-white/5">
+                <div className="flex gap-2 p-1 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/5">
                   <button
                     onClick={() => setReceiveTab('qr')}
                     className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${
@@ -632,7 +632,7 @@ export default function TransactPageContent() {
                       onShare={() => toast.success('Link copied!')}
                     />
 
-                    <div className="bg-white dark:bg-[#251a30] rounded-2xl p-5 border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
+                    <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
                       <label className="block text-sm text-slate-500 dark:text-[#ad92c9] mb-3">
                         Request specific amount (optional)
                       </label>
@@ -669,7 +669,7 @@ export default function TransactPageContent() {
                     )}
 
                     {showRequestForm && (
-                      <div className="bg-white dark:bg-[#251a30] rounded-2xl p-6 space-y-4 animate-scale-in border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
+                      <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-6 space-y-4 animate-scale-in border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
                         <h3 className="text-lg font-bold text-slate-900 dark:text-white">New Payment Request</h3>
                         
                         <div>
@@ -743,7 +743,7 @@ export default function TransactPageContent() {
                           <div className="spinner" />
                         </div>
                       ) : requests.length === 0 ? (
-                        <div className="bg-white dark:bg-[#251a30] rounded-2xl p-8 text-center border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
+                        <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-8 text-center border border-slate-200 dark:border-white/5 shadow-lg dark:shadow-none">
                           <span className="text-4xl mb-3 block">📋</span>
                           <p className="text-slate-900 dark:text-white font-bold">No payment requests yet</p>
                           <p className="text-slate-500 dark:text-[#ad92c9] text-sm mt-1">
@@ -755,7 +755,7 @@ export default function TransactPageContent() {
                           {requests.map((req) => (
                             <div
                               key={req._id}
-                              className="bg-white dark:bg-[#251a30] rounded-2xl p-4 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all shadow-lg dark:shadow-none"
+                              className="bg-white dark:bg-white/[0.04] rounded-2xl p-4 border border-slate-200 dark:border-white/5 hover:border-[#7f13ec]/30 transition-all shadow-lg dark:shadow-none"
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -812,7 +812,7 @@ export default function TransactPageContent() {
                 <div className="flex gap-2">
                   <button 
                     onClick={copyAddress}
-                    className="flex-1 bg-white/20 dark:bg-[#362348] hover:bg-white/30 dark:hover:bg-[#482e5e] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-white/20 dark:bg-white/[0.08] hover:bg-white/30 dark:hover:bg-white/10 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
                   >
                     <Copy className="w-4 h-4" /> Copy Address
                   </button>
@@ -822,7 +822,7 @@ export default function TransactPageContent() {
                       navigator.clipboard.writeText(url);
                       toast.success('Payment link copied!');
                     }}
-                    className="flex-1 bg-white/20 dark:bg-[#362348] hover:bg-white/30 dark:hover:bg-[#482e5e] py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-white/20 dark:bg-white/[0.08] hover:bg-white/30 dark:hover:bg-white/10 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2"
                   >
                     <Share2 className="w-4 h-4" /> Share
                   </button>
@@ -838,7 +838,7 @@ export default function TransactPageContent() {
               </div>
               <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
                 <Link href="/contacts" className="flex flex-col items-center gap-2 min-w-[70px] group">
-                  <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-[#362348] border-2 border-transparent group-hover:border-[#7f13ec] flex items-center justify-center transition-all">
+                  <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-white/[0.08] border-2 border-transparent group-hover:border-[#7f13ec] flex items-center justify-center transition-all">
                     <Plus className="text-[#7f13ec] w-6 h-6" />
                   </div>
                   <span className="text-xs font-medium text-slate-500 dark:text-[#ad92c9]">New</span>
@@ -868,7 +868,7 @@ export default function TransactPageContent() {
             </div>
 
             {/* Recent Activity */}
-            <div className="flex-1 bg-white dark:bg-[#251a30] rounded-3xl p-5 md:p-6 border border-slate-200 dark:border-white/5 flex flex-col shadow-lg dark:shadow-none">
+            <div className="flex-1 bg-white dark:bg-white/[0.04] rounded-3xl p-5 md:p-6 border border-slate-200 dark:border-white/5 flex flex-col shadow-lg dark:shadow-none">
               <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">Recent Activity</h3>
               <div className="flex flex-col gap-1 overflow-y-auto max-h-[280px] pr-1">
                 {recentTransactions.length === 0 ? (
@@ -927,7 +927,7 @@ export default function TransactPageContent() {
         onClose={() => setShowScanner(false)}
         onScan={handleQRScan}
       />
-    </DashboardLayout>
+    </AppShell>
   );
 }
 

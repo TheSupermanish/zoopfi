@@ -1,7 +1,10 @@
 @import "tailwindcss";
 
-/* Enable class-based dark mode for Tailwind v4 */
-@custom-variant dark (&:where(.dark, .dark *));
+/* Enable class-based dark mode for Tailwind v4.
+   Use :is() (not :where()) so dark utilities carry real specificity and reliably
+   win over their light base class (e.g. `bg-white dark:bg-white/[0.04]`). The app
+   renders dark-only, so the dark variant should always take precedence. */
+@custom-variant dark (&:is(.dark, .dark *));
 
 /* Design System CSS Variables */
 :root {
@@ -37,21 +40,23 @@
 }
 
 /* ===== DARK MODE (Default) ===== */
+/* One premium canvas: a deep purple-black the whole app sits on, with glassy
+   translucent surfaces layered on top (see .surface-* utilities below). */
 :root,
 .dark,
 [data-theme="dark"] {
-  --color-background: #191022;
-  --color-background-secondary: #130c1a;
-  --color-surface: #1a1122;
-  --color-card: #251a30;
-  --color-input: #130b1b;
-  
+  --color-background: #0a0512;
+  --color-background-secondary: #07040d;
+  --color-surface: #120c1c;
+  --color-card: #160f22;
+  --color-input: #0f0a18;
+
   --color-text-primary: #ffffff;
   --color-text-secondary: #ad92c9;
   --color-text-muted: #6b7280;
-  
-  --color-border: rgba(255, 255, 255, 0.05);
-  --color-border-strong: #362348;
+
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: #2a1d3d;
   
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
@@ -845,4 +850,100 @@ select:focus-visible {
 
 .avatar-stack > *:first-child {
   margin-left: 0;
+}
+
+/* ============================================================
+   ZOOPFI UNIFIED SHELL — premium glass surfaces + motion
+   One deep canvas, glassy layers on top, cohesive motion.
+   ============================================================ */
+
+/* Glassy surfaces layered on the deep canvas. Translucent so the ambient
+   glows read through them for that premium depth. */
+.surface {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.surface-strong {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+.surface-inset {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+/* Sticky nav rails (top bar / bottom bar) */
+.surface-rail {
+  background: rgba(10, 5, 18, 0.72);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  backdrop-filter: blur(24px) saturate(140%);
+}
+
+/* Brand gradient text */
+.text-gradient-brand {
+  background-image: linear-gradient(90deg, #ffffff 0%, #c89bff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Card lift on hover, unified */
+.lift {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.lift:hover {
+  transform: translateY(-2px);
+  border-color: rgba(155, 59, 255, 0.35);
+}
+
+/* Page enter transition (keyed on pathname in the shell) */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-page-enter {
+  animation: page-enter 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Nav active-pill morph (shared layout element transitions smoothly) */
+.nav-pill {
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* FAB ring pulse for the mobile Pay action */
+@keyframes fab-pulse {
+  0%, 100% {
+    box-shadow: 0 10px 30px -6px rgba(127, 19, 236, 0.55), 0 0 0 0 rgba(155, 59, 255, 0.45);
+  }
+  50% {
+    box-shadow: 0 12px 38px -4px rgba(127, 19, 236, 0.7), 0 0 0 10px rgba(155, 59, 255, 0);
+  }
+}
+.animate-fab { animation: fab-pulse 2.6s ease-in-out infinite; }
+
+/* Staggered list entrance helper */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise-in { animation: rise-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Subtle sheen sweep for premium CTAs */
+@keyframes sheen {
+  0% { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(220%); }
+}
+
+/* Respect reduced-motion: keep the UI, drop the movement */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -22,7 +22,7 @@ function SendRedirect() {
   }, [router, searchParams]);
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#191022]">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
       <div className="spinner" />
     </div>
   );
@@ -31,7 +31,7 @@ function SendRedirect() {
 export default function SendPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#191022]">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
         <div className="spinner" />
       </div>
     }>
