@@ -44,11 +44,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <AmbientGlow business={isBusiness} />
 
       {/* Desktop top navbar */}
-      <header className="surface-rail sticky top-0 z-50 hidden border-b border-white/10 md:block">
+      <header className="surface-rail sticky top-0 z-50 hidden border-b border-white/10 lg:block">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 lg:px-6">
           <div className="flex items-center gap-7">
             <Brand isBusiness={isBusiness} />
-            <NavTabs items={primary} pathname={pathname} isBusiness={isBusiness} />
+            <NavTabs items={primary} pathname={pathname} />
           </div>
           <div className="flex items-center gap-2.5">
             {isConnected && <BalanceChip />}
@@ -56,7 +56,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {isConnected ? (
               <AccountMenu
                 accountType={accountType}
-                overflow={overflow}
+                overflow={overflow.filter((o) => !primary.some((p) => p.href === o.href))}
                 username={user?.username}
                 displayName={user?.displayName}
                 avatarUrl={user?.avatarUrl}
@@ -70,7 +70,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* Mobile top header */}
-      <header className="surface-rail sticky top-0 z-40 flex items-center justify-between border-b border-white/10 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:hidden">
+      <header className="surface-rail sticky top-0 z-40 flex items-center justify-between border-b border-white/10 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
         <Brand isBusiness={isBusiness} />
         <div className="flex items-center gap-1.5">
           {address && <NotificationBell walletAddress={address} />}
@@ -93,7 +93,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Page content — re-keyed on route so it animates in on every navigation */}
       <main
         key={pathname}
-        className="animate-page-enter relative z-10 flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-10"
+        className="animate-page-enter relative z-10 flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10"
       >
         {children}
       </main>
@@ -122,7 +122,7 @@ function AmbientGlow({ business }: { business: boolean }) {
 /* ----------------------------- Brand ----------------------------- */
 function Brand({ isBusiness }: { isBusiness: boolean }) {
   return (
-    <Link href="/" className="flex shrink-0 items-center gap-2">
+    <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
       <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] shadow-lg shadow-[#7f13ec]/30">
         {isBusiness ? (
           <Building2 className="h-5 w-5 text-white" />
@@ -144,11 +144,9 @@ function Brand({ isBusiness }: { isBusiness: boolean }) {
 function NavTabs({
   items,
   pathname,
-  isBusiness,
 }: {
   items: NavItem[];
   pathname: string;
-  isBusiness: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const linkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
@@ -210,7 +208,7 @@ function BalanceChip() {
     >
       <Wallet className="h-4 w-4 text-[#b07bff]" />
       <span className="font-semibold tabular-nums">{formatBalance(balance)}</span>
-      <span className="text-xs text-purple-200/50">USDC</span>
+      <span className="text-xs text-purple-200/60">USDC</span>
     </Link>
   );
 }
@@ -277,14 +275,23 @@ function AccountMenu({
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const isBusiness = accountType === 'business';
 
   useEffect(() => {
     if (!open) return;
+    // Move focus into the menu on open for keyboard users.
+    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
     const onClick = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        triggerRef.current?.focus(); // return focus to the trigger
+      }
+    };
     document.addEventListener('mousedown', onClick);
     document.addEventListener('keydown', onKey);
     return () => {
@@ -318,8 +325,10 @@ function AccountMenu({
   return (
     <div ref={ref} className="relative">
       <button
+        ref={triggerRef}
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] p-1 pr-1.5 transition-colors hover:border-white/20"
+        aria-label="Account menu"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -332,7 +341,12 @@ function AccountMenu({
       </button>
 
       {open && (
-        <div className="animate-scale-in absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 origin-top-right overflow-hidden rounded-2xl border border-white/10 bg-[#120c1c]/95 shadow-2xl shadow-black/50 backdrop-blur-xl">
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label="Account"
+          className="animate-scale-in absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 origin-top-right overflow-hidden rounded-2xl border border-white/10 bg-[#120c1c]/95 shadow-2xl shadow-black/50 backdrop-blur-xl"
+        >
           {/* Identity */}
           <div className="flex items-center gap-3 border-b border-white/10 p-4">
             <Avatar initial={initial} avatarUrl={avatarUrl} isBusiness={isBusiness} lg />
@@ -342,6 +356,8 @@ function AccountMenu({
               </p>
               <button
                 onClick={copy}
+                role="menuitem"
+                aria-label="Copy wallet address"
                 className="mt-0.5 flex items-center gap-1 font-mono text-xs text-purple-200/60 transition-colors hover:text-white"
               >
                 {short}
@@ -356,6 +372,7 @@ function AccountMenu({
               <Link
                 key={it.href + it.label}
                 href={it.href}
+                role="menuitem"
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-purple-200/70 transition-colors hover:bg-white/5 hover:text-white"
               >
@@ -369,6 +386,7 @@ function AccountMenu({
           <div className="border-t border-white/10 p-1.5">
             <Link
               href={isBusiness ? '/dashboard' : '/business'}
+              role="menuitem"
               onClick={() => setOpen(false)}
               className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-purple-200/70 transition-colors hover:bg-white/5 hover:text-white"
             >
@@ -380,6 +398,7 @@ function AccountMenu({
             </Link>
             <button
               onClick={handleLogout}
+              role="menuitem"
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-300/80 transition-colors hover:bg-red-500/10 hover:text-red-300"
             >
               <LogOut className="h-4 w-4" />
@@ -438,7 +457,7 @@ function BottomNav({
   const right = tabs.slice(2, 4);
 
   return (
-    <nav className="surface-rail fixed inset-x-0 bottom-0 z-50 border-t border-white/10 pb-[env(safe-area-inset-bottom)] md:hidden">
+    <nav className="surface-rail fixed inset-x-0 bottom-0 z-50 border-t border-white/10 pb-[env(safe-area-inset-bottom)] lg:hidden">
       <div className="relative mx-auto flex max-w-md items-center justify-around px-2">
         {left.map((it) => (
           <BottomTab key={it.href} item={it} pathname={pathname} />
@@ -448,7 +467,7 @@ function BottomNav({
         <Link
           href={action.href}
           aria-label={action.label}
-          className={`animate-fab relative -mt-7 flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl text-white shadow-xl ${
+          className={`animate-fab relative z-10 mx-1 -mt-7 flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-2xl text-white shadow-xl ${
             isBusiness
               ? 'bg-gradient-to-br from-[#a855f7] to-[#7e22ce]'
               : 'bg-gradient-to-br from-[#9b3bff] to-[#6a10c7]'
@@ -473,11 +492,11 @@ function BottomTab({ item, pathname }: { item: NavItem; pathname: string }) {
       className="flex flex-1 flex-col items-center gap-1 py-2.5 transition-transform active:scale-90"
     >
       <item.Icon
-        className={`h-6 w-6 transition-colors ${active ? 'text-[#b07bff]' : 'text-purple-200/45'}`}
+        className={`h-6 w-6 transition-colors ${active ? 'text-[#b07bff]' : 'text-purple-200/65'}`}
       />
       <span
         className={`text-[10px] font-medium transition-colors ${
-          active ? 'text-white' : 'text-purple-200/45'
+          active ? 'text-white' : 'text-purple-200/65'
         }`}
       >
         {item.label}

@@ -138,7 +138,7 @@ export default function BusinessPage() {
                 <div key={f.title} className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
                   <f.Icon className="h-5 w-5 text-[#b07bff]" />
                   <p className="mt-2 text-sm font-medium text-white">{f.title}</p>
-                  <p className="mt-0.5 text-xs text-purple-200/45">{f.body}</p>
+                  <p className="mt-0.5 text-xs text-purple-200/65">{f.body}</p>
                 </div>
               ))}
             </div>
@@ -192,7 +192,7 @@ export default function BusinessPage() {
               Switch your wallet to a business profile. You can keep using the same address.
             </p>
 
-            <label className="mt-5 block text-xs font-medium uppercase tracking-wide text-purple-200/50">
+            <label className="mt-5 block text-xs font-medium uppercase tracking-wide text-purple-200/60">
               Business name
             </label>
             <input
@@ -202,7 +202,7 @@ export default function BusinessPage() {
               className="mt-1.5 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition-colors placeholder:text-purple-200/30 focus:border-[#9b3bff]/60"
             />
 
-            <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-purple-200/50">
+            <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-purple-200/60">
               Owner name
             </label>
             <input
@@ -212,7 +212,7 @@ export default function BusinessPage() {
               className="mt-1.5 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition-colors placeholder:text-purple-200/30 focus:border-[#9b3bff]/60"
             />
 
-            <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-purple-200/50">
+            <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-purple-200/60">
               Category
             </label>
             <select
@@ -246,7 +246,7 @@ export default function BusinessPage() {
                 <>Connect a wallet first <ArrowRight className="h-4 w-4" /></>
               )}
             </button>
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-purple-200/45">
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-purple-200/65">
               <Check className="h-3.5 w-3.5 text-emerald-400" /> No new wallet — your address stays the same
             </p>
           </div>

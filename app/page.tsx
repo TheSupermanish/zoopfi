@@ -94,7 +94,7 @@ export default function Home() {
             </button>
 
             {/* Amount */}
-            <label className="text-xs font-medium uppercase tracking-wide text-purple-200/50">You send</label>
+            <label className="text-xs font-medium uppercase tracking-wide text-purple-200/60">You send</label>
             <div className="mt-1.5 flex items-center rounded-2xl border border-white/10 bg-black/30 px-4 focus-within:border-[#9b3bff]/60 transition-colors">
               <input
                 type="number" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
@@ -108,7 +108,7 @@ export default function Home() {
             </div>
 
             {/* Recipient */}
-            <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-purple-200/50">To</label>
+            <label className="mt-4 block text-xs font-medium uppercase tracking-wide text-purple-200/60">To</label>
             <input
               value={recipient} onChange={(e) => setRecipient(e.target.value)} placeholder="@username or G… address"
               className="mt-1.5 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3.5 outline-none placeholder:text-purple-200/30 focus:border-[#9b3bff]/60 transition-colors"
@@ -151,7 +151,7 @@ export default function Home() {
         </div>
 
         {/* Trust row */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-purple-200/50">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-purple-200/60">
           <span className="flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-[#b07bff]" /> ZK verified on-chain</span>
           <span className="flex items-center gap-1.5"><Zap className="h-3.5 w-3.5 text-[#b07bff]" /> Stellar testnet</span>
           <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-[#b07bff]" /> Private by choice</span>

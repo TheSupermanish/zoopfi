@@ -85,6 +85,7 @@ export default function PayrollPage() {
     if (!isConnected || running || payees.length === 0) return;
     setRunning(true);
     for (const p of payees) {
+      if (rows[p.id]?.status === 'paid') continue; // never re-pay an already-paid recipient
       setRows((r) => ({ ...r, [p.id]: { status: 'sending' } }));
       try {
         let to = p.handle.replace(/^@/, '');
@@ -122,11 +123,11 @@ export default function PayrollPage() {
         {/* Summary */}
         <div className="surface mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl p-5">
           <div>
-            <p className="text-xs uppercase tracking-wide text-purple-200/50">Total payout</p>
+            <p className="text-xs uppercase tracking-wide text-purple-200/60">Total payout</p>
             <p className="mt-1 text-3xl font-bold tabular-nums">
-              {formatBalance(total)} <span className="text-base font-medium text-purple-200/50">{asset}</span>
+              {formatBalance(total)} <span className="text-base font-medium text-purple-200/60">{asset}</span>
             </p>
-            <p className="mt-0.5 text-xs text-purple-200/45">
+            <p className="mt-0.5 text-xs text-purple-200/65">
               {payees.length} {payees.length === 1 ? 'recipient' : 'recipients'}
               {paidCount > 0 && ` · ${paidCount} paid`}
             </p>
@@ -169,7 +170,7 @@ export default function PayrollPage() {
               <select
                 value={asset}
                 onChange={(e) => setAsset(e.target.value as AssetCode)}
-                className="rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm font-semibold text-white outline-none"
+                className="rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm font-semibold text-white outline-none transition-colors focus:border-[#9b3bff]/60"
               >
                 <option value="USDC" className="bg-[#160f22]">USDC</option>
                 <option value="XLM" className="bg-[#160f22]">XLM</option>
@@ -193,7 +194,7 @@ export default function PayrollPage() {
                 <Users className="h-7 w-7" />
               </span>
               <p className="mt-4 font-semibold text-white">No one on payroll yet</p>
-              <p className="mt-1 max-w-xs text-sm text-purple-200/50">
+              <p className="mt-1 max-w-xs text-sm text-purple-200/60">
                 Add your team above by @username or wallet address, then run the batch.
               </p>
             </div>
@@ -220,7 +221,7 @@ export default function PayrollPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-semibold tabular-nums">
-                      {formatBalance(Number(p.amount) || 0)} <span className="text-xs text-purple-200/45">{asset}</span>
+                      {formatBalance(Number(p.amount) || 0)} <span className="text-xs text-purple-200/65">{asset}</span>
                     </span>
                     {!running && (
                       <button
@@ -266,5 +267,5 @@ function RowStatus({ row }: { row: RowState }) {
         <AlertCircle className="h-3 w-3" /> {row.error || 'Failed'}
       </p>
     );
-  return <p className="text-xs text-purple-200/45">Ready</p>;
+  return <p className="text-xs text-purple-200/65">Ready</p>;
 }

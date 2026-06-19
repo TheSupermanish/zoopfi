@@ -31,7 +31,6 @@ export default function HistoryPage() {
   const LIMIT = 20;
 
   const { data: userData } = useUser();
-  const username = userData?.username ?? '';
   const isLoading = userData === undefined;
 
   // First page comes from the shared cache (instant + live-polled).
@@ -196,7 +195,7 @@ export default function HistoryPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-white/[0.08] rounded-xl text-slate-600 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/[0.08]/80 transition-colors">
+              <button className="flex items-center gap-2 px-4 py-2 bg-slate-200 dark:bg-white/[0.08] rounded-xl text-slate-600 dark:text-[#ad92c9] hover:text-slate-900 dark:hover:text-white hover:bg-slate-300 dark:hover:bg-white/[0.08] transition-colors">
                 <ArrowDownLeft className="w-4 h-4" />
                 <span className="text-sm font-medium">Export CSV</span>
               </button>
@@ -259,7 +258,7 @@ export default function HistoryPage() {
           </section>
 
           {/* Filters & Search Toolbar */}
-          <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#0a0512]/90 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-slate-200 dark:border-white/5">
+          <div className="bg-slate-50/95 dark:bg-[#0a0512]/90 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-slate-200 dark:border-white/5">
             <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
               {/* Search */}
               <div className="w-full md:w-96">
@@ -284,7 +283,7 @@ export default function HistoryPage() {
                     className={`flex shrink-0 items-center gap-2 px-4 py-2.5 rounded-xl transition-colors text-sm font-medium ${
                       filter === f
                         ? 'bg-[#7f13ec] text-white shadow-lg shadow-[#7f13ec]/20'
-                        : 'bg-white dark:bg-white/[0.08] text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/[0.08]/80 border border-slate-200 dark:border-white/5'
+                        : 'bg-white dark:bg-white/[0.08] text-slate-600 dark:text-white hover:bg-slate-100 dark:hover:bg-white/[0.08] border border-slate-200 dark:border-white/5'
                     }`}
                   >
                     {f === 'all' ? <Copy className="w-4 h-4" /> : f === 'sent' ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownLeft className="w-4 h-4" />}

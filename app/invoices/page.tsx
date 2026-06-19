@@ -30,9 +30,6 @@ export default function InvoicesPage() {
   const { address: walletAddress, authenticated, isConnected } = useWallet();
 
   const { data: userData } = useUser();
-  const username = userData?.username ?? '';
-  const displayName = userData?.displayName ?? '';
-  const avatarUrl = userData?.avatarUrl ?? '';
   const accountType = userData?.accountType ?? 'personal';
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);

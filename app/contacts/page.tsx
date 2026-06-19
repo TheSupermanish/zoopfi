@@ -54,7 +54,6 @@ export default function ContactsPage() {
   const router = useRouter();
   const { address: walletAddress, authenticated, isConnected } = useWallet();
   const { data: userData } = useUser();
-  const username = userData?.username ?? '';
 
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [receivedRequests, setReceivedRequests] = useState<ContactRequest[]>([]);
@@ -255,7 +254,7 @@ export default function ContactsPage() {
           </header>
 
           {/* Tabs */}
-          <div className="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#0a0512]/90 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-slate-200 dark:border-white/5">
+          <div className="bg-slate-50/95 dark:bg-[#0a0512]/90 backdrop-blur-md py-4 -mx-4 px-4 md:-mx-8 md:px-8 border-b border-slate-200 dark:border-white/5">
             <div className="flex gap-2 p-1.5 rounded-2xl bg-white dark:bg-white/[0.08] border border-slate-200 dark:border-white/5 shadow-sm dark:shadow-none">
               <button
                 onClick={() => setActiveTab('friends')}

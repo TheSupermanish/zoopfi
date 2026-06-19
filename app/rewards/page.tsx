@@ -31,11 +31,10 @@ const MILESTONES: { name: string; Icon: LucideIcon; count: number; reward: numbe
 
 export default function RewardsPage() {
   const router = useRouter();
-  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { authenticated, isConnected } = useWallet();
 
   const { data: userData } = useUser();
   const { data: streakInfo } = useStreak();
-  const username = userData?.username ?? '';
   const isLoading = userData === undefined;
 
   // Redirect if not registered
