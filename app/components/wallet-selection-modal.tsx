@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePrivy, useLogin } from "@privy-io/react-auth";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -31,14 +31,21 @@ export function WalletSelectionModal({ children }: WalletSelectionModalProps) {
   const [externalError, setExternalError] = useState<string | null>(null);
 
   const { login } = useLogin({
-    onComplete: () => {
-      // WalletProvider auto-creates the Stellar wallet once authenticated.
-      setOpen(false);
-    },
+    // Don't close on login completion — the embedded Stellar wallet is still
+    // provisioning. Closing here flashed a logged-out UI. The effect below
+    // closes the modal once `address` is ready, then AuthRouter routes a new
+    // user to onboarding.
+    onComplete: () => {},
     onError: (error) => {
       console.error("Login failed:", error);
     },
   });
+
+  // Close once authenticated AND the wallet is provisioned (instant for a
+  // returning user; after provisioning for a fresh signup).
+  useEffect(() => {
+    if (open && authenticated && address) setOpen(false);
+  }, [open, authenticated, address]);
 
   const onConnectExternal = async () => {
     setExternalError(null);

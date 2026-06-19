@@ -6,6 +6,7 @@ import { PRIVY_APP_ID, PRIVY_CONFIGURED, DEMO_MODE, MOCK_BACKEND } from './lib/c
 import { DemoWalletProvider, MockBackend } from './lib/chain/demo';
 import { ThemeProvider } from './context/ThemeContext';
 import { QueryProvider } from './lib/query';
+import { AuthRouter } from './components/AuthRouter';
 
 function ConfigNotice() {
   return (
@@ -39,13 +40,19 @@ export function Providers({ children }: { children: React.ReactNode }) {
       >
         {/* Provisions a Stellar (G...) embedded wallet and exposes useWallet(). */}
         <WalletProvider>
+          <AuthRouter />
           {MOCK_BACKEND ? <MockBackend>{children}</MockBackend> : children}
         </WalletProvider>
       </PrivyProvider>
     );
   } else if (DEMO_MODE) {
     // 2) Demo mode: fake auth + stubbed backend, fully client-side.
-    inner = <DemoWalletProvider>{children}</DemoWalletProvider>;
+    inner = (
+      <DemoWalletProvider>
+        <AuthRouter />
+        {children}
+      </DemoWalletProvider>
+    );
   } else {
     // 3) Otherwise, prompt for configuration instead of crashing.
     inner = <ConfigNotice />;

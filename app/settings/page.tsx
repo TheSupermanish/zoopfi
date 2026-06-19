@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useWallet } from '@/app/lib/chain';
 import { useUser } from '@/app/lib/hooks';
 import AppShell from '../components/shell/AppShell';
+import { PageShell, PageHeader, Card } from '../components/ui/primitives';
 import { convertToBusiness, BusinessCategory, BusinessInfo } from '../lib/api';
 import { toast } from 'sonner';
 import {
@@ -38,7 +39,7 @@ const BUSINESS_CATEGORIES: { value: BusinessCategory; label: string; icon: strin
 export default function SettingsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { address: walletAddress, authenticated, isConnected, logout } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected, logout } = useWallet();
 
   const { data: userData } = useUser();
   const isLoading = userData === undefined;
@@ -77,7 +78,7 @@ export default function SettingsPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) {
+      if (ready && !authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
@@ -150,117 +151,101 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
-        <div className="spinner" />
-      </div>
+      <AppShell>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="spinner" />
+        </div>
+      </AppShell>
     );
   }
 
   return (
     <AppShell>
-      <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-black/20 p-4 md:p-8 lg:p-12">
-        <div className="max-w-4xl mx-auto flex flex-col gap-8">
-          {/* Page Heading */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                {isBusiness ? 'Business Settings' : 'Profile & Settings'}
-            </h1>
-              {isBusiness && (
-                <span className="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 text-xs font-bold">
-                  BUSINESS
-                </span>
-              )}
-            </div>
-            <p className="text-slate-500 dark:text-[#ad92c9] text-lg">
-              {isBusiness ? 'Manage your business account and preferences.' : 'Manage your account and preferences.'}
-            </p>
-          </div>
+      <PageShell variant="wide">
+        <PageHeader
+          title={isBusiness ? 'Business Settings' : 'Profile & Settings'}
+          subtitle={isBusiness ? 'Manage your business account and preferences.' : 'Manage your account and preferences.'}
+          icon={Settings}
+          action={
+            isBusiness ? (
+              <span className="rounded-full border border-[#9b3bff]/20 bg-[#9b3bff]/10 px-3 py-1 text-xs font-bold text-[#c89bff]">
+                BUSINESS
+              </span>
+            ) : undefined
+          }
+        />
 
+        <div className="flex flex-col gap-4">
           {/* Profile Section */}
-          <section className={`rounded-3xl p-6 md:p-8 shadow-sm border ${
-            isBusiness 
-              ? 'bg-purple-50 dark:bg-purple-500/5 border-purple-200 dark:border-purple-500/20' 
-              : 'bg-white dark:bg-white/[0.04] border-slate-100 dark:border-white/10'
-          }`}>
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
-              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}>
-                {isBusiness ? <Building2 className="w-5 h-5" /> : <User className="w-5 h-5" />}
+          <Card as="section">
+            <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-white">
+              <span className="text-[#c89bff]">
+                {isBusiness ? <Building2 className="h-5 w-5" /> : <User className="h-5 w-5" />}
               </span>
               {isBusiness ? 'Business Profile' : 'Profile'}
             </h3>
 
             {/* Avatar Row */}
-            <div className="flex items-center gap-6 mb-8 pb-8 border-b border-slate-200 dark:border-white/10">
+            <div className="mb-8 flex items-center gap-6 border-b border-white/10 pb-8">
               <div className="relative">
                 {userData?.avatarUrl ? (
-                  <img 
-                    src={userData.avatarUrl} 
-                    alt={userData.displayName || 'Profile'} 
-                    className="size-24 rounded-2xl border-4 border-slate-100 dark:border-white/10 shadow-lg object-cover"
+                  <img
+                    src={userData.avatarUrl}
+                    alt={userData.displayName || 'Profile'}
+                    className="size-24 rounded-2xl border border-white/10 object-cover"
                   />
                 ) : (
-                <div 
-                  className="size-24 rounded-2xl border-4 border-slate-100 dark:border-white/10 shadow-lg flex items-center justify-center text-4xl font-bold text-white"
-                    style={{ background: isBusiness 
-                      ? 'linear-gradient(135deg, #9333ea 0%, #c084fc 100%)' 
-                      : 'linear-gradient(135deg, #7f13ec 0%, #a855f7 100%)' 
-                    }}
-                >
+                  <div className="flex size-24 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-4xl font-bold text-white">
                     {userData?.displayName?.charAt(0).toUpperCase() || userData?.username?.charAt(0).toUpperCase() || '?'}
-                </div>
+                  </div>
                 )}
-                <button 
+                <button
                   aria-label="Edit Avatar"
-                  className={`absolute -bottom-2 -right-2 text-white p-2 rounded-full shadow-lg hover:scale-110 transition-transform cursor-pointer ${
-                    isBusiness ? 'bg-purple-600' : 'bg-[#7f13ec]'
-                  }`}
+                  className="absolute -bottom-2 -right-2 cursor-pointer rounded-full bg-[#9b3bff] p-2 text-white shadow-lg transition-transform hover:scale-110"
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="h-4 w-4" />
                 </button>
               </div>
               <div className="flex-1">
-                <p className="text-xl font-bold text-slate-900 dark:text-white">
+                <p className="text-xl font-bold text-white">
                   {isBusiness ? userData?.displayName : `@${userData?.username || 'username'}`}
                 </p>
                 {isBusiness && userData?.businessInfo && (
-                  <p className="text-sm text-purple-600 dark:text-purple-400 mt-0.5">
+                  <p className="mt-0.5 text-sm text-[#c89bff]">
                     {BUSINESS_CATEGORIES.find(c => c.value === userData.businessInfo?.category)?.icon} {BUSINESS_CATEGORIES.find(c => c.value === userData.businessInfo?.category)?.label}
                   </p>
                 )}
-                <p className="text-sm text-slate-500 dark:text-[#ad92c9] mt-1">
-                  {isBusiness 
+                <p className="mt-1 text-sm text-purple-200/60">
+                  {isBusiness
                     ? `@${userData?.username} • Owned by ${userData?.businessInfo?.ownerFirstName} ${userData?.businessInfo?.ownerLastName}`
                     : `Member since ${new Date(userData?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
                   }
                 </p>
-                <div className="flex gap-2 mt-3">
-                  <button className={`px-4 py-2 text-white font-bold rounded-xl text-sm transition-colors ${
-                    isBusiness ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#7f13ec] hover:bg-[#5e0eb0]'
-                  }`}>
+                <div className="mt-3 flex gap-2">
+                  <button className="rounded-xl bg-[#9b3bff] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#8a2af0]">
                     {isBusiness ? 'Upload Logo' : 'Upload Photo'}
                   </button>
-                  <button className="px-4 py-2 bg-transparent border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white font-medium rounded-xl text-sm hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
+                  <button className="rounded-xl border border-white/10 bg-transparent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/5">
                     Remove
                   </button>
                 </div>
               </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+
+            <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Display Name / Business Name */}
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                <span className="text-sm font-semibold text-white">
                   {isBusiness ? 'Business Name' : 'Display Name'}
                 </span>
                 <div className="relative">
-                  {!isBusiness && <span className="absolute left-4 top-3.5 text-[#ad92c9] font-bold">@</span>}
+                  {!isBusiness && <span className="absolute left-4 top-3.5 font-bold text-purple-200/60">@</span>}
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder={isBusiness ? 'Your Business Name' : 'username'}
-                    className={`w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 pr-4 py-3 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400 ${
+                    className={`w-full rounded-xl border border-white/10 bg-black/30 py-3 pr-4 text-white outline-none transition-all placeholder:text-purple-200/40 focus:border-[#9b3bff]/60 ${
                       isBusiness ? 'pl-4' : 'pl-8'
                     }`}
                   />
@@ -269,7 +254,7 @@ export default function SettingsPage() {
 
               {/* Email Address */}
               <label className="flex flex-col gap-2">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                <span className="text-sm font-semibold text-white">
                   {isBusiness ? 'Business Email' : 'Email Address'}
                 </span>
                 <input
@@ -277,39 +262,39 @@ export default function SettingsPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-[#7f13ec] focus:ring-1 focus:ring-[#7f13ec] outline-none transition-all placeholder:text-slate-400"
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition-all placeholder:text-purple-200/40 focus:border-[#9b3bff]/60"
                 />
               </label>
             </div>
 
             {/* Business-specific fields */}
             {isBusiness && userData?.businessInfo && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pt-6 border-t border-purple-200 dark:border-purple-500/20">
+              <div className="mb-6 grid grid-cols-1 gap-6 border-t border-white/10 pt-6 md:grid-cols-2">
                 <label className="flex flex-col gap-2">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Owner First Name</span>
+                  <span className="text-sm font-semibold text-white">Owner First Name</span>
                   <input
                     type="text"
                     value={userData.businessInfo.ownerFirstName}
                     readOnly
-                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-slate-600 dark:text-slate-400"
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-purple-200/60"
                   />
                 </label>
                 <label className="flex flex-col gap-2">
-                  <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Owner Last Name</span>
+                  <span className="text-sm font-semibold text-white">Owner Last Name</span>
                   <input
                     type="text"
                     value={userData.businessInfo.ownerLastName}
                     readOnly
-                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-slate-600 dark:text-slate-400"
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-purple-200/60"
                   />
                 </label>
                 {userData.businessInfo.description && (
                   <label className="flex flex-col gap-2 md:col-span-2">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Business Description</span>
+                    <span className="text-sm font-semibold text-white">Business Description</span>
                     <textarea
                       value={userData.businessInfo.description}
                       readOnly
-                      className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-black/20 px-4 py-3 text-slate-600 dark:text-slate-400 min-h-[80px] resize-none"
+                      className="min-h-[80px] w-full resize-none rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-purple-200/60"
                     />
                   </label>
                 )}
@@ -318,327 +303,293 @@ export default function SettingsPage() {
 
             {/* Connected Wallet */}
             <div className="flex flex-col gap-2">
-              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Connected Wallet</span>
-              <div className="flex items-center gap-2 w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3">
-                <div className={`size-6 rounded-full flex items-center justify-center ${
-                  isBusiness 
-                    ? 'bg-gradient-to-r from-purple-600 to-purple-400' 
-                    : 'bg-gradient-to-r from-[#7f13ec] to-[#a855f7]'
-                }`}>
-                  <span className="text-white text-xs font-bold">M</span>
+              <span className="text-sm font-semibold text-white">Connected Wallet</span>
+              <div className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-4 py-3">
+                <div className="flex size-6 items-center justify-center rounded-full bg-gradient-to-r from-[#9b3bff] to-[#6a10c7]">
+                  <span className="text-xs font-bold text-white">M</span>
                 </div>
                 <input
                   type="text"
                   readOnly
                   value={walletAddress}
-                  className="flex-1 bg-transparent border-none p-0 text-slate-600 dark:text-[#ad92c9] focus:ring-0 font-mono text-sm truncate"
+                  className="flex-1 truncate border-none bg-transparent p-0 font-mono text-sm text-purple-200/60 focus:ring-0"
                 />
                 <button
                   onClick={() => copyToClipboard(walletAddress)}
-                  className={`hover:text-white p-1.5 rounded-lg transition-all ${
-                    isBusiness ? 'text-purple-600 hover:bg-purple-600' : 'text-[#7f13ec] hover:bg-[#7f13ec]'
-                  }`}
+                  className="rounded-lg p-1.5 text-[#c89bff] transition-all hover:bg-[#9b3bff]/20 hover:text-white"
                   title="Copy Address"
                 >
-                  <Copy className="w-5 h-5" />
+                  <Copy className="h-5 w-5" />
                 </button>
               </div>
-              <p className="text-xs text-slate-500 dark:text-[#ad92c9] ml-1">
+              <p className="ml-1 text-xs text-purple-200/60">
                 This wallet is used for all {isBusiness ? 'business ' : ''}transactions on Stellar Network.
               </p>
             </div>
-          </section>
+          </Card>
 
           {/* Convert to Business Section (Personal accounts only) */}
           {!isBusiness && (
-            <section className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-500/5 dark:to-violet-500/5 rounded-3xl p-6 md:p-8 border border-purple-200 dark:border-purple-500/20">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
-                <span className="text-purple-600"><Building2 className="w-5 h-5" /></span>
+            <Card as="section">
+              <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-white">
+                <span className="text-[#c89bff]"><Building2 className="h-5 w-5" /></span>
                 Upgrade to Business
               </h3>
-              
-              <p className="text-slate-600 dark:text-[#ad92c9] mb-6">
-                Convert your personal account to a business account to unlock features like invoicing, 
+
+              <p className="mb-6 text-sm text-purple-200/60">
+                Convert your personal account to a business account to unlock features like invoicing,
                 payment analytics, and a professional storefront for your customers.
               </p>
 
-              <div className="flex flex-wrap gap-4 mb-6">
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#ad92c9]">
-                  <span className="text-purple-500"><Check className="w-4 h-4" /></span>
+              <div className="mb-6 flex flex-wrap gap-4">
+                <div className="flex items-center gap-2 text-sm text-purple-200/60">
+                  <span className="text-[#c89bff]"><Check className="h-4 w-4" /></span>
                   <span>Professional profile</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#ad92c9]">
-                  <span className="text-purple-500"><Check className="w-4 h-4" /></span>
+                <div className="flex items-center gap-2 text-sm text-purple-200/60">
+                  <span className="text-[#c89bff]"><Check className="h-4 w-4" /></span>
                   <span>Payment analytics</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#ad92c9]">
-                  <span className="text-purple-500"><Check className="w-4 h-4" /></span>
+                <div className="flex items-center gap-2 text-sm text-purple-200/60">
+                  <span className="text-[#c89bff]"><Check className="h-4 w-4" /></span>
                   <span>Customer management</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-[#ad92c9]">
-                  <span className="text-purple-500"><Check className="w-4 h-4" /></span>
+                <div className="flex items-center gap-2 text-sm text-purple-200/60">
+                  <span className="text-[#c89bff]"><Check className="h-4 w-4" /></span>
                   <span>Invoice generation</span>
                 </div>
               </div>
 
               <button
                 onClick={() => setShowConvertModal(true)}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-colors flex items-center gap-2"
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-6 py-3 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
               >
-                <Rocket className="w-5 h-5" />
+                <Rocket className="h-5 w-5" />
                 Convert to Business Account
               </button>
-            </section>
+            </Card>
           )}
 
           {/* Preferences Section */}
-          <section className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-white/10">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
-              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}><Settings className="w-5 h-5" /></span>
+          <Card as="section">
+            <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-white">
+              <span className="text-[#c89bff]"><Settings className="h-5 w-5" /></span>
               Quick Preferences
             </h3>
-            
+
             <div className="space-y-6">
               {/* Two-Factor Auth Toggle */}
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-base font-bold text-slate-900 dark:text-white">Two-Factor Authentication</span>
-                  <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Secure your account with 2FA on login.</span>
+                  <span className="text-base font-semibold text-white">Two-Factor Authentication</span>
+                  <span className="text-sm text-purple-200/60">Secure your account with 2FA on login.</span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex cursor-pointer items-center">
                   <input
                     type="checkbox"
                     checked={twoFactor}
                     onChange={(e) => setTwoFactor(e.target.checked)}
-                    className="sr-only peer"
+                    className="peer sr-only"
                   />
-                  <div className={`w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all ${
-                    isBusiness 
-                      ? 'peer-focus:ring-purple-600/20 peer-checked:bg-purple-600' 
-                      : 'peer-focus:ring-[#7f13ec]/20 peer-checked:bg-[#7f13ec]'
-                  }`}></div>
+                  <div className="peer h-7 w-14 rounded-full bg-white/10 after:absolute after:left-[4px] after:top-0.5 after:h-6 after:w-6 after:rounded-full after:border after:border-white/20 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#9b3bff] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#9b3bff]/20"></div>
                 </label>
               </div>
 
               {/* Email Notifications Toggle */}
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-base font-bold text-slate-900 dark:text-white">Email Notifications</span>
-                  <span className="text-sm text-slate-500 dark:text-[#ad92c9]">
+                  <span className="text-base font-semibold text-white">Email Notifications</span>
+                  <span className="text-sm text-purple-200/60">
                     {isBusiness ? 'Receive updates about payments and customers.' : 'Receive updates about your transactions.'}
                   </span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex cursor-pointer items-center">
                   <input
                     type="checkbox"
                     checked={emailNotifications}
                     onChange={(e) => setEmailNotifications(e.target.checked)}
-                    className="sr-only peer"
+                    className="peer sr-only"
                   />
-                  <div className={`w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all ${
-                    isBusiness 
-                      ? 'peer-focus:ring-purple-600/20 peer-checked:bg-purple-600' 
-                      : 'peer-focus:ring-[#7f13ec]/20 peer-checked:bg-[#7f13ec]'
-                  }`}></div>
+                  <div className="peer h-7 w-14 rounded-full bg-white/10 after:absolute after:left-[4px] after:top-0.5 after:h-6 after:w-6 after:rounded-full after:border after:border-white/20 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#9b3bff] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#9b3bff]/20"></div>
                 </label>
               </div>
 
               {/* Push Notifications Toggle */}
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-base font-bold text-slate-900 dark:text-white">Push Notifications</span>
-                  <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Get instant alerts for payments.</span>
+                  <span className="text-base font-semibold text-white">Push Notifications</span>
+                  <span className="text-sm text-purple-200/60">Get instant alerts for payments.</span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex cursor-pointer items-center">
                   <input
                     type="checkbox"
                     checked={pushNotifications}
                     onChange={(e) => setPushNotifications(e.target.checked)}
-                    className="sr-only peer"
+                    className="peer sr-only"
                   />
-                  <div className={`w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all ${
-                    isBusiness 
-                      ? 'peer-focus:ring-purple-600/20 peer-checked:bg-purple-600' 
-                      : 'peer-focus:ring-[#7f13ec]/20 peer-checked:bg-[#7f13ec]'
-                  }`}></div>
+                  <div className="peer h-7 w-14 rounded-full bg-white/10 after:absolute after:left-[4px] after:top-0.5 after:h-6 after:w-6 after:rounded-full after:border after:border-white/20 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#9b3bff] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#9b3bff]/20"></div>
                 </label>
               </div>
 
               {/* Public Profile Toggle */}
               <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                  <span className="text-base font-bold text-slate-900 dark:text-white">
+                  <span className="text-base font-semibold text-white">
                     {isBusiness ? 'Public Business' : 'Public Profile'}
                   </span>
-                  <span className="text-sm text-slate-500 dark:text-[#ad92c9]">
+                  <span className="text-sm text-purple-200/60">
                     {isBusiness ? 'Allow customers to find your business by handle.' : 'Allow others to find you by your handle.'}
                   </span>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex cursor-pointer items-center">
                   <input
                     type="checkbox"
                     checked={publicProfile}
                     onChange={(e) => setPublicProfile(e.target.checked)}
-                    className="sr-only peer"
+                    className="peer sr-only"
                   />
-                  <div className={`w-14 h-7 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all ${
-                    isBusiness 
-                      ? 'peer-focus:ring-purple-600/20 peer-checked:bg-purple-600' 
-                      : 'peer-focus:ring-[#7f13ec]/20 peer-checked:bg-[#7f13ec]'
-                  }`}></div>
+                  <div className="peer h-7 w-14 rounded-full bg-white/10 after:absolute after:left-[4px] after:top-0.5 after:h-6 after:w-6 after:rounded-full after:border after:border-white/20 after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#9b3bff] peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#9b3bff]/20"></div>
                 </label>
               </div>
             </div>
-          </section>
+          </Card>
 
           {/* Support & Links Section */}
-          <section className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-white/10">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
-              <span className={isBusiness ? 'text-purple-600' : 'text-[#7f13ec]'}><Share2 className="w-5 h-5" /></span>
+          <Card as="section">
+            <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-white">
+              <span className="text-[#c89bff]"><Share2 className="h-5 w-5" /></span>
               Links & Support
             </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <a
                 href="https://stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/30 transition-colors group"
+                className="group flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 p-4 transition-colors hover:border-[#9b3bff]/30"
               >
-                <HelpCircle className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
+                <HelpCircle className="h-6 w-6 text-purple-200/60" />
                 <div className="flex-1">
-                  <p className={`font-bold text-slate-900 dark:text-white transition-colors ${
-                    isBusiness ? 'group-hover:text-purple-600' : 'group-hover:text-[#7f13ec]'
-                  }`}>Help Center</p>
-                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Get support and FAQs</p>
+                  <p className="font-semibold text-white transition-colors group-hover:text-[#c89bff]">Help Center</p>
+                  <p className="text-xs text-purple-200/60">Get support and FAQs</p>
                 </div>
-                <span className="text-slate-400 dark:text-[#ad92c9]">↗</span>
+                <span className="text-purple-200/60">↗</span>
               </a>
 
               <a
                 href="https://twitter.com/StellarOrg"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/30 transition-colors group"
+                className="group flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 p-4 transition-colors hover:border-[#9b3bff]/30"
               >
-                <Twitter className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
+                <Twitter className="h-6 w-6 text-purple-200/60" />
                 <div className="flex-1">
-                  <p className={`font-bold text-slate-900 dark:text-white transition-colors ${
-                    isBusiness ? 'group-hover:text-purple-600' : 'group-hover:text-[#7f13ec]'
-                  }`}>Twitter</p>
-                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Follow for updates</p>
+                  <p className="font-semibold text-white transition-colors group-hover:text-[#c89bff]">Twitter</p>
+                  <p className="text-xs text-purple-200/60">Follow for updates</p>
                 </div>
-                <span className="text-slate-400 dark:text-[#ad92c9]">↗</span>
+                <span className="text-purple-200/60">↗</span>
               </a>
 
               <a
                 href="https://discord.gg/stellardev"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/30 transition-colors group"
+                className="group flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 p-4 transition-colors hover:border-[#9b3bff]/30"
               >
-                <MessageCircle className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
+                <MessageCircle className="h-6 w-6 text-purple-200/60" />
                 <div className="flex-1">
-                  <p className={`font-bold text-slate-900 dark:text-white transition-colors ${
-                    isBusiness ? 'group-hover:text-purple-600' : 'group-hover:text-[#7f13ec]'
-                  }`}>Discord</p>
-                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Join the community</p>
+                  <p className="font-semibold text-white transition-colors group-hover:text-[#c89bff]">Discord</p>
+                  <p className="text-xs text-purple-200/60">Join the community</p>
                 </div>
-                <span className="text-slate-400 dark:text-[#ad92c9]">↗</span>
+                <span className="text-purple-200/60">↗</span>
               </a>
 
               <a
                 href="https://developers.stellar.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/30 transition-colors group"
+                className="group flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 p-4 transition-colors hover:border-[#9b3bff]/30"
               >
-                <BookOpen className="w-6 h-6 text-slate-500 dark:text-[#ad92c9]" />
+                <BookOpen className="h-6 w-6 text-purple-200/60" />
                 <div className="flex-1">
-                  <p className={`font-bold text-slate-900 dark:text-white transition-colors ${
-                    isBusiness ? 'group-hover:text-purple-600' : 'group-hover:text-[#7f13ec]'
-                  }`}>Documentation</p>
-                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Learn about Stellar</p>
+                  <p className="font-semibold text-white transition-colors group-hover:text-[#c89bff]">Documentation</p>
+                  <p className="text-xs text-purple-200/60">Learn about Stellar</p>
                 </div>
-                <span className="text-slate-400 dark:text-[#ad92c9]">↗</span>
+                <span className="text-purple-200/60">↗</span>
               </a>
             </div>
-          </section>
+          </Card>
 
           {/* Danger Zone */}
-          <section className="bg-red-50 dark:bg-red-500/5 rounded-3xl p-6 md:p-8 border border-red-200 dark:border-red-500/20">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-red-600 dark:text-red-400">
-              <AlertTriangle className="w-5 h-5" />
+          <Card as="section">
+            <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-rose-300">
+              <AlertTriangle className="h-5 w-5" />
               Danger Zone
             </h3>
-            
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
               <div>
-                <p className="font-bold text-slate-900 dark:text-white">Sign Out</p>
-                <p className="text-sm text-slate-500 dark:text-[#ad92c9]">
+                <p className="font-semibold text-white">Sign Out</p>
+                <p className="text-sm text-purple-200/60">
                   You'll need to reconnect your wallet to access Zoopfi again.
                 </p>
               </div>
               <button
                 onClick={() => setShowLogoutConfirm(true)}
-                className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-sm transition-colors flex items-center gap-2"
+                className="flex items-center gap-2 rounded-xl bg-rose-500 px-6 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-600"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="h-5 w-5" />
                 Sign Out
               </button>
             </div>
-          </section>
+          </Card>
 
           {/* Action Buttons */}
-          <div className="flex flex-col-reverse sm:flex-row justify-end gap-4 pb-12">
+          <div className="flex flex-col-reverse justify-end gap-4 sm:flex-row">
             <button
               onClick={() => router.back()}
-              className="px-8 py-3 bg-transparent border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+              className="rounded-xl border border-white/10 bg-transparent px-8 py-3 font-bold text-white transition-colors hover:bg-white/5"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className={`px-8 py-3 text-white font-bold rounded-xl shadow-xl transition-all hover:scale-[1.02] ${
-                isBusiness 
-                  ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30' 
-                  : 'bg-[#7f13ec] hover:bg-[#5e0eb0] shadow-[#7f13ec]/30'
-              }`}
+              className="rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-8 py-3 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
             >
               Save Changes
             </button>
           </div>
 
           {/* Version */}
-          <p className="text-center text-slate-400 dark:text-[#ad92c9]/40 text-xs pb-8">
+          <p className="pb-2 text-center text-xs text-purple-200/40">
             Zoopfi v1.0.0 • Built on Stellar Network
           </p>
         </div>
-      </div>
+      </PageShell>
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 max-w-sm w-full animate-scale-in border border-slate-200 dark:border-white/10 shadow-xl">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
-                <LogOut className="w-7 h-7 text-red-500" />
+        <div className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="surface animate-scale-in w-full max-w-sm rounded-2xl p-6 shadow-xl">
+            <div className="mb-6 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-500/10">
+                <LogOut className="h-7 w-7 text-rose-300" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Sign Out?</h3>
-              <p className="text-slate-500 dark:text-[#ad92c9] text-sm">
+              <h3 className="mb-2 text-xl font-bold text-white">Sign Out?</h3>
+              <p className="text-sm text-purple-200/60">
                 You'll need to reconnect your wallet to access Zoopfi again.
               </p>
             </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white font-bold hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                className="flex-1 rounded-xl border border-white/10 py-3 font-bold text-white transition-colors hover:bg-white/5"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors"
+                className="flex-1 rounded-xl bg-rose-500 py-3 font-bold text-white transition-colors hover:bg-rose-600"
               >
                 Sign Out
               </button>
@@ -649,22 +600,22 @@ export default function SettingsPage() {
 
       {/* Convert to Business Modal */}
       {showConvertModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 max-w-lg w-full animate-scale-in border border-purple-200 dark:border-purple-500/20 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <Building2 className="w-6 h-6 text-purple-600" />
+        <div className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="surface animate-scale-in max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl p-6 shadow-xl">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#9b3bff]/15 text-[#c89bff]">
+                <Building2 className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Convert to Business</h3>
-                <p className="text-sm text-slate-500 dark:text-[#ad92c9]">Set up your business profile</p>
+                <h3 className="text-xl font-bold text-white">Convert to Business</h3>
+                <p className="text-sm text-purple-200/60">Set up your business profile</p>
               </div>
             </div>
 
-            <div className="space-y-4 mb-6">
+            <div className="mb-6 space-y-4">
               {/* Business Name */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                <label className="mb-2 block text-sm font-semibold text-white">
                   Business Name *
                 </label>
                 <input
@@ -672,14 +623,14 @@ export default function SettingsPage() {
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="Starbucks"
-                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400"
+                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition-all placeholder:text-purple-200/40 focus:border-[#9b3bff]/60"
                 />
               </div>
 
               {/* Owner Name */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="mb-2 block text-sm font-semibold text-white">
                     Owner First Name *
                   </label>
                   <input
@@ -687,11 +638,11 @@ export default function SettingsPage() {
                     value={ownerFirstName}
                     onChange={(e) => setOwnerFirstName(e.target.value)}
                     placeholder="John"
-                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition-all placeholder:text-purple-200/40 focus:border-[#9b3bff]/60"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  <label className="mb-2 block text-sm font-semibold text-white">
                     Owner Last Name *
                   </label>
                   <input
@@ -699,14 +650,14 @@ export default function SettingsPage() {
                     value={ownerLastName}
                     onChange={(e) => setOwnerLastName(e.target.value)}
                     placeholder="Doe"
-                    className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400"
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition-all placeholder:text-purple-200/40 focus:border-[#9b3bff]/60"
                   />
                 </div>
               </div>
 
               {/* Business Category */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+                <label className="mb-2 block text-sm font-semibold text-white">
                   Business Category *
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -714,15 +665,15 @@ export default function SettingsPage() {
                     <button
                       key={cat.value}
                       onClick={() => setBusinessCategory(cat.value)}
-                      className={`p-3 rounded-xl border transition-all text-left ${
+                      className={`rounded-xl border p-3 text-left transition-all ${
                         businessCategory === cat.value
-                          ? 'border-purple-500 bg-purple-500/10'
-                          : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/20 hover:border-purple-500/50'
+                          ? 'border-[#9b3bff] bg-[#9b3bff]/10'
+                          : 'border-white/10 bg-black/30 hover:border-[#9b3bff]/50'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span>{cat.icon}</span>
-                        <span className="text-sm font-medium text-slate-900 dark:text-white">{cat.label}</span>
+                        <span className="text-sm font-medium text-white">{cat.label}</span>
                       </div>
                     </button>
                   ))}
@@ -731,14 +682,14 @@ export default function SettingsPage() {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                  Description <span className="text-slate-400 font-normal">(optional)</span>
+                <label className="mb-2 block text-sm font-semibold text-white">
+                  Description <span className="font-normal text-purple-200/40">(optional)</span>
                 </label>
                 <textarea
                   value={businessDescription}
                   onChange={(e) => setBusinessDescription(e.target.value)}
                   placeholder="Tell customers what you do..."
-                  className="w-full rounded-xl border border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-black/20 px-4 py-3 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-400 min-h-[80px] resize-none"
+                  className="min-h-[80px] w-full resize-none rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-white outline-none transition-all placeholder:text-purple-200/40 focus:border-[#9b3bff]/60"
                   maxLength={500}
                 />
               </div>
@@ -748,14 +699,14 @@ export default function SettingsPage() {
               <button
                 onClick={() => setShowConvertModal(false)}
                 disabled={isConverting}
-                className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-white/10 text-slate-700 dark:text-white font-bold hover:bg-slate-100 dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                className="flex-1 rounded-xl border border-white/10 py-3 font-bold text-white transition-colors hover:bg-white/5 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConvertToBusiness}
                 disabled={!isConversionValid() || isConverting}
-                className="flex-1 py-3 rounded-xl bg-purple-600 text-white font-bold hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] py-3 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isConverting ? (
                   <>

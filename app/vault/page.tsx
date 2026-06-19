@@ -11,7 +11,8 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '../components/shell/AppShell';
-import { TrendingUp, Loader2, AlertCircle, Check, ArrowUpRight, Lock } from 'lucide-react';
+import { PageShell, PageHeader, Card, StatTile } from '../components/ui/primitives';
+import { TrendingUp, Loader2, AlertCircle, Check, ArrowUpRight, Lock, Percent, Coins } from 'lucide-react';
 import { useWallet, getExplorerUrl, CONTRACTS } from '@/app/lib/chain';
 
 const DECIMALS = 7;
@@ -94,79 +95,73 @@ export default function VaultPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-md px-4 py-8">
-        <div className="mb-6 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-500">
-            <TrendingUp className="h-5 w-5" />
-          </span>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Yield Vault</h1>
-            <p className="text-sm text-slate-500 dark:text-[#ad92c9]">Earn on-chain yield on Stellar</p>
-          </div>
-        </div>
+      <PageShell variant="focused">
+        <PageHeader
+          center
+          icon={TrendingUp}
+          accent="emerald"
+          title="Yield Vault"
+          subtitle="Earn on-chain yield on Stellar"
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-4">
-            <p className="text-xs text-slate-500 dark:text-[#ad92c9]">APY</p>
-            <p className="text-2xl font-bold text-emerald-500">{apy != null ? `${apy}%` : '—'}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-4">
-            <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Price / share</p>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">{index != null ? index.toFixed(6) : '—'}</p>
-          </div>
+          <StatTile label="APY" icon={Percent} accent="emerald" value={apy != null ? `${apy}%` : '—'} />
+          <StatTile label="Price / share" icon={Coins} value={index != null ? index.toFixed(6) : '—'} />
         </div>
 
         {/* Position */}
         {isConnected && (
-          <div className="mt-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-            <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Your position</p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white tabular-nums">{value.toFixed(4)} <span className="text-base text-slate-400">USDC</span></p>
-            <p className="text-xs text-emerald-500">{shares > BigInt(0) ? 'Earning yield — grows every ledger' : 'No deposit yet'}</p>
-          </div>
+          <Card className="mt-3">
+            <p className="text-xs text-purple-200/55">Your position</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-white">
+              {value.toFixed(4)} <span className="text-base font-medium text-purple-200/50">USDC</span>
+            </p>
+            <p className="mt-1 text-xs text-emerald-300">{shares > BigInt(0) ? 'Earning yield — grows every ledger' : 'No deposit yet'}</p>
+          </Card>
         )}
 
         {/* Action */}
-        <div className="mt-4 rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/[0.04] p-5">
-          <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 dark:bg-black/20 p-1">
+        <Card className="mt-4">
+          <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1">
             {(['deposit', 'withdraw'] as const).map((t) => (
               <button key={t} onClick={() => setTab(t)}
-                className={`rounded-lg py-2 text-sm font-medium capitalize transition ${tab === t ? 'bg-white dark:bg-white/[0.08] text-slate-900 dark:text-white shadow' : 'text-slate-500 dark:text-[#ad92c9]'}`}>
+                className={`rounded-lg py-2 text-sm font-medium capitalize transition ${tab === t ? 'bg-white/[0.08] text-white shadow' : 'text-purple-200/60'}`}>
                 {t}
               </button>
             ))}
           </div>
           <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
-            className="w-full rounded-xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 px-4 py-3 text-xl font-semibold text-slate-900 dark:text-white outline-none focus:border-emerald-500" />
+            className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-xl font-semibold text-white outline-none focus:border-[#9b3bff]/60" />
 
           {!isConnected ? (
-            <a href="/" className="mt-3 block w-full rounded-xl bg-emerald-500 py-3.5 text-center font-semibold text-white">Connect wallet</a>
+            <a href="/" className="mt-3 block w-full rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] py-3.5 text-center font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50">Connect wallet</a>
           ) : (
             <button onClick={onAction} disabled={busy || !amount || !VAULT}
-              className="mt-3 w-full rounded-xl bg-emerald-500 hover:bg-emerald-600 py-3.5 font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-2">
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] py-3.5 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50 disabled:opacity-50">
               {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Working…</> : (tab === 'deposit' ? 'Deposit & earn' : 'Withdraw')}
             </button>
           )}
 
-          {!VAULT && <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">Vault contract not configured.</p>}
+          {!VAULT && <p className="mt-2 text-xs text-amber-400">Vault contract not configured.</p>}
           {error && (
-            <div className="mt-3 flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
+            <div className="mt-3 flex items-start gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-300">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span>
             </div>
           )}
           {lastTx && (
             <a href={getExplorerUrl(lastTx)} target="_blank" rel="noopener noreferrer"
-              className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              className="mt-3 flex items-center justify-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm font-medium text-emerald-300">
               <Check className="h-4 w-4" /> Confirmed — view transaction <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
           )}
-        </div>
+        </Card>
 
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[#7f13ec]/20 bg-[#7f13ec]/5 p-3 text-xs text-slate-600 dark:text-[#ad92c9]">
-          <Lock className="h-4 w-4 shrink-0 text-[#7f13ec]" />
-          <span><b className="text-[#7f13ec]">Private yield (roadmap):</b> hold your vault shares as shielded notes — the index stays public, your balance and gains stay private.</span>
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#7f13ec]/20 bg-[#7f13ec]/5 p-3 text-xs text-purple-200/60">
+          <Lock className="h-4 w-4 shrink-0 text-[#b07bff]" />
+          <span><b className="text-[#c89bff]">Private yield (roadmap):</b> hold your vault shares as shielded notes — the index stays public, your balance and gains stay private.</span>
         </div>
-      </div>
+      </PageShell>
     </AppShell>
   );
 }
