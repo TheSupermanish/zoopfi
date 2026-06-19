@@ -105,6 +105,24 @@ Stellar testnet:  Pool → Groth16 verifier → ASP membership / non-membership
 
 ---
 
+## 👤 Real username payments (optional backend + MongoDB)
+
+Pay-by-`@username` works as a flow out of the box (mock resolution). To resolve
+usernames to **real registered wallets** across users, run the Express + MongoDB
+backend (`backend/`). The `User` model maps `username → walletAddress`.
+
+1. **MongoDB Atlas** (free): create a cluster, get the connection string.
+2. **Deploy the backend** — Render blueprint included (`render.yaml`): Render →
+   New → Blueprint → connect this repo → set `MONGODB_URI`. (Railway/Fly work too;
+   it's a standard Express app: `npm install && npm run build && npm start`.)
+3. **Point the frontend at it** — set on Vercel:
+   `NEXT_PUBLIC_API_URL=<backend-url>` and `BACKEND_URL=<backend-url>`.
+
+Without this, the app uses an in-app mock store (usernames resolve to synthesized
+addresses) — fine for the demo, not for paying real people by handle.
+
+---
+
 ## 🖼️ Wallet options
 
 The login modal offers Privy social login **and** a full StellarWalletsKit picker

@@ -25,15 +25,22 @@ app.use(cors({
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
-    // Allow localhost, ngrok, and production URLs
+    // Allow localhost, ngrok, Vercel deployments, and any extra CORS_ORIGINS.
+    const extra = (process.env.CORS_ORIGINS || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     const allowedPatterns = [
       /^http:\/\/localhost(:\d+)?$/,
       /^https?:\/\/.*\.ngrok-free\.app$/,
       /^https?:\/\/.*\.ngrok\.io$/,
+      /^https:\/\/.*\.vercel\.app$/,
       /^https:\/\/superpay\.fi$/,
+      /^https:\/\/.*\.zoopfi\.app$/,
     ];
-    
-    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+
+    const isAllowed =
+      extra.includes(origin) || allowedPatterns.some((pattern) => pattern.test(origin));
     if (isAllowed) {
       callback(null, true);
     } else {
