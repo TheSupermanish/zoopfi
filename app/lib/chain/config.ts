@@ -39,15 +39,13 @@ export const PRIVY_CONFIGURED = !!PRIVY_APP_ID && PRIVY_APP_ID !== 'YOUR_PRIVY_A
 export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === '1';
 
 // Is a real Express/MongoDB backend configured?
-const BACKEND_CONFIGURED =
-  !!process.env.NEXT_PUBLIC_API_URL && !/YOUR_BACKEND/i.test(process.env.NEXT_PUBLIC_API_URL || '');
-
-// Serve the backend (user/contacts/groups/etc.) from the in-app seeded store
-// when there's no real backend, or explicitly via NEXT_PUBLIC_MOCK_BACKEND=1,
-// or in demo mode. This lets you connect a REAL Privy wallet and use the whole
-// app without running the Express/MongoDB backend. Auth + chain stay real.
+// The backend now runs as Next.js API routes (app/api/backend/*) backed by
+// MongoDB — no separate server. Set NEXT_PUBLIC_BACKEND=live (with MONGODB_URI
+// configured server-side) to use the real DB. Otherwise the in-app seeded store
+// serves user/contacts/groups/etc. so the whole app works with no DB at all.
+const BACKEND_LIVE = process.env.NEXT_PUBLIC_BACKEND === 'live';
 export const MOCK_BACKEND =
-  DEMO_MODE || process.env.NEXT_PUBLIC_MOCK_BACKEND === '1' || !BACKEND_CONFIGURED;
+  DEMO_MODE || process.env.NEXT_PUBLIC_MOCK_BACKEND === '1' || !BACKEND_LIVE;
 
 interface NetworkConfig {
   name: string;
