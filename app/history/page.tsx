@@ -27,7 +27,7 @@ type FilterType = 'all' | 'sent' | 'received';
 
 export default function HistoryPage() {
   const router = useRouter();
-  const { address: walletAddress, authenticated, isConnected, getExplorerUrl } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected, getExplorerUrl } = useWallet();
 
   const LIMIT = 20;
 
@@ -89,7 +89,7 @@ export default function HistoryPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) {
+      if (ready && !authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);

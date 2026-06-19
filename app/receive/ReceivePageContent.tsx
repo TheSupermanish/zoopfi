@@ -26,7 +26,7 @@ interface PaymentRequest {
 export default function ReceivePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected } = useWallet();
   const { data: userData } = useUser();
   const username = userData?.username ?? '';
 
@@ -65,7 +65,7 @@ export default function ReceivePageContent() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) {
+      if (ready && !authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);

@@ -34,7 +34,7 @@ const MILESTONES: { name: string; Icon: LucideIcon; count: number; reward: numbe
 
 export default function RewardsPage() {
   const router = useRouter();
-  const { authenticated, isConnected } = useWallet();
+  const { ready, authenticated, isConnected } = useWallet();
 
   const { data: userData } = useUser();
   const { data: streakInfo } = useStreak();
@@ -48,7 +48,7 @@ export default function RewardsPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) {
+      if (ready && !authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);

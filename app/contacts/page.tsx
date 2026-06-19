@@ -59,7 +59,7 @@ const fmtDate = (d: string, opts: Intl.DateTimeFormatOptions) => {
 
 export default function ContactsPage() {
   const router = useRouter();
-  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected } = useWallet();
   const { data: userData } = useUser();
 
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -109,7 +109,7 @@ export default function ContactsPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) {
+      if (ready && !authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);

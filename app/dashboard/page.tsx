@@ -30,7 +30,7 @@ interface Transaction {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected } = useWallet();
   const { data: userData } = useUser();
   const { data: balance = 0 } = useBalance('USDC');
   const { data: recentTransactions = [] } = useTransactions(6);
@@ -44,7 +44,7 @@ export default function DashboardPage() {
   }, [userData, router]);
   useEffect(() => {
     const t = setTimeout(() => {
-      if (!authenticated && !isConnected) router.replace('/');
+      if (ready && !authenticated && !isConnected) router.replace('/');
     }, 500);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

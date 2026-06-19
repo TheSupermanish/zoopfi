@@ -74,7 +74,7 @@ const EXPENSE_CATEGORIES = [
 
 export default function GroupsPage() {
   const router = useRouter();
-  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected } = useWallet();
   const { data: userData } = useUser();
   const username = userData?.username ?? '';
   const invalidate = useChainInvalidate();
@@ -140,7 +140,7 @@ export default function GroupsPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) {
+      if (ready && !authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);

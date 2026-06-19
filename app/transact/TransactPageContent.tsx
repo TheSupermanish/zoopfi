@@ -44,7 +44,7 @@ interface PaymentRequest {
 export default function TransactPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { address: walletAddress, authenticated, isConnected, ops } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected, ops } = useWallet();
   const { data: userData } = useUser();
   const { data: balance = 0 } = useBalance('USDC');
   const { data: recentTransactions = [] } = useTransactions(5);
@@ -113,7 +113,7 @@ export default function TransactPageContent() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) {
+      if (ready && !authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);

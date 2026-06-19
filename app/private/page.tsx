@@ -19,7 +19,7 @@ const ACTIONS: { mode: Exclude<Mode, 'none'>; Icon: typeof Shield; title: string
 
 export default function PrivatePage() {
   const router = useRouter();
-  const { address: walletAddress, authenticated, isConnected, ops } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected, ops } = useWallet();
 
   const { data: userData } = useUser();
   const invalidate = useChainInvalidate();
@@ -62,7 +62,7 @@ export default function PrivatePage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) router.replace('/');
+      if (ready && !authenticated && !isConnected) router.replace('/');
     }, 500);
     return () => clearTimeout(timer);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

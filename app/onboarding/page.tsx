@@ -116,10 +116,6 @@ export default function OnboardingPage() {
 
     setStep('creating');
     try {
-      // Testnet: fund the embedded wallet (friendbot) + add USDC trustline.
-      // No-op in mock mode.
-      await setupAccount();
-
       const businessInfo: BusinessInfo | undefined = accountType === 'business' ? {
         ownerFirstName: ownerFirstName.trim(),
         ownerLastName: ownerLastName.trim(),
@@ -127,6 +123,7 @@ export default function OnboardingPage() {
         description: businessDescription.trim() || undefined,
       } : undefined;
 
+      // Register first — this is the step that must succeed to enter the app.
       const result = await registerUser({
         walletAddress,
         username,
@@ -136,6 +133,10 @@ export default function OnboardingPage() {
       });
 
       if (result.user) {
+        // Fund the embedded wallet (friendbot) + add the USDC trustline in the
+        // background. Testnet provisioning can be slow, so we never block entry
+        // on it — the user lands in the app and it finishes behind the scenes.
+        void setupAccount().catch(() => {});
         setStep('success');
       } else {
         setError(result.error || 'Failed to create account');

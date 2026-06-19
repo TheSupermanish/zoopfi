@@ -29,7 +29,7 @@ interface Invoice {
 
 export default function InvoicesPage() {
   const router = useRouter();
-  const { address: walletAddress, authenticated, isConnected } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected } = useWallet();
 
   const { data: userData } = useUser();
   const accountType = userData?.accountType ?? 'personal';
@@ -64,7 +64,7 @@ export default function InvoicesPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) {
+      if (ready && !authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);

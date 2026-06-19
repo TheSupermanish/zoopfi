@@ -39,7 +39,7 @@ const BUSINESS_CATEGORIES: { value: BusinessCategory; label: string; icon: strin
 export default function SettingsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { address: walletAddress, authenticated, isConnected, logout } = useWallet();
+  const { ready, address: walletAddress, authenticated, isConnected, logout } = useWallet();
 
   const { data: userData } = useUser();
   const isLoading = userData === undefined;
@@ -78,7 +78,7 @@ export default function SettingsPage() {
   // Redirect if not connected
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!authenticated && !isConnected) {
+      if (ready && !authenticated && !isConnected) {
         router.replace('/');
       }
     }, 500);
