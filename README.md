@@ -60,7 +60,8 @@ The deployment record is in [`deployments/testnet.json`](./deployments/testnet.j
 
 ## 🟡 Level 2 (Yellow Belt) checklist
 
-This project also satisfies the Stellar Yellow Belt requirements:
+This project also satisfies the Stellar Yellow Belt requirements (full status:
+[`docs/levels/level-1.md`](./docs/levels/level-1.md), [`docs/levels/level-2.md`](./docs/levels/level-2.md)):
 
 | Requirement | Where |
 |---|---|
