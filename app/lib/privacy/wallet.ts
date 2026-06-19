@@ -23,7 +23,11 @@ import {
 } from '@creit.tech/stellar-wallets-kit';
 import { CURRENT_NETWORK } from '../chain/config';
 
-export type WalletErrorCode = 'WALLET_NOT_FOUND' | 'USER_REJECTED' | 'WALLET_ERROR';
+export type WalletErrorCode =
+  | 'WALLET_NOT_FOUND'
+  | 'USER_REJECTED'
+  | 'INSUFFICIENT_BALANCE'
+  | 'WALLET_ERROR';
 
 export class PrivacyWalletError extends Error {
   code: WalletErrorCode;
@@ -43,6 +47,9 @@ export function normalizeWalletError(e: unknown, fallback = 'Wallet error'): Pri
   }
   if (/reject|declin|denied|cancel|user (closed|did not)/.test(lower)) {
     return new PrivacyWalletError('You declined the request in your wallet.', 'USER_REJECTED');
+  }
+  if (/insufficient|underfunded|not enough|op_underfunded|tx_insufficient|#2\b|insufficientshares/.test(lower)) {
+    return new PrivacyWalletError('Insufficient balance for this transaction.', 'INSUFFICIENT_BALANCE');
   }
   return new PrivacyWalletError(msg, 'WALLET_ERROR');
 }

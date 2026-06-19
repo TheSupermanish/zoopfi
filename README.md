@@ -58,6 +58,24 @@ The deployment record is in [`deployments/testnet.json`](./deployments/testnet.j
 
 ---
 
+## 🟡 Level 2 (Yellow Belt) checklist
+
+This project also satisfies the Stellar Yellow Belt requirements:
+
+| Requirement | Where |
+|---|---|
+| **Multi-wallet (StellarWalletsKit)** | Login modal + `/shielded` — Freighter / xBull / Albedo / Lobstr / Rabet. Screenshot below. |
+| **3 error types handled** | `app/lib/privacy/wallet.ts` — `WALLET_NOT_FOUND`, `USER_REJECTED`, `INSUFFICIENT_BALANCE` (surfaced in the UI). |
+| **Contract deployed on testnet** | Yield vault `CBD637UVMIYLTPCVWEOLTV26OCL77NVPZOLDYUEHXTBC7RDEJKN7JOBE` ([explorer](https://stellar.expert/explorer/testnet/contract/CBD637UVMIYLTPCVWEOLTV26OCL77NVPZOLDYUEHXTBC7RDEJKN7JOBE)) + the shielded pool/verifier/ASP above. |
+| **Contract called from frontend** | `/vault` deposit/redeem + reads (`index`, `apy_bps`, `value_of`) via `app/lib/chain/stellar.ts`. |
+| **Read + write to a contract** | Vault: write `deposit`/`redeem`, read `index`/`value_of`/`apy_bps`. |
+| **Transaction status (pending/success/fail)** | `/shielded` proving→signing→submitting→confirming stepper; `/swap` + `/vault` busy/success/error states with explorer links. |
+| **Event listening + state sync** | `/shielded` streams pool activity (`getRecentPoolActivity`); `/vault` polls the live index so balances update in real time. |
+| **Verifiable contract-call tx** | Vault `deposit`: [`b3e9c6ac…b3b19`](https://stellar.expert/explorer/testnet/tx/b3e9c6ac969dfc333b839418b418111bdec6850bb8166fc7bb6c6eb6211b3b19) |
+| **2+ meaningful commits** | See git history. |
+
+---
+
 ## 🧱 Architecture
 
 ```

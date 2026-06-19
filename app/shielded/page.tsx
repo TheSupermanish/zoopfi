@@ -207,6 +207,7 @@ export default function ShieldedPage() {
                       <span>
                         {state.error.code === 'WALLET_NOT_FOUND' && 'No Stellar wallet found. Install Freighter or pick another wallet.'}
                         {state.error.code === 'USER_REJECTED' && 'Request declined in your wallet.'}
+                        {state.error.code === 'INSUFFICIENT_BALANCE' && 'Insufficient balance for this transaction.'}
                         {(!state.error.code || state.error.code === 'WALLET_ERROR') && state.error.message}
                       </span>
                     </div>
