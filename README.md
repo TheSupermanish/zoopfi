@@ -60,8 +60,8 @@ The deployment record is in [`deployments/testnet.json`](./deployments/testnet.j
 
 ## 🟡 Level 2 (Yellow Belt) checklist
 
-This project also satisfies the Stellar Yellow Belt requirements (full status:
-[`docs/levels/level-1.md`](./docs/levels/level-1.md), [`docs/levels/level-2.md`](./docs/levels/level-2.md)):
+This project also satisfies the Stellar belt requirements (full status:
+[Level 1](./docs/levels/level-1.md) · [Level 2](./docs/levels/level-2.md) · [Level 3](./docs/levels/level-3.md)):
 
 | Requirement | Where |
 |---|---|
@@ -128,12 +128,36 @@ synthesized addresses) — fine for the demo, not for paying real people by hand
 
 ---
 
-## 🖼️ Wallet options
+## 🖼️ Screenshots
+
+One unified app: a **top navbar** on web (logo, tabs, live balance, Pay action,
+account menu), a **bottom tab bar** with a center Pay action on mobile, and a
+dedicated **Business** workspace (payroll, invoicing, merchant payments) — all on
+one premium dark canvas.
+
+### Pay → connect → result
+| Send money (home) | Wallet options | Transaction result |
+|---|---|---|
+| ![Home](./docs/screenshots/landing.png) | ![Wallet options](./docs/screenshots/wallet-options.png) | ![Sent — view on Stellar](./docs/screenshots/transaction-result.png) |
 
 The login modal offers Privy social login **and** a full StellarWalletsKit picker
-(Freighter, xBull, Albedo, LOBSTR, Rabet, Hana, Klever).
+(Freighter, xBull, Albedo, LOBSTR, Rabet). On success the user sees a confirmation
+with a one-tap **view on Stellar** explorer link.
 
-![Wallet options](./docs/screenshots/wallet-options.png)
+### Wallet, activity, DeFi
+| Dashboard (balance + activity) | Transaction history | Swap (Stellar DEX) |
+|---|---|---|
+| ![Dashboard](./docs/screenshots/dashboard.png) | ![History](./docs/screenshots/transaction-history.png) | ![Swap](./docs/screenshots/swap.png) |
+
+### Private payments + Business
+| Shielded (ZK private) | Business workspace | Payroll (batch payouts) |
+|---|---|---|
+| ![Private](./docs/screenshots/shielded.png) | ![Business](./docs/screenshots/business.png) | ![Payroll](./docs/screenshots/payroll.png) |
+
+### Mobile (responsive)
+| Home | Dashboard | Payroll |
+|---|---|---|
+| ![Mobile home](./docs/screenshots/mobile.png) | ![Mobile dashboard](./docs/screenshots/mobile-dashboard.png) | ![Mobile payroll](./docs/screenshots/mobile-payroll.png) |
 
 ---
 

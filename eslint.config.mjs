@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated / vendored / non-source — not ours to lint:
+    "public/**", // prebuilt ZK engine bundle + circuit artifacts (WASM glue)
+    "backend/**", // reference Express server, excluded from the build
+    "contracts/**", // Rust (Soroban) — linted by cargo, not eslint
   ]),
 ]);
 
