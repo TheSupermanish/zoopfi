@@ -105,21 +105,26 @@ Stellar testnet:  Pool → Groth16 verifier → ASP membership / non-membership
 
 ---
 
-## 👤 Real username payments (optional backend + MongoDB)
+## 👤 Real username payments (MongoDB, no separate server)
 
 Pay-by-`@username` works as a flow out of the box (mock resolution). To resolve
-usernames to **real registered wallets** across users, run the Express + MongoDB
-backend (`backend/`). The `User` model maps `username → walletAddress`.
+usernames to **real registered wallets** across users, the app uses **Next.js API
+routes** (`app/api/backend/*`) backed by **MongoDB** — they run as Vercel
+serverless functions, so there's no separate server to host. The `User` model
+maps `username → walletAddress`.
 
-1. **MongoDB Atlas** (free): create a cluster, get the connection string.
-2. **Deploy the backend** — Render blueprint included (`render.yaml`): Render →
-   New → Blueprint → connect this repo → set `MONGODB_URI`. (Railway/Fly work too;
-   it's a standard Express app: `npm install && npm run build && npm start`.)
-3. **Point the frontend at it** — set on Vercel:
-   `NEXT_PUBLIC_API_URL=<backend-url>` and `BACKEND_URL=<backend-url>`.
+To turn it on:
+1. **MongoDB Atlas** (free): create a cluster, copy the connection string. In
+   Atlas → Network Access, add `0.0.0.0/0` so Vercel's functions can connect.
+2. **Set env vars** (Vercel project, or `.env.local` for local dev):
+   - `MONGODB_URI=mongodb+srv://…`  (server-side secret — never in the repo)
+   - `NEXT_PUBLIC_BACKEND=live`     (switches the app off the mock store)
 
-Without this, the app uses an in-app mock store (usernames resolve to synthesized
-addresses) — fine for the demo, not for paying real people by handle.
+Without these, the app uses an in-app mock store (usernames resolve to
+synthesized addresses) — fine for the demo, not for paying real people by handle.
+
+> The original Express server in `backend/` is the reference these routes were
+> ported from; it's no longer needed (and excluded from the build).
 
 ---
 
@@ -183,7 +188,8 @@ served as static assets.
    - `NEXT_PUBLIC_PRIVY_APP_ID` — your Privy app id (for social login)
    - `NEXT_PUBLIC_CHAIN_ADAPTER=stellar`
    - `NEXT_PUBLIC_STELLAR_NETWORK=testnet`
-   - the contract IDs from `.env.example` (pool / verifier / ASP / vault) — non-secret
+   - contract IDs are baked in as testnet defaults — no need to set them
+   - **For real username payments** (optional): `MONGODB_URI` (secret) + `NEXT_PUBLIC_BACKEND=live`
 3. Deploy. No COOP/COEP headers needed (the engine's workers use message passing,
    not SharedArrayBuffer).
 

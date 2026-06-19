@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4000';
-
 const nextConfig: NextConfig = {
   // Ignore TypeScript errors in node_modules during build
   typescript: {
@@ -25,15 +23,8 @@ const nextConfig: NextConfig = {
     'absolute-epic-gnu.ngrok-free.app',
     'localhost:3000',
   ],
-  // Proxy API requests to backend (so we only need to tunnel frontend)
-  async rewrites() {
-    return [
-      {
-        source: '/api/backend/:path*',
-        destination: `${BACKEND_URL}/api/:path*`,
-      },
-    ];
-  },
+  // /api/backend/* is now served by Next.js route handlers (app/api/backend),
+  // backed by MongoDB — no proxy/rewrite to an external server.
   // Webpack configuration for production build
   webpack: (config, { isServer, webpack }) => {
     // Null out thread-stream/pino test fixtures (they require dev-only modules
