@@ -36,6 +36,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         config={{
           // Social login methods.
           loginMethods: ['email', 'google', 'twitter', 'discord', 'github'],
+          // Match the app: dark, purple-accented modal (Privy defaults to light).
+          appearance: {
+            theme: 'dark',
+            accentColor: '#9b3bff',
+            showWalletLoginFirst: false,
+          },
         }}
       >
         {/* Provisions a Stellar (G...) embedded wallet and exposes useWallet(). */}
