@@ -57,6 +57,26 @@ export function normalizeWalletError(e: unknown, fallback = 'Wallet error'): Pri
 let kit: StellarWalletsKit | null = null;
 let connectedAddress = '';
 
+/**
+ * Optional embedded signer. When the app is on a Privy social-login (embedded)
+ * wallet, the privacy layer signs through it via raw-hash signing instead of
+ * opening the StellarWalletsKit picker, so /shielded works without connecting a
+ * second wallet. Built in ./embedded-signer and registered from usePrivacyPool;
+ * falls back to the kit when null (external wallets).
+ */
+export interface EmbeddedSigner {
+  address: string;
+  signMessage(message: string): Promise<string>;
+  signTransaction(xdr: string): Promise<string>;
+  signAuthEntry(preimageXdrBase64: string): Promise<string>;
+}
+let embedded: EmbeddedSigner | null = null;
+
+export function registerEmbeddedSigner(signer: EmbeddedSigner | null) {
+  embedded = signer;
+  if (signer) connectedAddress = signer.address;
+}
+
 function getKit(): StellarWalletsKit {
   if (kit) return kit;
   kit = new StellarWalletsKit({
@@ -104,6 +124,9 @@ export async function signWalletTransaction(
   opts: { address?: string; networkPassphrase?: string } = {},
 ): Promise<{ signedTxXdr: string; signerAddress: string }> {
   try {
+    if (embedded) {
+      return { signedTxXdr: await embedded.signTransaction(transactionXdr), signerAddress: embedded.address };
+    }
     const address = opts.address || (await getWalletAddress());
     const { signedTxXdr, signerAddress } = await getKit().signTransaction(transactionXdr, {
       address,
@@ -120,6 +143,9 @@ export async function signWalletAuthEntry(
   opts: { address?: string; networkPassphrase?: string } = {},
 ): Promise<{ signedAuthEntry: string; signerAddress: string }> {
   try {
+    if (embedded) {
+      return { signedAuthEntry: await embedded.signAuthEntry(entryXdr), signerAddress: embedded.address };
+    }
     const address = opts.address || (await getWalletAddress());
     const res = await getKit().signAuthEntry(entryXdr, {
       address,
@@ -140,6 +166,9 @@ export async function signWalletMessage(
   opts: { address?: string } = {},
 ): Promise<{ signedMessage: string; signerAddress: string }> {
   try {
+    if (embedded) {
+      return { signedMessage: await embedded.signMessage(message), signerAddress: embedded.address };
+    }
     const address = opts.address || (await getWalletAddress());
     const res = await getKit().signMessage(message, { address });
     const signedMessage = (res as any).signedMessage;
