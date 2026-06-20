@@ -10,8 +10,10 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { loadPrivacyEngine, type PrivacyEngine } from './engine';
-import { connectWallet, getConnectedAddress, signWalletMessage, PrivacyWalletError } from './wallet';
+import { connectWallet, getConnectedAddress, signWalletMessage, registerEmbeddedSigner, PrivacyWalletError } from './wallet';
+import { createEmbeddedSigner } from './embedded-signer';
 import { submitPreparedSorobanTx, type SubmitStatus } from './submit';
+import { useWallet, NETWORK } from '../chain';
 
 const DECIMALS = 7;
 const UNIT = 10 ** DECIMALS;
@@ -56,6 +58,7 @@ const phaseFor = (s: SubmitStatus): PrivacyPhase =>
       : 'confirming';
 
 export function usePrivacyPool() {
+  const main = useWallet();
   const engineRef = useRef<PrivacyEngine | null>(null);
   const [state, setState] = useState<PrivacyState>({
     ready: false, address: '', keysReady: false, busy: false, phase: 'idle',
@@ -78,6 +81,23 @@ export function usePrivacyPool() {
       .catch((e) => !cancelled && fail(e));
     return () => { cancelled = true; };
   }, [patch, fail]);
+
+  // On a Privy embedded (social-login) wallet, sign the privacy flow with it via
+  // raw-hash signing, so /shielded needs no separate StellarWalletsKit connect.
+  // External-wallet users fall back to the kit (signer stays null).
+  useEffect(() => {
+    if (main.walletSource === 'privy' && main.address && main.signRawHash) {
+      registerEmbeddedSigner(
+        createEmbeddedSigner({
+          address: main.address,
+          networkPassphrase: NETWORK.networkPassphrase,
+          rawSign: main.signRawHash,
+        }),
+      );
+    } else {
+      registerEmbeddedSigner(null);
+    }
+  }, [main.walletSource, main.address, main.signRawHash]);
 
   const refresh = useCallback(async () => {
     const eng = engineRef.current;

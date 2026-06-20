@@ -41,6 +41,8 @@ export interface WalletState {
   connectExternalWallet: () => Promise<void>;
   /** 'privy' (social embedded) or 'external' (StellarWalletsKit), or '' if none. */
   walletSource: 'privy' | 'external' | '';
+  /** Privy embedded raw-hash signer (null on external wallets); used by the privacy layer. */
+  signRawHash: SignRawHashFn | null;
   /** testnet setup: friendbot-fund XLM + add USDC trustline (no-op in mock). */
   setupAccount: () => Promise<void>;
   logout: () => Promise<void>;
@@ -178,6 +180,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     createStellarWallet,
     connectExternalWallet,
     walletSource,
+    signRawHash: externalAddress ? null : signFn,
     setupAccount,
     logout: async () => {
       if (externalAddress) {

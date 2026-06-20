@@ -424,6 +424,7 @@ export function DemoWalletProvider({ children }: { children: ReactNode }) {
     createStellarWallet: async () => {},
     connectExternalWallet: async () => {},
     walletSource: 'privy',
+    signRawHash: null,
     setupAccount: async () => {},
     logout: async () => {},
     getExplorerUrl,
