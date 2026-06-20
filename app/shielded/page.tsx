@@ -12,8 +12,9 @@ import {
   Check, BadgeCheck, Cpu, ArrowUpRight, ShieldCheck,
 } from 'lucide-react';
 import { usePrivacyPool, stroopsToXlm } from '@/app/lib/privacy/usePrivacyPool';
-import { getExplorerUrl, getAddressExplorerUrl, PRIVACY } from '@/app/lib/chain';
+import { useWallet, getExplorerUrl, getAddressExplorerUrl, PRIVACY } from '@/app/lib/chain';
 import AppShell from '../components/shell/AppShell';
+import { WalletSelectionModal } from '../components/wallet-selection-modal';
 
 type Tab = 'shield' | 'send' | 'unshield';
 
@@ -26,6 +27,7 @@ const PHASE_LABEL: Record<string, string> = {
 
 export default function ShieldedPage() {
   const { state, connect, shield, sendPrivate, unshield, refresh } = usePrivacyPool();
+  const { isConnected: appConnected } = useWallet();
   const [tab, setTab] = useState<Tab>('shield');
   const [amount, setAmount] = useState('');
   const [noteKey, setNoteKey] = useState('');
@@ -93,17 +95,27 @@ export default function ShieldedPage() {
               </div>
             ) : !state.address ? (
               <div className="py-4">
-                <button
-                  onClick={connect}
-                  disabled={busy}
-                  className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-6 py-4 text-base font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50 disabled:opacity-60"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    {busy ? <><Loader2 className="h-4 w-4 animate-spin" />{state.statusText || 'Connecting…'}</> : 'Connect a Stellar wallet'}
-                  </span>
-                </button>
+                {appConnected ? (
+                  <button
+                    onClick={connect}
+                    disabled={busy}
+                    className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-6 py-4 text-base font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50 disabled:opacity-60"
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2">
+                      {busy ? <><Loader2 className="h-4 w-4 animate-spin" />{state.statusText || 'Connecting…'}</> : 'Unlock private balance'}
+                    </span>
+                  </button>
+                ) : (
+                  <WalletSelectionModal>
+                    <button className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-6 py-4 text-base font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50">
+                      <span className="relative z-10 flex items-center justify-center gap-2">Connect wallet</span>
+                    </button>
+                  </WalletSelectionModal>
+                )}
                 <p className="mt-3 text-center text-xs text-purple-200/60">
-                  Freighter · xBull · Albedo · Lobstr — pick any Stellar wallet
+                  {appConnected
+                    ? 'Signs privately with your connected wallet — no second wallet needed.'
+                    : 'Social login or any Stellar wallet. Your keys stay on your device.'}
                 </p>
               </div>
             ) : (

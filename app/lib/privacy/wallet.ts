@@ -83,6 +83,18 @@ function getKit(): StellarWalletsKit {
     network: CURRENT_NETWORK === 'mainnet' ? WalletNetwork.PUBLIC : WalletNetwork.TESTNET,
     selectedWalletId: FREIGHTER_ID,
     modules: allowAllModules(),
+    // Match the app's dark/glass design instead of the kit's default light modal.
+    modalTheme: {
+      bgColor: '#160f22',
+      textColor: '#f4ecff',
+      solidTextColor: '#ffffff',
+      headerButtonColor: '#c89bff',
+      dividerColor: 'rgba(255, 255, 255, 0.10)',
+      helpBgColor: 'rgba(255, 255, 255, 0.04)',
+      notAvailableTextColor: '#ad92c9',
+      notAvailableBgColor: 'rgba(255, 255, 255, 0.04)',
+      notAvailableBorderColor: 'rgba(255, 255, 255, 0.10)',
+    },
   });
   return kit;
 }
