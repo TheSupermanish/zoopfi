@@ -37,14 +37,14 @@ export default function RewardsPage() {
   const router = useRouter();
   const { ready, authenticated, isConnected } = useWallet();
 
-  const { data: userData } = useUser();
+  const { data: userData, isFetching: userFetching } = useUser();
   const { data: streakInfo } = useStreak();
   const isLoading = userData === undefined;
 
   // Redirect if not registered
   useEffect(() => {
-    if (userData === null) router.replace('/onboarding');
-  }, [userData, router]);
+    if (!userFetching && userData === null) router.replace('/onboarding');
+  }, [userData, userFetching, router]);
 
   // Redirect if not connected
   useEffect(() => {

@@ -21,7 +21,7 @@ export default function PrivatePage() {
   const router = useRouter();
   const { ready, address: walletAddress, authenticated, isConnected, ops } = useWallet();
 
-  const { data: userData } = useUser();
+  const { data: userData, isFetching: userFetching } = useUser();
   const invalidate = useChainInvalidate();
   const isLoading = userData === undefined;
 
@@ -52,8 +52,8 @@ export default function PrivatePage() {
   }, [ops, walletAddress]);
 
   useEffect(() => {
-    if (userData === null) router.replace('/onboarding');
-  }, [userData, router]);
+    if (!userFetching && userData === null) router.replace('/onboarding');
+  }, [userData, userFetching, router]);
 
   useEffect(() => {
     if (!walletAddress) return;

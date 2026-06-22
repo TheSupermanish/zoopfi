@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useWallet } from '../lib/chain';
-import { checkUsername, registerUser, getUserByAddress, AccountType, BusinessCategory, BusinessInfo } from '../lib/api';
+import { useUser } from '../lib/hooks';
+import { checkUsername, registerUser, AccountType, BusinessCategory, BusinessInfo } from '../lib/api';
 import { Hand, User, Building2, Check, X, PartyPopper, ShoppingBag, UtensilsCrossed, Wrench, Laptop, Stethoscope, Clapperboard, Package, LucideIcon } from 'lucide-react';
 
 type Step = 'welcome' | 'account-type' | 'profile-info' | 'username' | 'creating' | 'success';
@@ -20,7 +22,11 @@ const BUSINESS_CATEGORIES: { value: BusinessCategory; label: string; Icon: Lucid
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { address: walletAddress, authenticated, ready, setupAccount } = useWallet();
+  // Same shared profile cache AuthRouter reads — both must agree on "registered?"
+  // or they ping-pong. (undefined = loading, null = no profile, object = profile)
+  const { data: existingUser, isFetching: userFetching } = useUser();
 
   const [step, setStep] = useState<Step>('welcome');
   const [error, setError] = useState('');
@@ -42,23 +48,13 @@ export default function OnboardingPage() {
   const [isChecking, setIsChecking] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
 
-  // Check if user already registered
+  // A returning user who already has a profile shouldn't sit on onboarding.
+  // Read from the shared cache (not a second fetch) and only act once it has
+  // settled — acting on in-flight/stale data is what caused the redirect loop.
   useEffect(() => {
-    if (!walletAddress) return;
-
-    const checkUser = async () => {
-      try {
-        const userData = await getUserByAddress(walletAddress);
-        if (userData) {
-          router.push('/dashboard');
-        }
-      } catch (error) {
-        // User not found, continue with onboarding
-      }
-    };
-
-    checkUser();
-  }, [walletAddress, router]);
+    if (!walletAddress || userFetching) return;
+    if (existingUser) router.replace('/dashboard');
+  }, [walletAddress, existingUser, userFetching, router]);
 
   // Redirect if not connected
   useEffect(() => {
@@ -133,6 +129,10 @@ export default function OnboardingPage() {
       });
 
       if (result.user) {
+        // Seed the shared profile cache immediately so AuthRouter sees the new
+        // profile the moment we land on /dashboard — otherwise its stale `null`
+        // would bounce the freshly-registered user straight back to onboarding.
+        queryClient.setQueryData(['user', walletAddress], result.user);
         // Fund the embedded wallet (friendbot) + add the USDC trustline in the
         // background. Testnet provisioning can be slow, so we never block entry
         // on it — the user lands in the app and it finishes behind the scenes.
