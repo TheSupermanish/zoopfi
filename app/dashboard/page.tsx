@@ -84,11 +84,16 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-10%] h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/12 blur-[150px]" />
+        <div className="absolute right-[-8%] top-[25%] h-[26rem] w-[26rem] rounded-full bg-blue-500/8 blur-[140px]" />
+      </div>
       <PageShell variant="wide">
         {/* Compact greeting — the balance is the hero, not this */}
         <div className="mb-6">
           <p className="text-sm text-purple-200/55">{greeting},</p>
-          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{name}</h1>
+          <h1 className="bg-gradient-to-r from-white to-[#c89bff] bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-3xl">{name}</h1>
         </div>
 
         {/* Balance */}

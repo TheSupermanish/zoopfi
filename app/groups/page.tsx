@@ -393,6 +393,12 @@ export default function GroupsPage() {
 
   return (
     <AppShell>
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-8%] h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/14 blur-[150px]" />
+        <div className="absolute right-[-8%] bottom-[10%] h-[28rem] w-[28rem] rounded-full bg-amber-500/10 blur-[140px]" />
+      </div>
+
       <div className="flex h-full overflow-hidden">
         {/* Mobile Groups List - shown on mobile when no detail is open */}
         <div className={`lg:hidden absolute inset-0 z-10 overflow-y-auto transition-transform duration-300 ${
@@ -407,7 +413,7 @@ export default function GroupsPage() {
               </div>
               <button
                 onClick={() => setShowCreateGroup(true)}
-                className="w-10 h-10 rounded-full bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] text-white flex items-center justify-center shadow-lg shadow-[#7f13ec]/30"
+                className="w-10 h-10 rounded-full bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] text-white flex items-center justify-center shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
               >
                 <Plus className="w-5 h-5" />
               </button>
@@ -419,21 +425,27 @@ export default function GroupsPage() {
                 <div className="spinner" />
               </div>
             ) : groups.length === 0 ? (
-              <Card className="text-center">
-                <div className="w-20 h-20 mx-auto rounded-2xl bg-[#9b3bff]/15 text-[#c89bff] flex items-center justify-center mb-4">
-                  <Users className="w-10 h-10" />
+              <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-8 text-center shadow-2xl shadow-black/40 animate-fade-in">
+                <div className="relative mx-auto mb-5 w-fit">
+                  <div className="absolute inset-0 rounded-2xl bg-[#7f13ec]/40 blur-2xl animate-pulse-glow" />
+                  <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/40">
+                    <Users className="h-10 w-10" />
+                  </div>
                 </div>
-                <h2 className="text-base font-semibold text-white mb-2">No groups yet</h2>
-                <p className="text-sm text-purple-200/60 mb-6">
-                  Create a group to start splitting expenses
+                <h2 className="mb-2 bg-gradient-to-r from-white to-[#c89bff] bg-clip-text text-xl font-bold tracking-tight text-transparent">
+                  No groups yet
+                </h2>
+                <p className="mx-auto mb-6 max-w-sm text-sm text-purple-200/60">
+                  Create a group to start splitting expenses with friends.
                 </p>
                 <button
                   onClick={() => setShowCreateGroup(true)}
-                  className="btn btn-primary h-12 px-6"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-6 py-3 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
                 >
+                  <Plus className="h-5 w-5" />
                   Create Your First Group
                 </button>
-              </Card>
+              </div>
             ) : (
               <div className="space-y-3">
                 {groups.map((group) => {
@@ -444,11 +456,11 @@ export default function GroupsPage() {
                     <button
                       key={group._id}
                       onClick={() => selectGroup(group)}
-                      className="surface lift w-full flex items-center gap-4 p-4 rounded-2xl text-left"
+                      className="group lift w-full flex items-center gap-4 p-4 rounded-2xl text-left border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] shadow-lg shadow-black/30"
                     >
                       <div
-                        className="flex items-center justify-center w-14 h-14 rounded-xl text-white shrink-0"
-                        style={{ backgroundColor: group.color }}
+                        className="flex items-center justify-center w-14 h-14 rounded-2xl text-white shrink-0 shadow-lg"
+                        style={{ backgroundImage: `linear-gradient(135deg, ${group.color}, #6a10c7)` }}
                       >
                         <span className="text-2xl">{group.icon}</span>
                       </div>
@@ -474,7 +486,7 @@ export default function GroupsPage() {
                 {/* Create New Group Button */}
                 <button
                   onClick={() => setShowCreateGroup(true)}
-                  className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed border-white/10 text-purple-200/60 hover:border-[#9b3bff]/60 hover:text-[#c89bff] transition-colors"
+                  className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] text-purple-200/60 hover:border-[#9b3bff]/60 hover:text-[#c89bff] transition-colors"
                 >
                   <Plus className="w-5 h-5" />
                   <span className="font-medium">Create New Group</span>
@@ -485,13 +497,13 @@ export default function GroupsPage() {
         </div>
 
         {/* Groups Sidebar - Desktop Only */}
-        <aside className="w-72 hidden lg:flex flex-col border-r border-white/5">
+        <aside className="w-72 hidden lg:flex flex-col border-r border-white/10">
           <div className="p-4 flex flex-col h-full">
             <div className="flex items-center justify-between mb-4 px-2">
               <h1 className="text-sm font-semibold uppercase tracking-wider text-purple-200/60">My Groups</h1>
               <button
                 onClick={() => setShowCreateGroup(true)}
-                className="text-[#c89bff] hover:text-white transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-[#c89bff] transition-colors hover:bg-white/[0.08] hover:text-white"
               >
                 <Plus className="w-5 h-5" />
               </button>
@@ -503,8 +515,13 @@ export default function GroupsPage() {
                   <div className="spinner" />
                 </div>
               ) : groups.length === 0 ? (
-                <div className="text-center py-8 text-purple-200/60">
-                  <Users className="w-8 h-8 mx-auto mb-2" />
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] py-8 text-center text-purple-200/60">
+                  <div className="relative mx-auto mb-3 w-fit">
+                    <div className="absolute inset-0 rounded-2xl bg-[#7f13ec]/30 blur-xl animate-pulse-glow" />
+                    <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30">
+                      <Users className="h-6 w-6" />
+                    </div>
+                  </div>
                   <p className="text-sm">No groups yet</p>
                 </div>
               ) : (
@@ -520,12 +537,12 @@ export default function GroupsPage() {
                       className={`group flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-left ${
                         isActive
                           ? 'bg-[#9b3bff]/15 border border-[#9b3bff]/30'
-                          : 'hover:bg-white/[0.08] border border-transparent'
+                          : 'hover:bg-white/[0.06] border border-transparent'
                       }`}
                     >
                       <div
-                        className="flex items-center justify-center w-10 h-10 rounded-xl text-white shrink-0"
-                        style={{ backgroundColor: group.color }}
+                        className="flex items-center justify-center w-10 h-10 rounded-xl text-white shrink-0 shadow-md"
+                        style={{ backgroundImage: `linear-gradient(135deg, ${group.color}, #6a10c7)` }}
                       >
                         <span className="text-lg">{group.icon}</span>
                       </div>
@@ -546,9 +563,9 @@ export default function GroupsPage() {
             <div className="mt-4 pt-4 border-t border-white/10">
               <button
                 onClick={() => setShowCreateGroup(true)}
-                className="btn btn-primary w-full h-12"
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-4 h-4" />
                 Create New Group
               </button>
             </div>
@@ -561,18 +578,24 @@ export default function GroupsPage() {
         }`}>
           {!selectedGroup ? (
             // Empty State - Desktop Only (mobile has its own empty state)
-            <div className="h-full hidden lg:flex flex-col items-center justify-center text-center p-8">
-              <div className="w-24 h-24 rounded-2xl bg-[#9b3bff]/15 text-[#c89bff] flex items-center justify-center mb-6">
-                <Users className="w-12 h-12" />
+            <div className="h-full hidden lg:flex flex-col items-center justify-center text-center p-8 animate-fade-in">
+              <div className="relative mb-7">
+                <div className="absolute inset-0 rounded-2xl bg-[#7f13ec]/40 blur-3xl animate-pulse-glow" />
+                <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white shadow-2xl shadow-[#7f13ec]/40">
+                  <Users className="h-12 w-12" />
+                </div>
               </div>
-              <h2 className="text-2xl font-bold tracking-tight text-white mb-2">Welcome to Groups</h2>
-              <p className="text-sm text-purple-200/60 mb-6 max-w-md">
+              <h2 className="mb-3 bg-gradient-to-r from-white via-purple-100 to-[#c89bff] bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+                Welcome to Groups
+              </h2>
+              <p className="mb-7 max-w-md text-balance text-sm text-purple-200/70 sm:text-base">
                 Split bills and expenses with friends. Create a group to get started!
               </p>
               <button
                 onClick={() => setShowCreateGroup(true)}
-                className="btn btn-primary h-12 px-6"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-6 py-3 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
               >
+                <Plus className="h-5 w-5" />
                 Create Your First Group
               </button>
             </div>
@@ -594,7 +617,7 @@ export default function GroupsPage() {
                 action={
                   <button
                     onClick={() => setShowAddMember(true)}
-                    className="btn btn-secondary h-10 px-4 text-sm"
+                    className="flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10"
                   >
                     <UserPlus className="w-4 h-4" />
                     Invite
@@ -631,7 +654,7 @@ export default function GroupsPage() {
                     {selectedGroup.members.slice(0, 4).map((member, i) => (
                       <div
                         key={i}
-                        className="w-8 h-8 rounded-full bg-[#9b3bff]/15 text-[#c89bff] border-2 border-white/10 flex items-center justify-center text-xs font-bold"
+                        className="w-8 h-8 rounded-full bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white border-2 border-[#16121f] flex items-center justify-center text-xs font-bold shadow-md"
                       >
                         {member.username[0].toUpperCase()}
                       </div>
@@ -689,7 +712,7 @@ export default function GroupsPage() {
                             key={member.walletAddress}
                             className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.06] transition-colors"
                           >
-                            <div className="w-10 h-10 rounded-full bg-[#9b3bff]/15 text-[#c89bff] flex items-center justify-center font-bold">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white flex items-center justify-center font-bold shadow-md">
                               {member.username[0].toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -778,10 +801,10 @@ export default function GroupsPage() {
                           return (
                             <div key={expense._id} className="flex gap-4 relative">
                               <div className="flex flex-col items-center">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 ${
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-10 shadow-md ${
                                   isSettlement
-                                    ? 'bg-emerald-500/15 text-emerald-300'
-                                    : 'bg-[#9b3bff]/15 text-[#c89bff]'
+                                    ? 'bg-gradient-to-br from-emerald-400 to-teal-600 text-white'
+                                    : 'bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white'
                                 }`}>
                                   {isSettlement
                                     ? <ArrowUpRight className="w-5 h-5" />
@@ -824,7 +847,7 @@ export default function GroupsPage() {
                   <div className="p-4 border-t border-white/10">
                     <button
                       onClick={() => setShowAddExpense(true)}
-                      className="btn btn-primary w-full h-12"
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
                     >
                       <Plus className="w-4 h-4" />
                       Add New Expense
@@ -839,15 +862,21 @@ export default function GroupsPage() {
 
       {/* Create Group Modal */}
       {showCreateGroup && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="surface-strong rounded-2xl p-6 w-full max-w-md animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowCreateGroup(false)} />
+          <div className="relative w-full max-w-md animate-scale-in overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#16121f] to-[#100b18] p-6 shadow-2xl shadow-black/60">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-base font-semibold text-white">Create New Group</h2>
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30">
+                  <Users className="h-5 w-5" />
+                </span>
+                <h2 className="text-base font-semibold text-white">Create New Group</h2>
+              </div>
               <button
                 onClick={() => setShowCreateGroup(false)}
-                className="text-purple-200/60 hover:text-white transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-purple-200/50 transition hover:bg-white/10 hover:text-white"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -855,8 +884,8 @@ export default function GroupsPage() {
               {/* Icon & Color Selection */}
               <div className="flex items-center gap-4">
                 <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-                  style={{ backgroundColor: newGroupColor }}
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-lg"
+                  style={{ backgroundImage: `linear-gradient(135deg, ${newGroupColor}, #6a10c7)` }}
                 >
                   {newGroupIcon}
                 </div>
@@ -926,14 +955,14 @@ export default function GroupsPage() {
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => setShowCreateGroup(false)}
-                  className="flex-1 btn btn-secondary h-12"
+                  className="flex h-12 flex-1 items-center justify-center rounded-xl border border-white/10 bg-white/5 font-semibold text-white transition-colors hover:bg-white/10"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateGroup}
                   disabled={isCreating || !newGroupName}
-                  className="flex-1 btn btn-primary h-12"
+                  className="flex h-12 flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isCreating ? 'Creating...' : 'Create Group'}
                 </button>
@@ -945,8 +974,9 @@ export default function GroupsPage() {
 
       {/* Add Expense Modal */}
       {showAddExpense && selectedGroup && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="surface-strong rounded-2xl w-full max-w-lg animate-scale-in my-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          <div className="relative w-full max-w-lg animate-scale-in overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#16121f] to-[#100b18] shadow-2xl shadow-black/60 my-4">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-white/10">
               <div>
@@ -1101,7 +1131,7 @@ export default function GroupsPage() {
                         className="flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-white/10"
                       >
                         {/* Avatar */}
-                        <div className="w-10 h-10 rounded-full bg-[#9b3bff]/15 text-[#c89bff] flex items-center justify-center font-bold shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white flex items-center justify-center font-bold shrink-0 shadow-md">
                           {member.username[0].toUpperCase()}
                         </div>
 
@@ -1224,14 +1254,14 @@ export default function GroupsPage() {
                   setSplitType('equal');
                   setMemberSplits({});
                 }}
-                className="flex-1 btn btn-secondary h-12"
+                className="flex h-12 flex-1 items-center justify-center rounded-xl border border-white/10 bg-white/5 font-semibold text-white transition-colors hover:bg-white/10"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddExpense}
                 disabled={isAddingExpense || !expenseDescription || !expenseAmount || (splitType !== 'equal' && !isSplitValid())}
-                className="flex-1 btn btn-primary h-12 flex items-center justify-center gap-2"
+                className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isAddingExpense ? (
                   <>
@@ -1252,15 +1282,21 @@ export default function GroupsPage() {
 
       {/* Add Member Modal */}
       {showAddMember && selectedGroup && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="surface-strong rounded-2xl p-6 w-full max-w-md animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowAddMember(false)} />
+          <div className="relative w-full max-w-md animate-scale-in overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#16121f] to-[#100b18] p-6 shadow-2xl shadow-black/60">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-base font-semibold text-white">Add Member</h2>
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30">
+                  <UserPlus className="h-5 w-5" />
+                </span>
+                <h2 className="text-base font-semibold text-white">Add Member</h2>
+              </div>
               <button
                 onClick={() => setShowAddMember(false)}
-                className="text-purple-200/60 hover:text-white transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-purple-200/50 transition hover:bg-white/10 hover:text-white"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
@@ -1292,14 +1328,14 @@ export default function GroupsPage() {
                     setNewMemberUsername('');
                     setError('');
                   }}
-                  className="flex-1 btn btn-secondary h-12 whitespace-nowrap"
+                  className="flex h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl border border-white/10 bg-white/5 font-semibold text-white transition-colors hover:bg-white/10"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddMember}
                   disabled={isAddingMember || !newMemberUsername}
-                  className="flex-1 btn btn-primary h-12 flex items-center justify-center gap-2 whitespace-nowrap"
+                  className="flex h-12 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isAddingMember ? (
                     <>

@@ -116,6 +116,10 @@ export const getAddressExplorerUrl = (address: string): string => {
   return `${NETWORK.explorerBase}/${kind}/${address}`;
 };
 
+/** Explorer URL for a ledger (block) number. */
+export const getLedgerExplorerUrl = (ledger: number | string): string =>
+  `${NETWORK.explorerBase}/ledger/${ledger}`;
+
 // Deployed contract IDs (filled in as we deploy to testnet). Empty => the
 // feature falls back to mock behavior.
 // Defaults are our public Stellar testnet deployments, so the app works on a

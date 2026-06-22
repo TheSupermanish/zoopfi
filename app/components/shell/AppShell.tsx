@@ -33,11 +33,19 @@ import NotificationBell from '../NotificationBell';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { address, isConnected } = useWallet();
+  const { address, isConnected: walletConnected } = useWallet();
   const { data: user } = useUser();
   const accountType: AccountType = user?.accountType ?? 'personal';
   const isBusiness = accountType === 'business';
   const { primary, overflow, action } = getNav(accountType);
+
+  // Auth state only resolves on the client (Privy has no SSR session), so gate
+  // the connected/disconnected header on a mounted flag — the server and the
+  // first client render both show the logged-out state, avoiding a hydration
+  // mismatch, then we switch to the connected header after mount.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isConnected = mounted && walletConnected;
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-[#0a0512] text-white">
@@ -73,7 +81,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <header className="surface-rail sticky top-0 z-40 flex items-center justify-between border-b border-white/10 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
         <Brand isBusiness={isBusiness} />
         <div className="flex items-center gap-1.5">
-          {address && <NotificationBell walletAddress={address} />}
+          {isConnected && address && <NotificationBell walletAddress={address} />}
           {isConnected ? (
             <AccountMenu
               accountType={accountType}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useWallet } from '@/app/lib/chain';
 import { useUser, useTransactions } from '@/app/lib/hooks';
 import AppShell from '../components/shell/AppShell';
-import { PageShell, PageHeader, Card, StatTile } from '../components/ui/primitives';
+import { PageShell, Card, StatTile } from '../components/ui/primitives';
 import { getTransactions } from '../lib/api';
 import { ArrowUpRight, ArrowDownLeft, Search, Check, Copy, Receipt } from 'lucide-react';
 
@@ -180,20 +180,34 @@ export default function HistoryPage() {
 
   return (
     <AppShell>
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-8%] h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/12 blur-[150px]" />
+        <div className="absolute right-[-8%] bottom-[10%] h-[26rem] w-[26rem] rounded-full bg-emerald-500/8 blur-[140px]" />
+      </div>
       <PageShell variant="wide">
         <div className="flex flex-col gap-8">
           {/* Page Heading */}
-          <PageHeader
-            title="Transaction history"
-            subtitle="View and manage your crypto activity on Stellar Network."
-            icon={Receipt}
-            action={
-              <button className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-purple-200/80 transition-colors hover:bg-white/[0.08] hover:text-white">
-                <ArrowDownLeft className="h-4 w-4" />
-                <span>Export CSV</span>
-              </button>
-            }
-          />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3.5">
+              <span className="relative flex h-12 w-12 shrink-0 items-center justify-center">
+                <span className="absolute inset-0 rounded-2xl bg-[#7f13ec]/30 blur-xl animate-pulse-glow" />
+                <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] shadow-lg shadow-[#7f13ec]/40">
+                  <Receipt className="h-6 w-6 text-white" />
+                </span>
+              </span>
+              <div>
+                <h1 className="bg-gradient-to-r from-white to-[#c89bff] bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-3xl">
+                  Activity
+                </h1>
+                <p className="mt-0.5 text-sm text-purple-200/60">Every payment, settled and verifiable on Stellar.</p>
+              </div>
+            </div>
+            <button className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-medium text-purple-200/80 transition-colors hover:bg-white/[0.08] hover:text-white">
+              <ArrowDownLeft className="h-4 w-4" />
+              <span>Export CSV</span>
+            </button>
+          </div>
 
           {/* Stats Overview */}
           <section className="grid grid-cols-1 gap-3 md:grid-cols-3">

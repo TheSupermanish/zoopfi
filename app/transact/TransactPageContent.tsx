@@ -17,7 +17,7 @@ import {
 } from '../lib/api';
 import { useWallet, formatBalance, formatUSD, getExplorerUrl } from '@/app/lib/chain';
 import { useUser, useBalance, useTransactions, useChainInvalidate } from '@/app/lib/hooks';
-import { PageShell, PageHeader, Card } from '@/app/components/ui/primitives';
+import { PageShell, Card } from '@/app/components/ui/primitives';
 import { toast } from 'sonner';
 
 type Step = 'form' | 'confirm' | 'success';
@@ -295,12 +295,29 @@ export default function TransactPageContent() {
 
   return (
     <AppShell>
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-8%] h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/12 blur-[150px]" />
+        <div className="absolute right-[-8%] top-[20%] h-[26rem] w-[26rem] rounded-full bg-blue-500/8 blur-[140px]" />
+      </div>
       <PageShell variant="wide">
-        <PageHeader
-          title="Transact"
-          subtitle="Send & receive assets securely and instantly."
-          action={modeToggle}
-        />
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <span className="relative flex h-12 w-12 shrink-0 items-center justify-center">
+              <span className="absolute inset-0 rounded-2xl bg-[#7f13ec]/30 blur-xl animate-pulse-glow" />
+              <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] shadow-lg shadow-[#7f13ec]/40">
+                {mode === 'send' ? <ArrowUpRight className="h-6 w-6 text-white" /> : <ArrowDownLeft className="h-6 w-6 text-white" />}
+              </span>
+            </span>
+            <div>
+              <h1 className="bg-gradient-to-r from-white to-[#c89bff] bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-3xl">
+                {mode === 'send' ? 'Send' : 'Receive'}
+              </h1>
+              <p className="mt-0.5 text-sm text-purple-200/60">Send &amp; receive assets securely and instantly on Stellar.</p>
+            </div>
+          </div>
+          {modeToggle}
+        </div>
 
         <div className="flex flex-col gap-6 lg:flex-row">
 
