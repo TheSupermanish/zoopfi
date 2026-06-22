@@ -14,9 +14,29 @@ import { connectWallet, getConnectedAddress, signWalletMessage, registerEmbedded
 import { createEmbeddedSigner } from './embedded-signer';
 import { submitPreparedSorobanTx, type SubmitStatus } from './submit';
 import { useWallet, NETWORK } from '../chain';
+import {
+  registerKeys, getRegistered, normUser, syntheticAddress, syntheticSig, type PubKeys,
+} from './directory';
+
+/** Read the signed-in user's profile (username/displayName) from the local app DB. */
+function readMyProfile(): { username?: string; display?: string } {
+  try {
+    const db = JSON.parse(localStorage.getItem('zoopfi.demo.db.v2') || '{}');
+    return { username: db?.user?.username, display: db?.user?.displayName };
+  } catch {
+    return {};
+  }
+}
 
 const DECIMALS = 7;
 const UNIT = 10 ** DECIMALS;
+
+// The deployed pool is constructed with maximum_deposit_amount = 1_000_000_000
+// stroops (100 XLM). A deposit above this reverts on-chain with the opaque
+// Error(Contract, #6) WrongExtAmount, so we cap + message it client-side instead
+// of burning a ~8s Groth16 proof just to fail at simulation.
+export const MAX_DEPOSIT_XLM = 100;
+const MAX_DEPOSIT_STROOPS = BigInt(MAX_DEPOSIT_XLM) * BigInt(UNIT);
 
 export const xlmToStroops = (xlm: string | number): bigint =>
   BigInt(Math.round(Number(xlm) * UNIT));
@@ -30,8 +50,11 @@ export interface PrivateNote {
   [k: string]: any;
 }
 export interface PoolActivity {
-  kind: string;
+  kind?: string;
   txHash?: string;
+  ledger?: number;       // Stellar ledger the shielded tx landed in
+  commitments?: number;  // new note commitments added to the merkle tree
+  nullifiers?: number;   // notes spent (marked used) by this tx
   [k: string]: any;
 }
 
@@ -141,6 +164,14 @@ export function usePrivacyPool() {
         const sigBytes = Uint8Array.from(atob(signedMessage), (c) => c.charCodeAt(0));
         await eng.webClient.deriveAndSaveUserKeys(address, sigBytes);
       }
+      // Publish my public keys to the username directory so others can pay me by @handle.
+      try {
+        const { username, display } = readMyProfile();
+        const mine = await eng.webClient.getUserKeys(address).catch(() => null);
+        if (username && mine?.noteKeypair?.public && mine?.encryptionKeypair?.public) {
+          registerKeys(username, { notePub: mine.noteKeypair.public, encPub: mine.encryptionKeypair.public }, display);
+        }
+      } catch { /* directory is best-effort */ }
       patch({ keysReady: true, busy: false, statusText: '' });
       void refresh();
     } catch (e) {
@@ -204,11 +235,20 @@ export function usePrivacyPool() {
   const shield = useCallback(
     (xlm: string) => {
       const amount = xlmToStroops(xlm);
+      if (amount > MAX_DEPOSIT_STROOPS) {
+        fail(
+          new PrivacyWalletError(
+            `This pool accepts up to ${MAX_DEPOSIT_XLM} XLM per shield. Try a smaller amount.`,
+            'WALLET_ERROR',
+          ),
+        );
+        return Promise.resolve(undefined);
+      }
       return run('Shield', (pid, addr) =>
         engineRef.current!.webClient.executeDeposit(pid, addr, amount, [amount, BigInt(0)], submitFn(), onStatus()),
       );
     },
-    [run, submitFn, onStatus],
+    [run, fail, submitFn, onStatus],
   );
 
   /** Send privately: transfer to a recipient's note + encryption public keys. */
@@ -242,5 +282,38 @@ export function usePrivacyPool() {
     return engineRef.current.webClient.getUserKeys(address).catch(() => null);
   }, []);
 
-  return { state, connect, shield, sendPrivate, unshield, refresh, myKeys };
+  /** Resolve a @username to its pool public keys (registry first, else deterministic). */
+  const resolveRecipient = useCallback(async (username: string): Promise<PubKeys> => {
+    const u = normUser(username);
+    if (!u) throw new PrivacyWalletError('Enter a recipient username.', 'WALLET_ERROR');
+    const reg = getRegistered(u);
+    if (reg) return { notePub: reg.notePub, encPub: reg.encPub };
+    // Derive a stable keypair for a recipient who hasn't published keys on this device.
+    const eng = engineRef.current!;
+    const addr = syntheticAddress(u);
+    let k = await eng.webClient.getUserKeys(addr).catch(() => null);
+    if (!k) {
+      await eng.webClient.deriveAndSaveUserKeys(addr, syntheticSig(u));
+      k = await eng.webClient.getUserKeys(addr);
+    }
+    const keys: PubKeys = { notePub: k.noteKeypair.public, encPub: k.encryptionKeypair.public };
+    registerKeys(u, keys);
+    return keys;
+  }, []);
+
+  /** Send privately to a @username — resolves keys under the hood, no hex required. */
+  const sendPrivateToUsername = useCallback(
+    (username: string, xlm: string) => {
+      const amount = xlmToStroops(xlm);
+      return run('Private send', async (pid, addr) => {
+        const keys = await resolveRecipient(username);
+        return engineRef.current!.webClient.executeTransfer(
+          pid, addr, amount, keys.notePub, keys.encPub, submitFn(), onStatus(),
+        );
+      });
+    },
+    [run, resolveRecipient, submitFn, onStatus],
+  );
+
+  return { state, connect, shield, sendPrivate, sendPrivateToUsername, resolveRecipient, unshield, refresh, myKeys };
 }

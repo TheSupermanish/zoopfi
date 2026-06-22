@@ -6,7 +6,6 @@ import { useWallet } from '@/app/lib/chain';
 import { useUser } from '@/app/lib/hooks';
 import Link from 'next/link';
 import AppShell from '../components/shell/AppShell';
-import { PageShell, PageHeader, Card } from '../components/ui/primitives';
 import {
   getContacts,
   deleteContact,
@@ -241,27 +240,48 @@ export default function ContactsPage() {
         : 'text-purple-200/60 hover:bg-white/5 hover:text-white'
     }`;
 
+  // Premium glass card — matches the recipe used across vault/rewards/swap.
+  const cardClass =
+    'rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] p-6 shadow-2xl shadow-black/40';
+
   return (
     <AppShell>
-      <PageShell variant="wide">
-        <PageHeader
-          title="Friends"
-          subtitle="Connect and send money to your friends instantly."
-          icon={Users}
-          accent="rose"
-          action={
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-5 py-2.5 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
-            >
-              <UserPlus className="h-5 w-5" />
-              Add Friend
-            </button>
-          }
-        />
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-8%] h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/14 blur-[150px]" />
+        <div className="absolute right-[-8%] bottom-[10%] h-[28rem] w-[28rem] rounded-full bg-rose-500/10 blur-[140px]" />
+      </div>
+
+      <div className="relative mx-auto max-w-4xl px-4 py-10 sm:py-14">
+        {/* Hero */}
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 rounded-2xl bg-rose-500/35 blur-2xl animate-pulse-glow" />
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 to-pink-600 shadow-lg shadow-rose-500/40">
+                <Users className="h-7 w-7 text-white" />
+              </div>
+            </div>
+            <div>
+              <h1 className="bg-gradient-to-r from-white to-[#c89bff] bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-3xl">
+                Friends
+              </h1>
+              <p className="mt-1 text-sm text-purple-200/70">
+                Connect and send money to your friends instantly.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-5 py-2.5 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
+          >
+            <UserPlus className="h-5 w-5" />
+            Add Friend
+          </button>
+        </div>
 
         {/* Tabs */}
-        <div className="surface mb-4 flex gap-1.5 rounded-2xl p-1.5">
+        <div className="surface mb-4 mt-8 flex gap-1.5 rounded-2xl p-1.5">
           <button onClick={() => setActiveTab('friends')} className={tabClass(activeTab === 'friends')}>
             <Users className="h-4 w-4" />
             Friends ({contacts.length})
@@ -302,8 +322,8 @@ export default function ContactsPage() {
                 <div className="spinner" />
               </div>
             ) : filteredContacts.length === 0 ? (
-              <Card className="py-12 text-center">
-                <span className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[#9b3bff]/15 text-[#c89bff]">
+              <div className={`${cardClass} animate-fade-in py-12 text-center`}>
+                <span className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400/20 to-pink-600/20 text-rose-300">
                   <Users className="h-12 w-12" />
                 </span>
                 <h3 className="mb-2 text-base font-semibold text-white">
@@ -323,17 +343,17 @@ export default function ContactsPage() {
                     Add Your First Friend
                   </button>
                 )}
-              </Card>
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {filteredContacts.map((contact, index) => (
-                  <Card
+                  <div
                     key={contact._id}
-                    className="lift group animate-fade-in-up"
+                    className={`${cardClass} lift group animate-fade-in-up`}
                   >
                     <div className="flex items-center gap-4" style={{ animationDelay: `${index * 50}ms` }}>
                       <div
-                        className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${getAvatarColor(contact.contactUsername)} shadow-lg transition-transform group-hover:scale-105`}
+                        className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${getAvatarColor(contact.contactUsername)} shadow-lg transition-transform group-hover:scale-105`}
                       >
                         <span className="text-xl font-bold text-white">
                           {contact.contactUsername.charAt(0).toUpperCase()}
@@ -370,7 +390,7 @@ export default function ContactsPage() {
                         <Trash2 className="h-5 w-5" />
                       </button>
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             )}
@@ -381,22 +401,22 @@ export default function ContactsPage() {
         {activeTab === 'requests' && (
           <div className="flex flex-col gap-4">
             {receivedRequests.length === 0 ? (
-              <Card className="py-12 text-center">
-                <span className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-300">
+              <div className={`${cardClass} animate-fade-in py-12 text-center`}>
+                <span className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400/20 to-orange-600/20 text-amber-300">
                   <MailOpen className="h-12 w-12" />
                 </span>
                 <h3 className="mb-2 text-base font-semibold text-white">No pending requests</h3>
                 <p className="mx-auto max-w-sm text-sm text-purple-200/60">
                   When someone sends you a friend request, it will appear here for you to accept or decline.
                 </p>
-              </Card>
+              </div>
             ) : (
               <div className="space-y-4">
                 {receivedRequests.map((request, index) => (
-                  <Card key={request._id} className="animate-fade-in-up">
+                  <div key={request._id} className={`${cardClass} animate-fade-in-up`}>
                     <div className="flex items-start gap-4" style={{ animationDelay: `${index * 50}ms` }}>
                       <div
-                        className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${getAvatarColor(request.senderUsername)} shadow-lg`}
+                        className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${getAvatarColor(request.senderUsername)} shadow-lg`}
                       >
                         <span className="text-xl font-bold text-white">
                           {request.senderUsername.charAt(0).toUpperCase()}
@@ -430,7 +450,7 @@ export default function ContactsPage() {
                         Accept
                       </button>
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             )}
@@ -441,23 +461,23 @@ export default function ContactsPage() {
         {activeTab === 'sent' && (
           <div className="flex flex-col gap-4">
             {sentRequests.length === 0 ? (
-              <Card className="py-12 text-center">
-                <span className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-300">
+              <div className={`${cardClass} animate-fade-in py-12 text-center`}>
+                <span className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400/20 to-blue-600/20 text-blue-300">
                   <Send className="h-12 w-12" />
                 </span>
                 <h3 className="mb-2 text-base font-semibold text-white">No sent requests</h3>
                 <p className="mx-auto max-w-sm text-sm text-purple-200/60">
                   Requests you've sent will appear here while they're waiting for a response.
                 </p>
-              </Card>
+              </div>
             ) : (
               <div className="space-y-4">
                 {sentRequests.map((request, index) => (
-                  <Card key={request._id} className="animate-fade-in-up">
+                  <div key={request._id} className={`${cardClass} animate-fade-in-up`}>
                     <div className="flex items-center justify-between" style={{ animationDelay: `${index * 50}ms` }}>
                       <div className="flex items-center gap-4">
                         <div
-                          className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${getAvatarColor(request.receiverUsername)} shadow-lg`}
+                          className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${getAvatarColor(request.receiverUsername)} shadow-lg`}
                         >
                           <span className="text-xl font-bold text-white">
                             {request.receiverUsername.charAt(0).toUpperCase()}
@@ -483,13 +503,13 @@ export default function ContactsPage() {
                         Cancel
                       </button>
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             )}
           </div>
         )}
-      </PageShell>
+      </div>
 
       {/* Add Friend Modal */}
       {showAddForm && (

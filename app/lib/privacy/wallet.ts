@@ -51,6 +51,11 @@ export function normalizeWalletError(e: unknown, fallback = 'Wallet error'): Pri
   if (/insufficient|underfunded|not enough|op_underfunded|tx_insufficient|#2\b|insufficientshares/.test(lower)) {
     return new PrivacyWalletError('Insufficient balance for this transaction.', 'INSUFFICIENT_BALANCE');
   }
+  // Pool deposit cap: WrongExtAmount (Error #6) fires when a shield exceeds the
+  // pool's maximum_deposit_amount. Surface a human message instead of the raw host error.
+  if (/wrongextamount|error\(contract,\s*#6\)/.test(lower)) {
+    return new PrivacyWalletError('Amount exceeds this pool’s deposit limit (100 XLM). Try a smaller amount.', 'WALLET_ERROR');
+  }
   return new PrivacyWalletError(msg, 'WALLET_ERROR');
 }
 

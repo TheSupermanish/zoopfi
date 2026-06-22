@@ -7,7 +7,7 @@ import { useUser } from '@/app/lib/hooks';
 import Link from 'next/link';
 import { getUserByUsername, getTransactions } from '../../lib/api';
 import { toast } from 'sonner';
-import { Ghost, Pencil, ArrowUpRight, ArrowDownLeft, Copy, Check, Calendar, Clock, ArrowLeftRight, ArrowUp, ArrowDown, Flame, Wallet, ExternalLink, Zap, HandCoins, Share2, History } from 'lucide-react';
+import { Ghost, Pencil, ArrowUpRight, ArrowDownLeft, Copy, Calendar, Clock, ArrowLeftRight, ArrowUp, ArrowDown, Flame, Wallet, ExternalLink, Zap, HandCoins, Share2, History, BadgeCheck, ShieldCheck, Sparkles, ArrowLeft } from 'lucide-react';
 
 interface UserProfile {
   _id?: string;
@@ -127,7 +127,10 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-transparent">
+      <div className="relative flex min-h-screen items-center justify-center bg-[#0a0510]">
+        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute left-1/2 top-[-8%] h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/14 blur-[150px]" />
+        </div>
         <div className="spinner" />
       </div>
     );
@@ -135,21 +138,25 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-transparent p-4">
-        <div className="text-center">
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-slate-200 dark:bg-white/[0.08] flex items-center justify-center">
-            <Ghost className="w-12 h-12 text-slate-500 dark:text-[#ad92c9]" />
+      <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#0a0510] p-4">
+        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute left-1/2 top-[-8%] h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/14 blur-[150px]" />
+          <div className="absolute right-[-10%] bottom-[5%] h-[28rem] w-[28rem] rounded-full bg-blue-500/10 blur-[140px]" />
+        </div>
+        <div className="animate-fade-in max-w-sm text-center">
+          <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04]">
+            <Ghost className="h-12 w-12 text-[#ad92c9]" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">User Not Found</h1>
-          <p className="text-slate-500 dark:text-[#ad92c9] mb-6">
-            The user @{username} doesn't exist or hasn't registered yet.
+          <h1 className="mb-2 text-2xl font-bold text-white">User not found</h1>
+          <p className="mb-6 text-sm text-purple-200/70">
+            The user @{username} doesn&apos;t exist or hasn&apos;t registered yet.
           </p>
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#7f13ec] text-white font-bold rounded-xl hover:bg-[#5e0eb0] transition-colors"
+            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] px-6 py-3 font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
           >
-            <span>←</span>
-            Go Back
+            <ArrowLeft className="h-4 w-4" />
+            Go back
           </Link>
         </div>
       </div>
@@ -157,162 +164,155 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-transparent">
+    <div className="relative min-h-screen bg-[#0a0510] text-white">
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-8%] h-[40rem] w-[40rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/14 blur-[150px]" />
+        <div className="absolute right-[-10%] bottom-[5%] h-[28rem] w-[28rem] rounded-full bg-blue-500/10 blur-[140px]" />
+      </div>
+
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-white/80 dark:bg-black/40 backdrop-blur-xl border-b border-slate-200 dark:border-white/10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-black/40 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4">
           <button
             onClick={() => router.back()}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-purple-100 transition hover:bg-white/10"
           >
-            <span className="text-xl">←</span>
+            <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="font-bold text-slate-900 dark:text-white">Profile</h1>
+          <h1 className="text-sm font-semibold text-purple-100/80">Pay profile</h1>
           <div className="w-10" /> {/* Spacer */}
         </div>
       </header>
 
       {/* Profile Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Hero Section */}
-        <div className="relative mb-8">
-          {/* Cover Gradient */}
-          <div 
-            className="h-48 rounded-3xl overflow-hidden"
-            style={{ 
-              background: 'linear-gradient(135deg, #7f13ec 0%, #a855f7 50%, #6366f1 100%)',
-            }}
-          >
-            {/* Pattern Overlay */}
-            <div 
-              className="absolute inset-0 opacity-10"
+      <main className="relative mx-auto max-w-3xl px-4 py-8 sm:py-12">
+        {/* Hero card */}
+        <div className="animate-rise-in overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.07] to-white/[0.02] shadow-2xl shadow-black/40">
+          {/* Cover gradient */}
+          <div className="relative h-32 overflow-hidden bg-gradient-to-r from-[#9b3bff] via-[#7f13ec] to-[#6a10c7] sm:h-36">
+            <div
+              className="absolute inset-0 opacity-15"
               style={{
                 backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`,
                 backgroundSize: '32px 32px',
               }}
             />
-            {/* Decorative Elements */}
-            <div className="absolute top-6 right-6 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-            <div className="absolute bottom-6 left-6 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+            <div className="absolute right-6 top-4 h-24 w-24 rounded-full bg-white/15 blur-2xl" />
+            <div className="absolute bottom-2 left-10 h-28 w-28 rounded-full bg-blue-300/20 blur-2xl" />
           </div>
 
-          {/* Avatar */}
-          <div className="absolute -bottom-16 left-8">
-            <div 
-              className="w-32 h-32 rounded-3xl border-4 border-white dark:border-white/10 shadow-2xl flex items-center justify-center text-5xl font-bold text-white"
-              style={{ background: 'linear-gradient(135deg, #7f13ec 0%, #a855f7 100%)' }}
-            >
-              {getInitials(profile.username)}
+          <div className="px-6 pb-7 sm:px-8 sm:pb-8">
+            {/* Avatar + name */}
+            <div className="-mt-12 flex flex-col items-center text-center">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-3xl bg-[#7f13ec]/40 blur-2xl animate-pulse-glow" />
+                <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-4xl font-bold text-white shadow-2xl shadow-[#7f13ec]/40 ring-4 ring-[#0a0510]">
+                  {getInitials(profile.username)}
+                </div>
+              </div>
+              <h2 className="mt-4 flex items-center gap-2 bg-gradient-to-r from-white via-purple-100 to-[#c89bff] bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+                @{profile.username}
+              </h2>
+              <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                <BadgeCheck className="h-3.5 w-3.5" />
+                Verified Zoopfi user
+              </span>
+
+              {/* Trust pills */}
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                {[
+                  [ShieldCheck, 'Private payments'],
+                  [BadgeCheck, 'On Stellar'],
+                  [Calendar, `Joined ${formatDate(profile.createdAt)}`],
+                  [Clock, `Member for ${getMemberDuration(profile.createdAt)}`],
+                ].map(([Icon, label], i) => {
+                  const I = Icon as typeof BadgeCheck;
+                  return (
+                    <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-purple-100/80">
+                      <I className="h-3.5 w-3.5 text-[#c89bff]" /> {label as string}
+                    </span>
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Actions */}
-          <div className="absolute -bottom-6 right-4 flex gap-2">
-            {isOwnProfile ? (
-              <Link
-                href="/settings"
-                className="px-5 py-2.5 bg-white dark:bg-white/[0.04] text-slate-900 dark:text-white font-bold rounded-xl text-sm shadow-lg hover:scale-105 transition-all border border-slate-200 dark:border-white/10 flex items-center gap-2"
-              >
-                <Pencil className="w-4 h-4" />
-                Edit Profile
-              </Link>
-            ) : (
-              <>
+            {/* Primary CTA */}
+            <div className="mt-7">
+              {isOwnProfile ? (
+                <Link
+                  href="/settings"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] py-3.5 font-semibold text-white transition hover:bg-white/[0.08]"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit profile
+                </Link>
+              ) : (
                 <Link
                   href={`/send?to=${profile.username}`}
-                  className="px-5 py-2.5 bg-[#7f13ec] text-white font-bold rounded-xl text-sm shadow-lg shadow-[#7f13ec]/30 hover:scale-105 transition-all flex items-center gap-2"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] py-4 text-base font-semibold text-white shadow-lg shadow-[#7f13ec]/30 transition hover:shadow-[#7f13ec]/50"
                 >
-                  <ArrowUpRight className="w-4 h-4" />
-                  Send Money
+                  <ArrowUpRight className="h-5 w-5" />
+                  Pay @{profile.username}
                 </Link>
-                <button
-                  onClick={() => copyToClipboard(profile.walletAddress)}
-                  className="px-5 py-2.5 bg-white dark:bg-white/[0.04] text-slate-900 dark:text-white font-bold rounded-xl text-sm shadow-lg hover:scale-105 transition-all border border-slate-200 dark:border-white/10 flex items-center gap-2"
-                >
-                  <Copy className="w-4 h-4" />
-                  Copy Address
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Profile Info */}
-        <div className="mt-20 mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white">
-              @{profile.username}
-            </h2>
-            <span className="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-xs font-bold inline-flex items-center gap-1">
-              <Check className="w-3 h-3" />
-              Verified
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-4 text-slate-500 dark:text-[#ad92c9]">
-            <span className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" />
-              Joined {formatDate(profile.createdAt)}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4" />
-              Member for {getMemberDuration(profile.createdAt)}
-            </span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowLeftRight className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
-              <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Transactions</span>
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <div className="mb-2 flex items-center gap-2 text-purple-200/55">
+              <ArrowLeftRight className="h-4 w-4" />
+              <span className="text-xs">Transactions</span>
             </div>
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.transactionCount}</p>
+            <p className="text-2xl font-bold tabular-nums text-white">{stats.transactionCount}</p>
           </div>
-          
-          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowUp className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
-              <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Total Sent</span>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <div className="mb-2 flex items-center gap-2 text-purple-200/55">
+              <ArrowUp className="h-4 w-4" />
+              <span className="text-xs">Total sent</span>
             </div>
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.totalSent.toFixed(2)}</p>
-            <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60">USDC</p>
+            <p className="text-2xl font-bold tabular-nums text-white">{stats.totalSent.toFixed(2)}</p>
+            <p className="text-xs text-purple-200/40">USDC</p>
           </div>
-          
-          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <ArrowDown className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
-              <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Total Received</span>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <div className="mb-2 flex items-center gap-2 text-purple-200/55">
+              <ArrowDown className="h-4 w-4" />
+              <span className="text-xs">Total received</span>
             </div>
-            <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.totalReceived.toFixed(2)}</p>
-            <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60">USDC</p>
+            <p className="text-2xl font-bold tabular-nums text-white">{stats.totalReceived.toFixed(2)}</p>
+            <p className="text-xs text-purple-200/40">USDC</p>
           </div>
-          
-          <div className="bg-white dark:bg-white/[0.04] rounded-2xl p-5 border border-slate-200 dark:border-white/10 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Flame className="w-5 h-5 text-slate-500 dark:text-[#ad92c9]" />
-              <span className="text-sm text-slate-500 dark:text-[#ad92c9]">Activity</span>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <div className="mb-2 flex items-center gap-2 text-purple-200/55">
+              <Flame className="h-4 w-4" />
+              <span className="text-xs">Activity</span>
             </div>
-            <p className="text-2xl font-black text-emerald-500">Active</p>
-            <p className="text-xs text-slate-400 dark:text-[#ad92c9]/60">Recently</p>
+            <p className="text-2xl font-bold text-emerald-300">Active</p>
+            <p className="text-xs text-purple-200/40">Recently</p>
           </div>
         </div>
 
         {/* Wallet Info Card */}
-        <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 border border-slate-200 dark:border-white/10 shadow-sm mb-8">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-[#7f13ec]" />
-            Wallet Information
+        <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+          <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+            <Wallet className="h-5 w-5 text-[#b07bff]" />
+            Wallet information
           </h3>
-          
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10">
+
+          <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-white/10 bg-black/25 p-4 md:flex-row md:items-center">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7f13ec] to-[#a855f7] flex items-center justify-center shadow-lg shadow-[#7f13ec]/20">
-                <span className="text-white text-xl font-bold">M</span>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] shadow-lg shadow-[#7f13ec]/20">
+                <ShieldCheck className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-slate-500 dark:text-[#ad92c9]">Stellar Network</p>
-                <p className="font-mono text-sm text-slate-900 dark:text-white">
+                <p className="text-xs uppercase tracking-wide text-purple-200/45">Stellar network</p>
+                <p className="font-mono text-sm text-white">
                   {profile.walletAddress.slice(0, 12)}...{profile.walletAddress.slice(-10)}
                 </p>
               </div>
@@ -320,18 +320,18 @@ export default function ProfilePage() {
             <div className="flex gap-2">
               <button
                 onClick={() => copyToClipboard(profile.walletAddress)}
-                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-white/[0.08] text-slate-700 dark:text-white font-medium text-sm hover:bg-slate-300 dark:hover:bg-white/10 transition-colors flex items-center gap-2"
+                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
               >
-                <Copy className="w-4 h-4" />
+                <Copy className="h-4 w-4" />
                 Copy
               </button>
               <a
                 href={getAddressExplorerUrl(profile.walletAddress)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 rounded-xl bg-[#7f13ec]/10 text-[#7f13ec] font-medium text-sm hover:bg-[#7f13ec]/20 transition-colors flex items-center gap-2"
+                className="flex items-center gap-2 rounded-xl bg-[#7f13ec]/15 px-4 py-2 text-sm font-medium text-[#c89bff] transition hover:bg-[#7f13ec]/25"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="h-4 w-4" />
                 Explorer
               </a>
             </div>
@@ -340,36 +340,36 @@ export default function ProfilePage() {
 
         {/* Quick Actions */}
         {!isOwnProfile && walletAddress && (
-          <div className="bg-gradient-to-br from-[#7f13ec]/10 to-[#a855f7]/10 rounded-3xl p-6 border border-[#7f13ec]/20 mb-8">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <Zap className="w-5 h-5" />
-              Quick Actions
+          <div className="mt-6 rounded-3xl border border-[#7f13ec]/20 bg-[#7f13ec]/[0.07] p-6">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+              <Zap className="h-5 w-5 text-[#b07bff]" />
+              Quick actions
             </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <Link
                 href={`/send?to=${profile.username}`}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
+                className="group flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:border-[#7f13ec]/50 hover:bg-white/[0.06]"
               >
-                <div className="w-14 h-14 rounded-2xl bg-[#7f13ec]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ArrowUpRight className="w-8 h-8 text-[#7f13ec]" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7f13ec]/15 transition-transform group-hover:scale-110">
+                  <ArrowUpRight className="h-7 w-7 text-[#c89bff]" />
                 </div>
                 <div className="text-center">
-                  <p className="font-bold text-slate-900 dark:text-white">Send Money</p>
-                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Transfer USDC instantly</p>
+                  <p className="font-semibold text-white">Send money</p>
+                  <p className="text-xs text-purple-200/55">Transfer USDC instantly</p>
                 </div>
               </Link>
 
               <Link
                 href={`/send?to=${profile.username}&request=true`}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
+                className="group flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:border-[#7f13ec]/50 hover:bg-white/[0.06]"
               >
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <HandCoins className="w-8 h-8 text-emerald-500" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 transition-transform group-hover:scale-110">
+                  <HandCoins className="h-7 w-7 text-emerald-300" />
                 </div>
                 <div className="text-center">
-                  <p className="font-bold text-slate-900 dark:text-white">Request Money</p>
-                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Ask for a payment</p>
+                  <p className="font-semibold text-white">Request money</p>
+                  <p className="text-xs text-purple-200/55">Ask for a payment</p>
                 </div>
               </Link>
 
@@ -378,14 +378,14 @@ export default function ProfilePage() {
                   const url = `${window.location.origin}/profile/${profile.username}`;
                   copyToClipboard(url);
                 }}
-                className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 hover:border-[#7f13ec]/50 hover:shadow-lg hover:shadow-[#7f13ec]/10 transition-all group"
+                className="group flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition hover:border-[#7f13ec]/50 hover:bg-white/[0.06]"
               >
-                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Share2 className="w-8 h-8 text-blue-500" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/15 transition-transform group-hover:scale-110">
+                  <Share2 className="h-7 w-7 text-blue-300" />
                 </div>
                 <div className="text-center">
-                  <p className="font-bold text-slate-900 dark:text-white">Share Profile</p>
-                  <p className="text-xs text-slate-500 dark:text-[#ad92c9]">Copy profile link</p>
+                  <p className="font-semibold text-white">Share profile</p>
+                  <p className="text-xs text-purple-200/55">Copy profile link</p>
                 </div>
               </button>
             </div>
@@ -394,48 +394,48 @@ export default function ProfilePage() {
 
         {/* Recent Activity */}
         {transactions.length > 0 && (
-          <div className="bg-white dark:bg-white/[0.04] rounded-3xl p-6 border border-slate-200 dark:border-white/10 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <History className="w-5 h-5 text-[#7f13ec]" />
-                Recent Activity
+          <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-xl">
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-white">
+                <History className="h-5 w-5 text-[#b07bff]" />
+                Recent activity
               </h3>
               {isOwnProfile && (
                 <Link
                   href="/history"
-                  className="text-[#7f13ec] text-sm font-bold hover:underline"
+                  className="text-sm font-semibold text-[#c89bff] transition hover:text-white"
                 >
-                  View All →
+                  View all →
                 </Link>
               )}
             </div>
-            
-            <div className="space-y-3">
+
+            <div className="space-y-2.5">
               {transactions.slice(0, 5).map((tx) => {
                 const isSent = tx.senderAddress === profile.walletAddress;
                 return (
                   <div
                     key={tx._id}
-                    className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10"
+                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 p-4"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        isSent ? 'bg-red-500/10' : 'bg-emerald-500/10'
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                        isSent ? 'bg-rose-500/15' : 'bg-emerald-500/15'
                       }`}>
                         {isSent
-                          ? <ArrowUpRight className="w-5 h-5 text-red-400" />
-                          : <ArrowDownLeft className="w-5 h-5 text-emerald-400" />}
+                          ? <ArrowUpRight className="h-5 w-5 text-rose-300" />
+                          : <ArrowDownLeft className="h-5 w-5 text-emerald-300" />}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900 dark:text-white text-sm">
+                        <p className="text-sm font-semibold text-white">
                           {isSent ? `To @${tx.receiverUsername}` : `From @${tx.senderUsername}`}
                         </p>
-                        <p className="text-xs text-slate-500 dark:text-[#ad92c9]">
+                        <p className="text-xs text-purple-200/45">
                           {new Date(tx.timestamp).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <p className={`font-bold ${isSent ? 'text-red-400' : 'text-emerald-400'}`}>
+                    <p className={`font-semibold tabular-nums ${isSent ? 'text-rose-300' : 'text-emerald-300'}`}>
                       {isSent ? '-' : '+'}{tx.amount.toFixed(4)} USDC
                     </p>
                   </div>
@@ -446,9 +446,9 @@ export default function ProfilePage() {
         )}
 
         {/* Footer */}
-        <div className="mt-12 text-center">
-          <p className="text-slate-400 dark:text-[#ad92c9]/40 text-xs">
-            Zoopfi • Built on Stellar Network
+        <div className="mt-10 flex flex-col items-center gap-1 text-center text-xs text-purple-200/40">
+          <p className="flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" /> Zoopfi · Private payments on Stellar
           </p>
         </div>
       </main>

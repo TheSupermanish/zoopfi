@@ -12,6 +12,7 @@ export {
   PRIVACY_LIVE,
   getExplorerUrl,
   getAddressExplorerUrl,
+  getLedgerExplorerUrl,
 } from './config';
 export type { AssetCode, ChainNetwork, ChainAdapterMode } from './config';
 export type {

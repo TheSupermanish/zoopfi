@@ -41,11 +41,16 @@ export function loadPrivacyEngine(): Promise<PrivacyEngine> {
     // wasm-bindgen default export = init; loads web_bg.wasm next to web.js.
     await mod.default({ module_or_path: '/js/web_bg.wasm' });
     const handle = await mod.mainThread(new mod.Config(NETWORK.rpcUrl));
-    return {
+    const engine = {
       webClient: handle.webClient,
       rpcUrl: NETWORK.rpcUrl,
       networkPassphrase: NETWORK.networkPassphrase,
     };
+    // Dev-only: expose the loaded engine for debugging private-pool calls from the console.
+    if (process.env.NODE_ENV !== 'production') {
+      (window as any).__eng = engine;
+    }
+    return engine;
   })();
 
   return enginePromise;

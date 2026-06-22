@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useWallet } from '@/app/lib/chain';
 import { useUser } from '@/app/lib/hooks';
 import AppShell from '../components/shell/AppShell';
-import { PageShell, PageHeader, Card } from '../components/ui/primitives';
+import { PageShell } from '../components/ui/primitives';
 import { convertToBusiness, BusinessCategory, BusinessInfo } from '../lib/api';
 import { toast } from 'sonner';
 import {
@@ -17,6 +17,7 @@ import {
   Rocket,
   Check,
   Settings,
+  SlidersHorizontal,
   Share2,
   HelpCircle,
   Twitter,
@@ -152,6 +153,10 @@ export default function SettingsPage() {
   if (isLoading) {
     return (
       <AppShell>
+        <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute left-1/2 top-[-8%] h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/14 blur-[150px]" />
+          <div className="absolute right-[-8%] bottom-[10%] h-[28rem] w-[28rem] rounded-full bg-blue-500/10 blur-[140px]" />
+        </div>
         <div className="flex h-[60vh] items-center justify-center">
           <div className="spinner" />
         </div>
@@ -161,25 +166,43 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
+      {/* Ambient glow */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-1/2 top-[-8%] h-[38rem] w-[38rem] -translate-x-1/2 rounded-full bg-[#7f13ec]/14 blur-[150px]" />
+        <div className="absolute right-[-8%] bottom-[10%] h-[28rem] w-[28rem] rounded-full bg-blue-500/10 blur-[140px]" />
+      </div>
+
       <PageShell variant="wide">
-        <PageHeader
-          title={isBusiness ? 'Business Settings' : 'Profile & Settings'}
-          subtitle={isBusiness ? 'Manage your business account and preferences.' : 'Manage your account and preferences.'}
-          icon={Settings}
-          action={
-            isBusiness ? (
-              <span className="rounded-full border border-[#9b3bff]/20 bg-[#9b3bff]/10 px-3 py-1 text-xs font-bold text-[#c89bff]">
-                BUSINESS
+        {/* Page Heading */}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5">
+            <span className="relative flex h-12 w-12 shrink-0 items-center justify-center">
+              <span className="absolute inset-0 rounded-2xl bg-[#7f13ec]/30 blur-xl animate-pulse-glow" />
+              <span className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] shadow-lg shadow-[#7f13ec]/40">
+                <SlidersHorizontal className="h-6 w-6 text-white" />
               </span>
-            ) : undefined
-          }
-        />
+            </span>
+            <div>
+              <h1 className="bg-gradient-to-r from-white to-[#c89bff] bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-3xl">
+                {isBusiness ? 'Business Settings' : 'Settings'}
+              </h1>
+              <p className="mt-0.5 text-sm text-purple-200/60">
+                {isBusiness ? 'Manage your business account and preferences.' : 'Manage your account and preferences.'}
+              </p>
+            </div>
+          </div>
+          {isBusiness && (
+            <span className="shrink-0 rounded-full border border-[#9b3bff]/20 bg-[#9b3bff]/10 px-3 py-1 text-xs font-bold text-[#c89bff]">
+              BUSINESS
+            </span>
+          )}
+        </div>
 
         <div className="flex flex-col gap-4">
           {/* Profile Section */}
-          <Card as="section">
-            <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-white">
-              <span className="text-[#c89bff]">
+          <section className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-5 shadow-xl shadow-black/30 sm:p-6">
+            <h3 className="mb-6 flex items-center gap-3 text-base font-semibold text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30">
                 {isBusiness ? <Building2 className="h-5 w-5" /> : <User className="h-5 w-5" />}
               </span>
               {isBusiness ? 'Business Profile' : 'Profile'}
@@ -326,13 +349,13 @@ export default function SettingsPage() {
                 This wallet is used for all {isBusiness ? 'business ' : ''}transactions on Stellar Network.
               </p>
             </div>
-          </Card>
+          </section>
 
           {/* Convert to Business Section (Personal accounts only) */}
           {!isBusiness && (
-            <Card as="section">
-              <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-white">
-                <span className="text-[#c89bff]"><Building2 className="h-5 w-5" /></span>
+            <section className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-5 shadow-xl shadow-black/30 sm:p-6">
+              <h3 className="mb-4 flex items-center gap-3 text-base font-semibold text-white">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30"><Building2 className="h-5 w-5" /></span>
                 Upgrade to Business
               </h3>
 
@@ -367,13 +390,13 @@ export default function SettingsPage() {
                 <Rocket className="h-5 w-5" />
                 Convert to Business Account
               </button>
-            </Card>
+            </section>
           )}
 
           {/* Preferences Section */}
-          <Card as="section">
-            <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-white">
-              <span className="text-[#c89bff]"><Settings className="h-5 w-5" /></span>
+          <section className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-5 shadow-xl shadow-black/30 sm:p-6">
+            <h3 className="mb-6 flex items-center gap-3 text-base font-semibold text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30"><Settings className="h-5 w-5" /></span>
               Quick Preferences
             </h3>
 
@@ -452,12 +475,12 @@ export default function SettingsPage() {
                 </label>
               </div>
             </div>
-          </Card>
+          </section>
 
           {/* Support & Links Section */}
-          <Card as="section">
-            <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-white">
-              <span className="text-[#c89bff]"><Share2 className="h-5 w-5" /></span>
+          <section className="rounded-3xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-5 shadow-xl shadow-black/30 sm:p-6">
+            <h3 className="mb-6 flex items-center gap-3 text-base font-semibold text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#9b3bff] to-[#6a10c7] text-white shadow-lg shadow-[#7f13ec]/30"><Share2 className="h-5 w-5" /></span>
               Links & Support
             </h3>
 
@@ -518,12 +541,14 @@ export default function SettingsPage() {
                 <span className="text-purple-200/60">↗</span>
               </a>
             </div>
-          </Card>
+          </section>
 
           {/* Danger Zone */}
-          <Card as="section">
-            <h3 className="mb-6 flex items-center gap-2 text-base font-semibold text-rose-300">
-              <AlertTriangle className="h-5 w-5" />
+          <section className="rounded-3xl border border-rose-500/15 bg-gradient-to-b from-rose-500/[0.06] to-white/[0.02] p-5 shadow-xl shadow-black/30 sm:p-6">
+            <h3 className="mb-6 flex items-center gap-3 text-base font-semibold text-rose-300">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 text-rose-300">
+                <AlertTriangle className="h-5 w-5" />
+              </span>
               Danger Zone
             </h3>
 
@@ -542,7 +567,7 @@ export default function SettingsPage() {
                 Sign Out
               </button>
             </div>
-          </Card>
+          </section>
 
           {/* Action Buttons */}
           <div className="flex flex-col-reverse justify-end gap-4 sm:flex-row">
