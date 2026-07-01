@@ -31,7 +31,7 @@ interface Transaction {
 export default function DashboardPage() {
   const router = useRouter();
   const { ready, address: walletAddress, authenticated, isConnected } = useWallet();
-  const { data: userData } = useUser();
+  const { data: userData, isFetching: userFetching } = useUser();
   const { data: balance = 0 } = useBalance('USDC');
   const { data: recentTransactions = [] } = useTransactions(6);
   const { data: streakInfo } = useStreak();
@@ -40,8 +40,8 @@ export default function DashboardPage() {
   const isLoading = userData === undefined;
 
   useEffect(() => {
-    if (userData === null) router.replace('/onboarding');
-  }, [userData, router]);
+    if (!userFetching && userData === null) router.replace('/onboarding');
+  }, [userData, userFetching, router]);
   useEffect(() => {
     const t = setTimeout(() => {
       if (ready && !authenticated && !isConnected) router.replace('/');

@@ -31,7 +31,7 @@ export default function HistoryPage() {
 
   const LIMIT = 20;
 
-  const { data: userData } = useUser();
+  const { data: userData, isFetching: userFetching } = useUser();
   const isLoading = userData === undefined;
 
   // First page comes from the shared cache (instant + live-polled).
@@ -83,8 +83,8 @@ export default function HistoryPage() {
 
   // Redirect if not registered
   useEffect(() => {
-    if (userData === null) router.replace('/onboarding');
-  }, [userData, router]);
+    if (!userFetching && userData === null) router.replace('/onboarding');
+  }, [userData, userFetching, router]);
 
   // Redirect if not connected
   useEffect(() => {
