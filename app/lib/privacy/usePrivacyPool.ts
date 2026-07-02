@@ -17,6 +17,7 @@ import { useWallet, NETWORK } from '../chain';
 import {
   registerKeys, getRegistered, normUser, syntheticAddress, syntheticSig, type PubKeys,
 } from './directory';
+import { publishPoolKeys, resolvePoolKeys } from '../api';
 
 /** Read the signed-in user's profile (username/displayName) from the local app DB. */
 function readMyProfile(): { username?: string; display?: string } {
@@ -164,12 +165,18 @@ export function usePrivacyPool() {
         const sigBytes = Uint8Array.from(atob(signedMessage), (c) => c.charCodeAt(0));
         await eng.webClient.deriveAndSaveUserKeys(address, sigBytes);
       }
-      // Publish my public keys to the username directory so others can pay me by @handle.
+      // Publish my public keys to the directory so others can pay me by @handle.
+      // Local cache for this device + the shared server directory so a sender on
+      // ANY device can resolve my real keys (the cross-device path that makes
+      // pay-by-username actually deliverable).
       try {
         const { username, display } = readMyProfile();
         const mine = await eng.webClient.getUserKeys(address).catch(() => null);
-        if (username && mine?.noteKeypair?.public && mine?.encryptionKeypair?.public) {
-          registerKeys(username, { notePub: mine.noteKeypair.public, encPub: mine.encryptionKeypair.public }, display);
+        const notePub = mine?.noteKeypair?.public;
+        const encPub = mine?.encryptionKeypair?.public;
+        if (username && notePub && encPub) {
+          registerKeys(username, { notePub, encPub }, display);
+          void publishPoolKeys(address, notePub, encPub);
         }
       } catch { /* directory is best-effort */ }
       patch({ keysReady: true, busy: false, statusText: '' });
@@ -282,13 +289,38 @@ export function usePrivacyPool() {
     return engineRef.current.webClient.getUserKeys(address).catch(() => null);
   }, []);
 
-  /** Resolve a @username to its pool public keys (registry first, else deterministic). */
+  /**
+   * Resolve a @username to its pool public keys.
+   *   1. Local cache (this device — instant, covers users seen here).
+   *   2. Shared server directory — the real cross-device path: if @u is a Zoopfi
+   *      user who has unlocked private payments, we get their real, claimable keys.
+   *   3. If @u IS a Zoopfi user but hasn't enabled private payments, refuse — a
+   *      transfer would go to keys they can't spend. Tell the sender to nudge them.
+   *   4. Otherwise (unknown handle) derive a deterministic demo keypair so
+   *      testnet demo recipients like @alice still work without a second device.
+   */
   const resolveRecipient = useCallback(async (username: string): Promise<PubKeys> => {
     const u = normUser(username);
     if (!u) throw new PrivacyWalletError('Enter a recipient username.', 'WALLET_ERROR');
+
     const reg = getRegistered(u);
     if (reg) return { notePub: reg.notePub, encPub: reg.encPub };
-    // Derive a stable keypair for a recipient who hasn't published keys on this device.
+
+    const { keys: remote, userExists } = await resolvePoolKeys(u);
+    if (remote?.notePubKey && remote?.encryptionPubKey) {
+      const keys: PubKeys = { notePub: remote.notePubKey, encPub: remote.encryptionPubKey };
+      registerKeys(u, keys, remote.displayName);
+      return keys;
+    }
+    if (userExists) {
+      throw new PrivacyWalletError(
+        `@${u} hasn't enabled private payments yet. Ask them to open the Private tab once, then try again.`,
+        'WALLET_ERROR',
+      );
+    }
+
+    // Deterministic demo fallback (testnet only): recoverable only by re-deriving
+    // from the username, so this is not for real custody.
     const eng = engineRef.current!;
     const addr = syntheticAddress(u);
     let k = await eng.webClient.getUserKeys(addr).catch(() => null);

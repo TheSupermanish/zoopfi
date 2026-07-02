@@ -76,6 +76,52 @@ export const getUserByAddress = async (address: string): Promise<UserData | null
   return response.json();
 };
 
+// Shielded-pool key directory ------------------------------------------------
+
+export interface PoolKeys {
+  username: string;
+  displayName?: string;
+  notePubKey: string;
+  encryptionPubKey: string;
+}
+
+/** Publish my shielded-pool public keys so others can pay me by @username. Best-effort. */
+export const publishPoolKeys = async (
+  walletAddress: string,
+  notePubKey: string,
+  encryptionPubKey: string,
+): Promise<boolean> => {
+  try {
+    const res = await fetch(`${API_BASE}/privacy/keys`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress, notePubKey, encryptionPubKey }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Resolve a @username to its shielded-pool public keys.
+ * `userExists` distinguishes "no such Zoopfi user" (safe to fall back to a demo
+ * keypair) from "user exists but hasn't enabled private payments" (must NOT
+ * send — the recipient couldn't claim it).
+ */
+export const resolvePoolKeys = async (
+  username: string,
+): Promise<{ keys: PoolKeys | null; userExists: boolean }> => {
+  try {
+    const res = await fetch(`${API_BASE}/privacy/keys?username=${encodeURIComponent(username)}`);
+    if (res.ok) return { keys: (await res.json()) as PoolKeys, userExists: true };
+    if (res.status === 409) return { keys: null, userExists: true }; // exists, no keys yet
+    return { keys: null, userExists: false }; // 404 / not a Zoopfi user
+  } catch {
+    return { keys: null, userExists: false };
+  }
+};
+
 export const convertToBusiness = async (
   walletAddress: string,
   businessInfo: BusinessInfo,
