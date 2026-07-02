@@ -35,6 +35,18 @@ const MARKETS: Market[] = [
   { id: 'btc', asset: 'BTC', name: 'BTC Vault', accent: 'from-amber-400 to-orange-600', apy: '3.1%', live: false },
 ];
 
+// Tokenized equities (xStocks-style: each token collateralized 1:1 by the real
+// share, tracking its price). These are a PREVIEW surface: no tokenized-stock
+// asset is live on Stellar testnet, so we never quote an APY (stocks don't
+// yield) and never fake a balance. The pitch is holding equities privately.
+type Stock = { ticker: string; name: string; accent: string };
+const STOCKS: Stock[] = [
+  { ticker: 'TSLAX', name: 'Tesla', accent: 'from-rose-400 to-red-600' },
+  { ticker: 'AAPLX', name: 'Apple', accent: 'from-slate-300 to-slate-500' },
+  { ticker: 'NVDAX', name: 'NVIDIA', accent: 'from-lime-400 to-green-600' },
+  { ticker: 'SPYX', name: 'S&P 500 ETF', accent: 'from-indigo-400 to-violet-600' },
+];
+
 export default function VaultPage() {
   const { ops, address, isConnected } = useWallet();
   const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit');
@@ -217,6 +229,40 @@ export default function VaultPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Tokenized stocks (preview) */}
+        <div className="mt-9">
+          <div className="mb-3 flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-purple-100/80">Tokenized stocks</h2>
+            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-purple-200/50">Preview</span>
+            <span className="h-px flex-1 bg-white/10" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {STOCKS.map((s) => (
+              <div key={s.ticker} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
+                <div className="flex items-center justify-between">
+                  <span className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${s.accent} text-xs font-bold text-white shadow-lg`}>
+                    {s.ticker.slice(0, 4)}
+                  </span>
+                  <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-purple-200/50">Soon</span>
+                </div>
+                <p className="mt-3.5 font-semibold text-white">{s.name}</p>
+                <p className="mt-0.5 font-mono text-xs text-purple-200/45">{s.ticker} · tracks {s.name}</p>
+                <button
+                  type="button"
+                  disabled
+                  className="mt-4 w-full cursor-not-allowed rounded-xl border border-white/10 bg-white/[0.03] py-2.5 text-sm font-semibold text-purple-200/40"
+                >
+                  Coming soon
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 flex items-start gap-2 text-xs text-purple-200/50">
+            <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#b07bff]" />
+            <span>Tokenized equities collateralized 1:1 by the underlying share. Hold them privately, shield your positions so what you own stays yours. Not yet live on Stellar; no balances are simulated.</span>
+          </p>
         </div>
 
         {/* Privacy note + verifier */}
