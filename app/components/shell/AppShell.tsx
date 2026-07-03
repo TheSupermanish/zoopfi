@@ -38,6 +38,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const accountType: AccountType = user?.accountType ?? 'personal';
   const isBusiness = accountType === 'business';
   const { primary, overflow, action } = getNav(accountType);
+  // Business desktop uses a left sidebar (more room for Payroll/Invoices/etc.),
+  // so it lists primary + overflow deduped. Personal keeps the top navbar.
+  const sidebarItems = [
+    ...primary,
+    ...overflow.filter((o) => !primary.some((p) => p.href === o.href)),
+  ];
 
   // Auth state only resolves on the client (Privy has no SSR session), so gate
   // the connected/disconnected header on a mounted flag — the server and the
@@ -51,7 +57,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <div className="relative flex min-h-dvh flex-col bg-[#0a0512] text-white">
       <AmbientGlow business={isBusiness} />
 
-      {/* Desktop top navbar */}
+      {/* Desktop business sidebar (business gets a left rail; personal keeps the top navbar) */}
+      {isBusiness && isConnected && (
+        <BusinessSidebar
+          items={sidebarItems}
+          pathname={pathname}
+          action={action}
+          accountType={accountType}
+          username={user?.username}
+          displayName={user?.displayName}
+          avatarUrl={user?.avatarUrl}
+          address={address}
+        />
+      )}
+
+      {/* Desktop top navbar — personal, or anyone logged out */}
+      {!(isBusiness && isConnected) && (
       <header className="surface-rail sticky top-0 z-50 hidden border-b border-white/10 lg:block">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 lg:px-6">
           <div className="flex items-center gap-7">
@@ -76,6 +97,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
+      )}
 
       {/* Mobile top header */}
       <header className="surface-rail sticky top-0 z-40 flex items-center justify-between border-b border-white/10 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
@@ -101,7 +123,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* Page content — re-keyed on route so it animates in on every navigation */}
       <main
         key={pathname}
-        className="animate-page-enter relative z-10 flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10"
+        className={`animate-page-enter relative z-10 flex-1 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10 ${
+          isBusiness && isConnected ? 'lg:pl-64' : ''
+        }`}
       >
         {children}
       </main>
@@ -124,6 +148,70 @@ function AmbientGlow({ business }: { business: boolean }) {
       <div className="animate-float absolute top-1/3 -right-40 h-96 w-96 rounded-full bg-fuchsia-600/10 blur-[130px]" />
       <div className="absolute -bottom-40 -left-32 h-96 w-96 rounded-full bg-indigo-700/10 blur-[140px]" />
     </div>
+  );
+}
+
+/* ----------------------------- Business sidebar ----------------------------- */
+function BusinessSidebar({
+  items,
+  pathname,
+  action,
+  accountType,
+  username,
+  displayName,
+  avatarUrl,
+  address,
+}: {
+  items: NavItem[];
+  pathname: string;
+  action: PrimaryAction;
+  accountType: AccountType;
+  username?: string;
+  displayName?: string;
+  avatarUrl?: string;
+  address?: string;
+}) {
+  return (
+    <aside className="surface-rail fixed inset-y-0 left-0 z-50 hidden w-64 flex-col border-r border-white/10 px-3 py-4 lg:flex">
+      <div className="px-2">
+        <Brand isBusiness />
+      </div>
+
+      <nav className="mt-6 flex flex-1 flex-col gap-1">
+        {items.map((item) => {
+          const active = isItemActive(pathname, item.href, item.match);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                active
+                  ? 'bg-gradient-to-r from-[#a855f7] to-[#7e22ce] text-white shadow-lg shadow-[#9333ea]/25'
+                  : 'text-purple-200/60 hover:bg-white/[0.06] hover:text-white'
+              }`}
+            >
+              <item.Icon className="h-5 w-5 shrink-0" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="mt-auto flex flex-col gap-3 border-t border-white/10 pt-4">
+        <ActionButton action={action} pathname={pathname} isBusiness />
+        <div className="flex items-center justify-between gap-2">
+          <BalanceChip />
+          <AccountMenu
+            accountType={accountType}
+            overflow={[]}
+            username={username}
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            address={address ?? ''}
+          />
+        </div>
+      </div>
+    </aside>
   );
 }
 
