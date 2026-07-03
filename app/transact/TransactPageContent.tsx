@@ -17,6 +17,7 @@ import {
 } from '../lib/api';
 import { useWallet, formatBalance, formatUSD, getExplorerUrl } from '@/app/lib/chain';
 import { useUser, useBalance, useTransactions, useChainInvalidate } from '@/app/lib/hooks';
+import { usePrivacyPool, stroopsToXlm } from '@/app/lib/privacy/usePrivacyPool';
 import { PageShell, Card } from '@/app/components/ui/primitives';
 import { toast } from 'sonner';
 
@@ -49,6 +50,7 @@ export default function TransactPageContent() {
   const { data: balance = 0 } = useBalance('USDC');
   const { data: recentTransactions = [] } = useTransactions(5);
   const invalidate = useChainInvalidate();
+  const priv = usePrivacyPool();
   const senderUsername = userData?.username ?? '';
 
   // Mode: send or receive
@@ -179,13 +181,14 @@ export default function TransactPageContent() {
       const amountNum = Number(amount);
 
       if (isPrivate) {
-        // Private (shielded) transfer: routed through the privacy pool. The
-        // sender<->recipient link stays hidden, so it is NOT recorded in the
-        // public transaction history (it shows up in the user's /private feed).
-        if (!(await ops.privacy.isEnabled())) await ops.privacy.enable();
-        const result = await ops.privacy.transfer(recipientData.username, String(amountNum), 'USDC', note || undefined);
-        if (!result.success) throw new Error(result.error || 'Private transfer failed. Please try again.');
-        hash = result.hash;
+        // Real on-chain shielded transfer via the privacy pool (XLM). The
+        // sender<->recipient link and amount stay hidden, so it is intentionally
+        // NOT recorded in the public tx history — it lives in the shielded feed.
+        if (!priv.state.ready) throw new Error('Private engine is still loading — try again in a moment.');
+        if (!priv.state.keysReady) await priv.connect();
+        const h = await priv.sendPrivateToUsername(recipientData.username, String(amountNum));
+        if (!h) throw new Error(priv.state.error?.message || 'Private transfer failed. Please try again.');
+        hash = h;
       } else {
         const result = await ops.sendPayment(recipientData.walletAddress, String(amountNum), 'USDC', note || undefined);
         if (!result.success) throw new Error(result.error || 'Transaction failed. Please try again.');
@@ -246,6 +249,12 @@ export default function TransactPageContent() {
 
   // USDC is dollar-denominated (1:1)
   const usdValue = Number(amount);
+
+  // Private sends run through the real shielded pool, which is XLM-denominated,
+  // so the whole Send flow switches unit + available balance when Private is on.
+  const sendUnit = isPrivate ? 'XLM' : 'USDC';
+  const shieldedXlm = Number(stroopsToXlm(priv.state.privateBalance));
+  const insufficientPrivate = isPrivate && amount !== '' && Number(amount) > shieldedXlm;
 
   // Copy wallet address
   const copyAddress = async () => {
@@ -335,7 +344,7 @@ export default function TransactPageContent() {
                     </div>
                     <h2 className="text-2xl font-bold text-white">{isPrivate ? 'Sent Privately!' : 'Payment Sent!'}</h2>
                     <p className="text-purple-200/60">
-                      {amount} USDC sent {isPrivate ? 'privately ' : ''}to @{recipientData?.username}
+                      {amount} {sendUnit} sent {isPrivate ? 'privately ' : ''}to @{recipientData?.username}
                     </p>
                     <Card className="mx-auto max-w-md">
                       <p className="mb-1 text-xs text-purple-200/60">Transaction Hash</p>
@@ -378,8 +387,8 @@ export default function TransactPageContent() {
                     <Card className="overflow-hidden p-0">
                       <div className="border-b border-white/10 p-5">
                         <p className="text-sm text-purple-200/60">Amount</p>
-                        <p className="text-3xl font-bold text-white">{amount} USDC</p>
-                        <p className="text-sm text-purple-200/60">≈ ${usdValue.toFixed(2)} USD</p>
+                        <p className="text-3xl font-bold text-white">{amount} {sendUnit}</p>
+                        <p className="text-sm text-purple-200/60">{isPrivate ? 'Shielded transfer · amount hidden on-chain' : `≈ $${usdValue.toFixed(2)} USD`}</p>
                       </div>
                       <div className="border-b border-white/10 p-5">
                         <p className="text-sm text-purple-200/60">To</p>
@@ -404,9 +413,9 @@ export default function TransactPageContent() {
                       <div className="p-5">
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-1 text-purple-200/60">
-                            <Fuel className="h-4 w-4" /> Est. Gas Fee
+                            <Fuel className="h-4 w-4" /> Est. Network Fee
                           </span>
-                          <span className="font-bold text-white">~0.001 USDC</span>
+                          <span className="font-bold text-white">~0.001 {sendUnit}</span>
                         </div>
                       </div>
                     </Card>
@@ -476,8 +485,8 @@ export default function TransactPageContent() {
                             M
                           </div>
                           <div className="flex flex-col items-start text-left">
-                            <span className="text-sm font-bold leading-tight text-white">USDC</span>
-                            <span className="text-xs text-purple-200/60">Stellar</span>
+                            <span className="text-sm font-bold leading-tight text-white">{sendUnit}</span>
+                            <span className="text-xs text-purple-200/60">{isPrivate ? 'Shielded' : 'Stellar'}</span>
                           </div>
                         </div>
 
@@ -490,7 +499,9 @@ export default function TransactPageContent() {
                             className="w-full border-none bg-transparent p-0 text-4xl font-black leading-tight text-white placeholder-purple-200/30 focus:ring-0 md:text-5xl lg:text-6xl"
                           />
                           <div className="mt-1 text-sm font-medium text-purple-200/60">
-                            ≈ ${usdValue.toFixed(2)} USD • Balance: {formatBalance(balance)} USDC
+                            {isPrivate
+                              ? `Private balance: ${shieldedXlm} XLM (shielded)`
+                              : `≈ $${usdValue.toFixed(2)} USD • Balance: ${formatBalance(balance)} USDC`}
                           </div>
                         </div>
                       </div>
@@ -583,17 +594,47 @@ export default function TransactPageContent() {
                       />
                     </div>
 
+                    {/* Private toggle — flips the whole send to a real shielded XLM transfer */}
+                    <button
+                      type="button"
+                      onClick={() => setIsPrivate((v) => !v)}
+                      className={`flex w-full items-center justify-between rounded-2xl border p-4 transition-all ${
+                        isPrivate ? 'border-[#9b3bff] bg-[#9b3bff]/10' : 'border-white/10 bg-white/[0.04]'
+                      }`}
+                    >
+                      <span className="flex items-center gap-3 text-left">
+                        <Shield className="h-6 w-6 text-[#c89bff]" />
+                        <span>
+                          <span className="block font-bold text-white">Send privately</span>
+                          <span className="block text-xs text-purple-200/60">
+                            {isPrivate
+                              ? 'Real shielded transfer via the on-chain pool (XLM). Amount + recipient stay hidden.'
+                              : 'Hide amount + recipient with a zero-knowledge proof (uses shielded XLM).'}
+                          </span>
+                        </span>
+                      </span>
+                      <span className={`h-7 w-12 shrink-0 rounded-full p-1 transition-colors ${isPrivate ? 'bg-[#7f13ec]' : 'bg-white/10'}`}>
+                        <span className={`block h-5 w-5 rounded-full bg-white transition-transform ${isPrivate ? 'translate-x-5' : ''}`} />
+                      </span>
+                    </button>
+
+                    {insufficientPrivate && (
+                      <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-sm text-amber-300">
+                        You have {shieldedXlm} XLM shielded. <a href="/shielded" className="font-bold underline">Shield more →</a>
+                      </div>
+                    )}
+
                     {/* Action */}
                     <div className="mt-4 flex flex-col gap-4">
                       <div className="flex items-center justify-between px-1 text-sm">
                         <span className="flex items-center gap-1 text-purple-200/60">
-                          <Fuel className="h-4 w-4" /> Est. Gas Fee
+                          <Fuel className="h-4 w-4" /> Est. Network Fee
                         </span>
-                        <span className="font-bold text-white">~0.001 USDC</span>
+                        <span className="font-bold text-white">~0.001 {sendUnit}</span>
                       </div>
                       <button
                         onClick={() => setStep('confirm')}
-                        disabled={!recipientData || !amount || Number(amount) <= 0 || Number(amount) > balance}
+                        disabled={!recipientData || !amount || Number(amount) <= 0 || (!isPrivate && Number(amount) > balance)}
                         className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#9b3bff] to-[#6a10c7] py-4 text-lg font-bold text-white shadow-lg shadow-[#7f13ec]/25 transition-all hover:shadow-[#7f13ec]/40 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Review Transaction
