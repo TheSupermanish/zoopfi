@@ -63,6 +63,7 @@ export type PrivacyPhase = 'idle' | 'proving' | 'signing' | 'submitting' | 'conf
 
 export interface PrivacyState {
   ready: boolean;          // engine loaded
+  bootStalled: boolean;    // engine hasn't loaded within the timeout (RPC history gap)
   address: string;         // connected wallet
   keysReady: boolean;      // note keys derived
   busy: boolean;
@@ -73,6 +74,12 @@ export interface PrivacyState {
   notes: PrivateNote[];
   activity: PoolActivity[];
 }
+
+// The engine boots by replaying pool history from the Soroban RPC. On a pool
+// older than the RPC's ~7-day retention window that sync can never complete, so
+// cap the "Booting…" spinner and fall back to a clear state instead of hanging
+// forever.
+const BOOT_TIMEOUT_MS = 30_000;
 
 const phaseFor = (s: SubmitStatus): PrivacyPhase =>
   s.stage === 'sign_auth' || s.stage === 'sign_tx'
@@ -85,7 +92,7 @@ export function usePrivacyPool() {
   const main = useWallet();
   const engineRef = useRef<PrivacyEngine | null>(null);
   const [state, setState] = useState<PrivacyState>({
-    ready: false, address: '', keysReady: false, busy: false, phase: 'idle',
+    ready: false, bootStalled: false, address: '', keysReady: false, busy: false, phase: 'idle',
     statusText: '', error: null, privateBalance: '0', notes: [], activity: [],
   });
 
@@ -100,10 +107,15 @@ export function usePrivacyPool() {
   // Load the WASM engine once on mount.
   useEffect(() => {
     let cancelled = false;
+    const stallTimer = setTimeout(() => {
+      if (!cancelled) patch({ bootStalled: true });
+    }, BOOT_TIMEOUT_MS);
     loadPrivacyEngine()
-      .then((eng) => { if (!cancelled) { engineRef.current = eng; patch({ ready: true }); } })
-      .catch((e) => !cancelled && fail(e));
-    return () => { cancelled = true; };
+      .then((eng) => {
+        if (!cancelled) { engineRef.current = eng; clearTimeout(stallTimer); patch({ ready: true, bootStalled: false }); }
+      })
+      .catch((e) => { if (!cancelled) { clearTimeout(stallTimer); fail(e); } });
+    return () => { cancelled = true; clearTimeout(stallTimer); };
   }, [patch, fail]);
 
   // On a Privy embedded (social-login) wallet, sign the privacy flow with it via
