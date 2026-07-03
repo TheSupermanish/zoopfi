@@ -23,6 +23,22 @@ const nextConfig: NextConfig = {
     'absolute-epic-gnu.ngrok-free.app',
     'localhost:3000',
   ],
+  // Cross-origin isolation so the ZK engine gets SharedArrayBuffer and the main
+  // thread can sync with the prover/storage workers (without this the engine
+  // hangs on "Booting the ZK engine…"). COEP credentialless (not require-corp)
+  // keeps third-party scripts like Privy loading (cross-origin subresources are
+  // fetched without credentials rather than blocked).
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
+        ],
+      },
+    ];
+  },
   // /api/backend/* is now served by Next.js route handlers (app/api/backend),
   // backed by MongoDB — no proxy/rewrite to an external server.
   // Webpack configuration for production build
