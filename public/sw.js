@@ -1,4 +1,7 @@
-const CACHE_NAME = 'superpay-v1';
+// Bump this on any service-worker behavior change so activate() purges the old
+// cache (v1 aggressively cached ALL app code, which served stale UI after a
+// deploy and could interfere with the ZK engine's large WASM/circuit fetches).
+const CACHE_NAME = 'superpay-v2';
 // Use the icons that actually exist (the app ships SVG icons — the .png variants
 // were never created, so precaching them 404'd and broke install).
 const STATIC_ASSETS = [
@@ -34,24 +37,20 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch event — the service worker ONLY serves the precached static icons (so
+// PWA install / offline icon still work). Everything else (HTML, JS, CSS, API,
+// WASM, ZK circuits, RPC) is left untouched so the browser always fetches it
+// fresh from the network. This guarantees a new deploy is picked up on the next
+// load (no stale app code, no hard-reload) and the SW never sits in front of the
+// privacy engine's large downloads.
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
-
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin || !STATIC_ASSETS.includes(url.pathname)) {
+    return; // not a precached icon → let the browser handle it (fresh network)
+  }
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clone the response before caching
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
-        });
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
 });
 
