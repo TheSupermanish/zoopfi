@@ -95,7 +95,23 @@ export default function ShieldedPage() {
         {/* Main card */}
         <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.04] p-1 backdrop-blur-xl shadow-2xl shadow-black/40">
           <div className="rounded-2xl bg-gradient-to-b from-white/[0.03] to-transparent p-6 sm:p-8">
-            {!state.ready ? (
+            {!state.ready && state.bootStalled ? (
+              <div className="flex flex-col items-center gap-3 py-8 text-center">
+                <AlertCircle className="h-6 w-6 text-amber-300/80" />
+                <p className="text-sm font-medium text-purple-100/90">Privacy engine is still syncing</p>
+                <p className="max-w-sm text-xs leading-relaxed text-purple-200/60">
+                  The engine replays this pool&apos;s full history from the Stellar RPC, which only
+                  retains a rolling window, so a long-lived pool can take a while (or stall) on first load.
+                  The pool itself is live and every proof is verified on-chain.
+                </p>
+                {PRIVACY.verifier && (
+                  <a href={getAddressExplorerUrl(PRIVACY.pool || PRIVACY.verifier)} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-[#b07bff] transition hover:border-[#9b3bff]/40">
+                    View live shielded activity on-chain <ArrowUpRight className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
+            ) : !state.ready ? (
               <div className="flex items-center justify-center gap-2 py-10 text-purple-200/70">
                 <Loader2 className="h-4 w-4 animate-spin" /> Booting the ZK engine…
               </div>

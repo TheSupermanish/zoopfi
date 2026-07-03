@@ -40,10 +40,15 @@ export function loadPrivacyEngine(): Promise<PrivacyEngine> {
     const mod = await nativeImport('/js/web.js');
     // wasm-bindgen default export = init; loads web_bg.wasm next to web.js.
     await mod.default({ module_or_path: '/js/web_bg.wasm' });
-    const handle = await mod.mainThread(new mod.Config(NETWORK.rpcUrl));
+    // Route RPC through our same-origin proxy (/api/rpc). It forwards everything
+    // to the real Soroban RPC but clamps getEvents.startLedger to the RPC's
+    // retention window, so the engine's boot sync can't get stuck asking for
+    // pool history older than the RPC keeps (which otherwise hangs "Booting…").
+    const rpcUrl = `${window.location.origin}/api/rpc`;
+    const handle = await mod.mainThread(new mod.Config(rpcUrl));
     const engine = {
       webClient: handle.webClient,
-      rpcUrl: NETWORK.rpcUrl,
+      rpcUrl,
       networkPassphrase: NETWORK.networkPassphrase,
     };
     // Dev-only: expose the loaded engine for debugging private-pool calls from the console.
