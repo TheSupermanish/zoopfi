@@ -1,16 +1,21 @@
 const CACHE_NAME = 'superpay-v1';
+// Use the icons that actually exist (the app ships SVG icons — the .png variants
+// were never created, so precaching them 404'd and broke install).
 const STATIC_ASSETS = [
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
+  '/icon-192.svg',
+  '/icon-512.svg',
+  '/icon.svg',
 ];
 
-// Install event - cache static assets
+// Install event - cache static assets.
+// Cache each asset independently (allSettled) so a single missing file — e.g. an
+// icon that hasn't been added yet — can't reject the whole install and throw
+// "Failed to execute 'addAll' on 'Cache'". PWA install stays resilient.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(STATIC_ASSETS.map((url) => cache.add(url)))
+    )
   );
   self.skipWaiting();
 });
@@ -56,8 +61,8 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: '/icon-192.svg',
+      badge: '/icon-192.svg',
       vibrate: [100, 50, 100],
       data: {
         url: data.url || '/dashboard',
