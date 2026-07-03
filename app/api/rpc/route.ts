@@ -53,10 +53,11 @@ export async function POST(req: Request): Promise<Response> {
   let body: any = null;
   try { body = await req.json(); } catch { /* forward as-is */ }
 
-  if (
-    body && body.method === 'getEvents' &&
-    body.params && typeof body.params.startLedger === 'number'
-  ) {
+  // Clamp any historical range call (getEvents / getTransactions / getLedgers)
+  // to what the RPC really retains, so none of them are rejected for asking
+  // before the retention window — while still letting the engine THINK history
+  // goes back further (see the getHealth rewrite below).
+  if (body && body.params && typeof body.params.startLedger === 'number') {
     const floor = await minStartLedger();
     if (floor && body.params.startLedger < floor) {
       body.params.startLedger = floor;
@@ -68,6 +69,26 @@ export async function POST(req: Request): Promise<Response> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+
+  // The engine's indexer compares its sync cursor to the RPC's `oldestLedger`
+  // and, if the cursor is older, declares "RPC sync gap" and stalls the deposit
+  // forever ("waiting the indexer", "asp membership check is not fully synced").
+  // Report oldestLedger=1 on getHealth/getLatestLedger so the gap check passes;
+  // the actual getEvents calls above are still clamped to the retained window,
+  // so the indexer just syncs recent history and marks itself caught up.
+  if (body && (body.method === 'getHealth' || body.method === 'getLatestLedger')) {
+    try {
+      const j = await upstream.json();
+      if (j && j.result && typeof j.result.oldestLedger === 'number') {
+        j.result.oldestLedger = 1;
+      }
+      return new Response(JSON.stringify(j), {
+        status: upstream.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch { /* fall through to raw passthrough */ }
+  }
+
   const text = await upstream.text();
   return new Response(text, {
     status: upstream.status,
